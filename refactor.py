@@ -6,11 +6,11 @@ import csv
 
 
 class MetaAnalysisInfo(object):
-    def __init__(self, expression, contraryExpression, studySetSize, contraryStudySetSize,
+    def __init__(self, expression, studySetSize, contraryExpression, contraryStudySetSize,
                  metaAnalysis=None, images=None):
         self.expression = expression
-        self.contraryExpression = contraryExpression
         self.studySetSize = studySetSize
+        self.contraryExpression = contraryExpression
         self.contraryStudySetSize = contraryStudySetSize
         self.metaAnalysis = metaAnalysis
         self.images = images
@@ -22,17 +22,26 @@ class MetaAnalysisInfo(object):
         return cls(metaAnalysis.expression, metaAnalysis.contraryExpression, metaAnalysis.studySetSize,
                    metaAnalysis.contraryStudySetSize, images=meanImages)
 
+    def print_info(self):
+        print [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize]
+
     def write_images_to_file(self, outfile, delimiter='\t'):
         if self.images is None:
             raise RuntimeError('Images not initialized')
         writer = csv.writer(outfile, delimiter=delimiter)
-        writer.writerow([self.expression, self.contraryExpression, self.studySetSize, self.contraryStudySetSize]
-                        + np.asarray(self.images))
+        for imageName in self.images.keys():
+            imageAsList = self.images[imageName].tolist()
+            prefix = [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize, imageName]
+            print '?? ', prefix
+            print '?! ', len(self.images[imageName])
+            print '!! ', imageAsList[0]
+            print '!? ', len(imageAsList)
+            # writer.writerow(prefix + imageAsList)
 
     def save_images(self):
         if self.images is None:
             raise RuntimeError('Images not initialized')
-            # TODO
+        # TODO
 
 
 def write_metaanalysisinfo_list_to_csv(metaAnalysisInfoList, outfilename):
@@ -189,11 +198,11 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
         metaInfoLists.append([])
         for i in range(len(studySets)):
             meta1VsOthers, metaOthersVs1 = compare_two_study_sets(dataset, studySets[i], studySetsToCompare[i], prior)
-            metaInfo1VsOthers = MetaAnalysisInfo(expression[i], '',  # TODO
-                                                 len(studySets[i]), len(studySetsToCompare[i]),
+            metaInfo1VsOthers = MetaAnalysisInfo(expressions[i], len(studySets[i]),
+                                                 '', len(studySetsToCompare[i]),  # TODO
                                                  metaAnalysis=meta1VsOthers)
-            metaInfoOthersVs1 = MetaAnalysisInfo('', expression,  # TODO
-                                                 len(studySetsToCompare[i]), len(studySets[i]),
+            metaInfoOthersVs1 = MetaAnalysisInfo('', len(studySetsToCompare[i]),  # TODO
+                                                 expressions[i], len(studySets[i]),
                                                  metaAnalysis=metaOthersVs1)
             metaInfoLists[i].append(metaInfo1VsOthers)
             metaInfoLists[i].append(metaInfoOthersVs1)
@@ -203,7 +212,6 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     meanMetaResult = get_mean_images(metaInfoLists)
 
     # TODO test
-    print meanMetaResult
 
     # 5) save results
     write_metaanalysisinfo_list_to_csv(meanMetaResult, 'test.out')
