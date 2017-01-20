@@ -1,5 +1,4 @@
-from neurosynth import Dataset, meta
-from neurosynth.base import imageutils
+import neurosynth as ns
 import random
 import numpy as np
 import csv
@@ -29,25 +28,49 @@ class MetaAnalysisInfo(object):
         if self.images is None:
             raise RuntimeError('Images not initialized')
         writer = csv.writer(outfile, delimiter=delimiter)
+        # Note: the length of image arrays exceeds the maximum number of columns of MS Excel
         for imageName in self.images.keys():
             imageAsList = self.images[imageName].tolist()
             prefix = [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize, imageName]
-            print '?? ', prefix
-            print '?! ', len(self.images[imageName])
-            print '!! ', imageAsList[0]
-            print '!? ', len(imageAsList)
-            # writer.writerow(prefix + imageAsList)
+            writer.writerow(prefix + imageAsList)
 
-    def save_images(self):
+    def save_images(self, masker):
         if self.images is None:
             raise RuntimeError('Images not initialized')
-        # TODO
+        for imageName in self.images.keys():
+            filename = self.expression.split(' ', 1)[0] + '_vs_' + self.contraryExpression.split(' ', 1)[0] + '_' \
+                       + imageName + '.nii.gz'
+            ns.imageutils.save_img(self.images[imageName], filename=filename, masker=masker)
+        # TODO test
 
+    @classmethod
+    def get_mean_images(cls, metaInfoLists):
+        """
+        :param metaInfoLists: a list of lists of MetaAnalysisInfo to be averaged
+        :return: a list of MetaAnalysisInfo
+        """
+        if len(metaInfoLists) == 1:
+            meanMetaInfoList = metaInfoLists[0]
+        else:
+            meanMetaInfoList = []
+            # calculate means for each comparison across all iterations
+            for metaInfos in zip(*metaInfoLists):  # iterating through columns
+                # find intersection of image names  # TODO change names to common ones instead of finding them?
+                allImgNames = [metaInfo.metaAnalysis.images.keys() for metaInfo in metaInfos]
+                imgNames = set(allImgNames[0]).intersection(*allImgNames)
+                # calculate means
+                meanImages = {}
+                for imgName in imgNames:
+                    meanImages[imgName] = np.mean([metaInfo.images[imgName] for metaInfo in metaInfos],
+                                                  axis=0)  # TODO test
+                meanMetaInfoList.append(MetaAnalysisInfo.with_mean_images(metaInfos[0].metaAnalysis, meanImages))
+        return meanMetaInfoList
 
-def write_metaanalysisinfo_list_to_csv(metaAnalysisInfoList, outfilename):
-    with open(outfilename, 'w') as outfile:
-        for metaAnalysisInfo in metaAnalysisInfoList:
-            metaAnalysisInfo.write_images_to_file(outfile)
+    @classmethod
+    def write_info_list_to_csv(cls, metaAnalysisInfoList, outfilename):
+        with open(outfilename, 'w') as outfile:
+            for metaAnalysisInfo in metaAnalysisInfoList:
+                metaAnalysisInfo.write_images_to_file(outfile)
 
 
 def get_expressions_one_to_one(term, termList):
@@ -74,7 +97,15 @@ def get_expression_one_to_all(term, termList):
 
 
 def read_pkl_data(filePath, maskerPath=None):
-    return Dataset.load(filePath)  # TODO
+    """
+    :param filePath: a string path to a pickled dataset file (.pkl)
+    :param maskerPath: a string path to a .nii.gz masker file
+    :return: a neurosynth Dataset object
+    """
+    dataset = ns.Dataset.load(filePath)
+    if maskerPath is not None:
+        dataset.masker = ns.mask.Masker(maskerPath)
+    return dataset
 
 
 def compare_two_study_sets(dataset, studySet1, studySet2, prior=None):
@@ -96,33 +127,10 @@ def compare_two_study_sets(dataset, studySet1, studySet2, prior=None):
         prior2 = 1.0 * len(studySet2) / totalNum
 
     # meta analysis
-    metaAnalysis1Vs2 = meta.MetaAnalysis(dataset, studySet1, studySet2, prior=prior1)
-    metaAnalysis2Vs1 = meta.MetaAnalysis(dataset, studySet2, studySet1, prior=prior2)
+    metaAnalysis1Vs2 = ns.meta.MetaAnalysis(dataset, studySet1, studySet2, prior=prior1)
+    metaAnalysis2Vs1 = ns.meta.MetaAnalysis(dataset, studySet2, studySet1, prior=prior2)
 
     return metaAnalysis1Vs2, metaAnalysis2Vs1
-
-
-def get_mean_images(metaInfoLists):
-    """
-
-    :param metaInfoLists:
-    :return: a list of MetaAnalysisInfo
-    """
-    if len(metaInfoLists) == 1:
-        meanMetaInfoList = metaInfoLists[0]
-    else:
-        meanMetaInfoList = []
-        # calculate means for each comparison across all iterations
-        for metaInfos in zip(*metaInfoLists):  # iterating through columns
-            # find intersection of image names  # TODO change names to common ones instead of finding them?
-            allImgNames = [metaInfo.metaAnalysis.images.keys() for metaInfo in metaInfos]
-            imgNames = set(allImgNames[0]).intersection(*allImgNames)
-            # calculate means
-            meanImages = {}
-            for imgName in imgNames:
-                meanImages[imgName] = np.mean([metaInfo.images[imgName] for metaInfo in metaInfos], axis=0)  # TODO test
-            meanMetaInfoList.append(MetaAnalysisInfo.with_mean_images(metaInfos[0].metaAnalysis, meanImages))
-    return meanMetaInfoList
 
 
 def even_study_set_size(studySets):
@@ -198,10 +206,14 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
         metaInfoLists.append([])
         for i in range(len(studySets)):
             meta1VsOthers, metaOthersVs1 = compare_two_study_sets(dataset, studySets[i], studySetsToCompare[i], prior)
+            if len(studySets) == 2:
+                otherExpression = expressions[1 - i]
+            else:
+                otherExpression = 'union of "' + '", "'.join(expressions[:i] + expressions[(i + 1):]) + '"'
             metaInfo1VsOthers = MetaAnalysisInfo(expressions[i], len(studySets[i]),
-                                                 '', len(studySetsToCompare[i]),  # TODO
+                                                 otherExpression, len(studySetsToCompare[i]),
                                                  metaAnalysis=meta1VsOthers)
-            metaInfoOthersVs1 = MetaAnalysisInfo('', len(studySetsToCompare[i]),  # TODO
+            metaInfoOthersVs1 = MetaAnalysisInfo(otherExpression, len(studySetsToCompare[i]),
                                                  expressions[i], len(studySets[i]),
                                                  metaAnalysis=metaOthersVs1)
             metaInfoLists[i].append(metaInfo1VsOthers)
@@ -209,13 +221,14 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
             if len(studySets) == 2:
                 break  # no need to repeat if there are only 2 study sets to compare
     # 4) get average image
-    meanMetaResult = get_mean_images(metaInfoLists)
+    meanMetaResult = MetaAnalysisInfo.get_mean_images(metaInfoLists)
 
     # TODO test
 
-    # 5) save results
-    write_metaanalysisinfo_list_to_csv(meanMetaResult, 'test.out')
-    # imageutils.save_img(img, outpath, masker)
+    # 5) save results TODO put this outside?
+    MetaAnalysisInfo.write_info_list_to_csv(meanMetaResult, 'test.out')
+    for meta in meanMetaResult:
+        meta.save_images(dataset.masker)
 
 
 def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, numIterations=1, prior=None):
@@ -224,7 +237,6 @@ def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, num
         expressions += get_expressions_one_to_one(term1, termList2)
     for exprTuple in expressions:
         compare_expressions(dataset, exprTuple, evenStudySetSize, numIterations, prior)
-    # TODO
 
 
 def compare_terms_group(dataset, termList, evenStudySetSize=True, numIterations=1, prior=None):
@@ -232,13 +244,14 @@ def compare_terms_group(dataset, termList, evenStudySetSize=True, numIterations=
     for term in termList:
         expressions.append(get_expression_one_to_all(term, termList))
     compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior)
-    # TODO
 
 
 if __name__ == '__main__':
-    filePath = 'current_data/dataset.pkl'
-    dataset = read_pkl_data(filePath, maskerPath=None)
-    compare_term_pairs(dataset, ['emotion'], ['pain'], evenStudySetSize=False)
+    # ns.dataset.download(path='.', unpack=True)
+    # dataset = ns.Dataset(filename='current_data/database.txt', masker=None)
+    # dataset.add_features('current_data/features.txt')
+    dataset = ns.Dataset.load('current_data/dataset.pkl')
+    compare_term_pairs(dataset, ['emotion'], ['pain', 'memory', 'language'], evenStudySetSize=False)
 
 # Nomenclature for variables below: p = probability, F = feature present, g = given,
 # U = unselected, A = activation. So, e.g., pAgF = p(A|F) = probability of activation

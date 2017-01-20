@@ -294,7 +294,8 @@ if __name__ == '__main__':
     dataset = Dataset.load(filePath)
     compare_terms_pairs(dataset,
                         ['emotion'],
-                        ['pain'],
-                        maps=['pFgA_pF=0.34', 'pFgA_pF=0.66'],
+                        ['pain', 'memory', 'language'],
+                        maps=['pA_pF_emp_prior', 'pFgA_emp_prior', 'pAgF', 'consistency_z_FDR_0.01', 'consistency_z',
+                              'specificity_z_FDR_0.01', 'specificity_z', 'pFgA_emp_prior_FDR_0.01'],
                         name='out',
                         even_studies=False)
