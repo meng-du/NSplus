@@ -23,21 +23,21 @@ class MetaAnalysisInfo(object):
     def print_info(self):
         print [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize]
 
-    def write_images_to_file(self, outfile, delimiter='\t'):
+    def get_images_as_list(self):
         if self.images is None:
             raise RuntimeError('Images not initialized')
-        writer = csv.writer(outfile, delimiter=delimiter)
+        result = []
         # Note: the length of image arrays exceeds the maximum number of columns of MS Excel
         for imageName in self.images.keys():
             imageAsList = self.images[imageName].tolist()
             prefix = [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize, imageName]
-            writer.writerow(prefix + imageAsList)
+            result.append(prefix + imageAsList)
+        return result
 
     def save_images(self, masker):
         if self.images is None:
             raise RuntimeError('Images not initialized')
         for imageName in self.images.keys():
-            print self.expression, self.contraryExpression
             filename = self.expression.split(' ', 1)[0] + '_vs_' + self.contraryExpression.split(' ', 1)[0] + '_' \
                        + imageName + '.nii.gz'
             ns.imageutils.save_img(self.images[imageName], filename=filename, masker=masker)
@@ -65,10 +65,13 @@ class MetaAnalysisInfo(object):
         return meanMetaInfoList
 
     @classmethod
-    def write_info_list_to_csv(cls, metaAnalysisInfoList, outfilename):
+    def write_info_list_to_csv(cls, metaAnalysisInfoList, outfilename, delimiter=','):
+        results = np.concatenate([metaAnalysisInfo.get_images_as_list() for metaAnalysisInfo in metaAnalysisInfoList])
+        results = results.T  # transpose
         with open(outfilename, 'w') as outfile:
-            for metaAnalysisInfo in metaAnalysisInfoList:
-                metaAnalysisInfo.write_images_to_file(outfile)
+            writer = csv.writer(outfile, delimiter=delimiter)
+            for result in results:
+                writer.writerow(result)
 
 
 def get_expressions_one_to_one(term, termList):
@@ -152,7 +155,7 @@ def get_list_unions(lists):
     :param lists: a list of lists of strings (study IDs)
     :return: a list of unions of all other lists
     """
-    # algorithm adapted from stackoverflow.com/a/2680697
+    # adapted from stackoverflow.com/a/2680697
     result = []
     temp = []
     for i in range(len(lists)):
@@ -202,7 +205,6 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
         studySetsToCompare = get_list_unions(newStudySets)
         metaInfoLists.append([])
         for j in range(len(newStudySets)):
-            print i, metaInfoLists
             meta1VsOthers, metaOthersVs1 = compare_two_study_sets(dataset, newStudySets[j], studySetsToCompare[j], prior)
             if len(newStudySets) == 2:
                 otherExpression = expressions[1 - j]
@@ -216,18 +218,15 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
                                                  metaAnalysis=metaOthersVs1)
             metaInfoLists[i].append(metaInfo1VsOthers)
             metaInfoLists[i].append(metaInfoOthersVs1)
-            print metaInfoLists
             if len(newStudySets) == 2:  # no need to repeat if there are only 2 study sets to compare
                 break
     # 4) get average image
-    print metaInfoLists
     meanMetaResult = MetaAnalysisInfo.get_mean_images(metaInfoLists)
-    print meanMetaResult
 
     # TODO test
 
     # 5) save results TODO put this outside?
-    MetaAnalysisInfo.write_info_list_to_csv(meanMetaResult, 'test.out')
+    MetaAnalysisInfo.write_info_list_to_csv(meanMetaResult, 'output.csv')
     for meta in meanMetaResult:
         meta.save_images(dataset.masker)
 
@@ -252,7 +251,7 @@ if __name__ == '__main__':
     # dataset = ns.Dataset(filename='current_data/database.txt', masker=None)
     # dataset.add_features('current_data/features.txt')
     dataset = ns.Dataset.load('current_data/dataset.pkl')
-    compare_term_pairs(dataset, ['emotion'], ['pain'], evenStudySetSize=True, numIterations=2)
+    compare_term_pairs(dataset, ['emotion'], ['pain', 'language'], evenStudySetSize=False)
 
 # Nomenclature for variables below: p = probability, F = feature present, g = given,
 # U = unselected, A = activation. So, e.g., pAgF = p(A|F) = probability of activation
