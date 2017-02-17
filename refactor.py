@@ -16,10 +16,9 @@ class MetaAnalysisInfo(object):
         if images is None and metaAnalysis is not None:
             self.images = self.metaAnalysis.images
 
-    @classmethod
-    def with_mean_images(cls, metaAnalysis, meanImages):
-        return cls(metaAnalysis.expression, metaAnalysis.contraryExpression, metaAnalysis.studySetSize,
-                   metaAnalysis.contraryStudySetSize, images=meanImages)
+    def init_with_mean_images(self, meanImages):
+        return MetaAnalysisInfo(self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize,
+                                images=meanImages)
 
     def print_info(self):
         print [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize]
@@ -38,10 +37,10 @@ class MetaAnalysisInfo(object):
         if self.images is None:
             raise RuntimeError('Images not initialized')
         for imageName in self.images.keys():
+            print self.expression, self.contraryExpression
             filename = self.expression.split(' ', 1)[0] + '_vs_' + self.contraryExpression.split(' ', 1)[0] + '_' \
                        + imageName + '.nii.gz'
             ns.imageutils.save_img(self.images[imageName], filename=filename, masker=masker)
-        # TODO test
 
     @classmethod
     def get_mean_images(cls, metaInfoLists):
@@ -61,9 +60,8 @@ class MetaAnalysisInfo(object):
                 # calculate means
                 meanImages = {}
                 for imgName in imgNames:
-                    meanImages[imgName] = np.mean([metaInfo.images[imgName] for metaInfo in metaInfos],
-                                                  axis=0)  # TODO test
-                meanMetaInfoList.append(MetaAnalysisInfo.with_mean_images(metaInfos[0].metaAnalysis, meanImages))
+                    meanImages[imgName] = np.mean([metaInfo.images[imgName] for metaInfo in metaInfos], axis=0)
+                meanMetaInfoList.append(metaInfos[0].init_with_mean_images(meanImages))
         return meanMetaInfoList
 
     @classmethod
@@ -198,30 +196,33 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     metaInfoLists = []  # stores lists of MetaAnalysisInfo (one list per iteration)
     for i in range(numIterations):
         # 2) reduce sizes
-        if evenStudySetSize:
-            studySets = even_study_set_size(studySets)
+        newStudySets = even_study_set_size(studySets) if evenStudySetSize else studySets
 
         # 3) get meta analysis results for each study set vs union of all other study sets
-        studySetsToCompare = get_list_unions(studySets)
+        studySetsToCompare = get_list_unions(newStudySets)
         metaInfoLists.append([])
-        for i in range(len(studySets)):
-            meta1VsOthers, metaOthersVs1 = compare_two_study_sets(dataset, studySets[i], studySetsToCompare[i], prior)
-            if len(studySets) == 2:
-                otherExpression = expressions[1 - i]
+        for j in range(len(newStudySets)):
+            print i, metaInfoLists
+            meta1VsOthers, metaOthersVs1 = compare_two_study_sets(dataset, newStudySets[j], studySetsToCompare[j], prior)
+            if len(newStudySets) == 2:
+                otherExpression = expressions[1 - j]
             else:
-                otherExpression = 'union of "' + '", "'.join(expressions[:i] + expressions[(i + 1):]) + '"'
-            metaInfo1VsOthers = MetaAnalysisInfo(expressions[i], len(studySets[i]),
-                                                 otherExpression, len(studySetsToCompare[i]),
+                otherExpression = 'union of "' + '", "'.join(expressions[:j] + expressions[(j + 1):]) + '"'
+            metaInfo1VsOthers = MetaAnalysisInfo(expressions[j], len(newStudySets[j]),
+                                                 otherExpression, len(studySetsToCompare[j]),
                                                  metaAnalysis=meta1VsOthers)
-            metaInfoOthersVs1 = MetaAnalysisInfo(otherExpression, len(studySetsToCompare[i]),
-                                                 expressions[i], len(studySets[i]),
+            metaInfoOthersVs1 = MetaAnalysisInfo(otherExpression, len(studySetsToCompare[j]),
+                                                 expressions[j], len(newStudySets[j]),
                                                  metaAnalysis=metaOthersVs1)
             metaInfoLists[i].append(metaInfo1VsOthers)
             metaInfoLists[i].append(metaInfoOthersVs1)
-            if len(studySets) == 2:
-                break  # no need to repeat if there are only 2 study sets to compare
+            print metaInfoLists
+            if len(newStudySets) == 2:  # no need to repeat if there are only 2 study sets to compare
+                break
     # 4) get average image
+    print metaInfoLists
     meanMetaResult = MetaAnalysisInfo.get_mean_images(metaInfoLists)
+    print meanMetaResult
 
     # TODO test
 
@@ -251,7 +252,7 @@ if __name__ == '__main__':
     # dataset = ns.Dataset(filename='current_data/database.txt', masker=None)
     # dataset.add_features('current_data/features.txt')
     dataset = ns.Dataset.load('current_data/dataset.pkl')
-    compare_term_pairs(dataset, ['emotion'], ['pain', 'memory', 'language'], evenStudySetSize=False)
+    compare_term_pairs(dataset, ['emotion'], ['pain'], evenStudySetSize=True, numIterations=2)
 
 # Nomenclature for variables below: p = probability, F = feature present, g = given,
 # U = unselected, A = activation. So, e.g., pAgF = p(A|F) = probability of activation
