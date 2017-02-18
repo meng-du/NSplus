@@ -2,10 +2,11 @@ import neurosynth as ns
 import random
 import numpy as np
 import csv
+import os
 
 
 class MetaAnalysisInfo(object):
-    def __init__(self, expression, studySetSize, contraryExpression, contraryStudySetSize,
+    def __init__(self, expression, studySetSize, contraryExpression='', contraryStudySetSize=-1,
                  metaAnalysis=None, images=None):
         self.expression = expression
         self.studySetSize = studySetSize
@@ -30,17 +31,30 @@ class MetaAnalysisInfo(object):
         # Note: the length of image arrays exceeds the maximum number of columns of MS Excel
         for imageName in self.images.keys():
             imageAsList = self.images[imageName].tolist()
-            prefix = [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize, imageName]
+            if self.contraryStudySetSize == -1:
+                prefix = [self.expression, self.studySetSize, imageName]
+            else:
+                prefix = [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize,
+                          imageName]
             result.append(prefix + imageAsList)
         return result
 
-    def save_images(self, masker):
+    def write_images_to_csv(self, filename, delimiter=','):
+        data = np.array(self.get_images_as_list()).T
+        with open(filename, 'w') as outfile:
+            writer = csv.writer(outfile, delimiter=delimiter)
+            for row in data:
+                writer.writerow(row)
+
+    def save_images(self, mask):
         if self.images is None:
             raise RuntimeError('Images not initialized')
         for imageName in self.images.keys():
-            filename = self.expression.split(' ', 1)[0] + '_vs_' + self.contraryExpression.split(' ', 1)[0] + '_' \
-                       + imageName + '.nii.gz'
-            ns.imageutils.save_img(self.images[imageName], filename=filename, masker=masker)
+            filename = get_first_word_in_expression(self.expression)
+            if self.contraryStudySetSize != -1:
+                filename += '_vs_' + get_first_word_in_expression(self.contraryExpression)
+            filename += '_' + imageName + '.nii.gz'
+            ns.imageutils.save_img(self.images[imageName], filename=filename, masker=mask)
 
     @classmethod
     def get_mean_images(cls, metaInfoLists):
@@ -72,6 +86,13 @@ class MetaAnalysisInfo(object):
             writer = csv.writer(outfile, delimiter=delimiter)
             for result in results:
                 writer.writerow(result)
+
+
+def get_first_word_in_expression(expression):
+    word = expression.split(' ', 1)[0]
+    if word[0] == '(':
+        word = word[1:]
+    return word
 
 
 def get_expressions_one_to_one(term, termList):
@@ -168,6 +189,22 @@ def get_list_unions(lists):
     return result
 
 
+def analyze_expression(dataset, expression, prior=None, dataset_size=None):
+    # get studies
+    studySet = dataset.get_studies(expression=expression)
+    # prior
+    if dataset_size is None:
+        dataset_size = len(dataset.get_studies(expression='*'))  # 11405
+    if prior is None:
+        prior = 1.0 * len(studySet) / dataset_size
+    # analyze
+    meta = ns.meta.MetaAnalysis(dataset, studySet, prior=prior)
+    metaInfo = MetaAnalysisInfo(expression, len(studySet), metaAnalysis=meta)
+    # output
+    metaInfo.write_images_to_csv(get_first_word_in_expression(expression) + '_output.csv')
+    metaInfo.save_images(dataset.masker)
+
+
 def compare_expressions(dataset, expressions, evenStudySetSize=True, numIterations=1, prior=None):
     """
     Compare each expression to all the other expressions in the given list and return MetaAnalysis objects
@@ -223,8 +260,6 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     # 4) get average image
     meanMetaResult = MetaAnalysisInfo.get_mean_images(metaInfoLists)
 
-    # TODO test
-
     # 5) save results TODO put this outside?
     MetaAnalysisInfo.write_info_list_to_csv(meanMetaResult, 'output.csv')
     for meta in meanMetaResult:
@@ -247,11 +282,38 @@ def compare_terms_group(dataset, termList, evenStudySetSize=True, numIterations=
 
 
 if __name__ == '__main__':
-    # ns.dataset.download(path='.', unpack=True)
-    # dataset = ns.Dataset(filename='current_data/database.txt', masker=None)
-    # dataset.add_features('current_data/features.txt')
-    dataset = ns.Dataset.load('current_data/dataset.pkl')
-    compare_term_pairs(dataset, ['emotion'], ['pain', 'language'], evenStudySetSize=False)
+    MASK_FOLDER = 'mPFC_masks_20170207'
+    TERMS = [
+        '(social | mentaliz*)',
+        'self',
+        '(value | reward | incentive)',
+        '(choice | decision making)',
+        'emotion*',
+        '(episodic | future | past | autobiographical | retrieval | prospective | memory retrieval)',
+        '(scene | semantic knowledge | semantic memory | construction | imagine*)',
+        '(multitasking | dual)'
+    ]
+    maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
+    for maskFile in maskFiles:
+        # ns.dataset.download(path='.', unpack=True)
+        # dataset = ns.Dataset(filename='current_data/database.txt', masker=mask)
+        # dataset.add_features('current_data/features.txt')
+        print maskFile
+        dirname = 'mask=' + maskFile[:-4]
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        dataset = ns.Dataset.load('current_data/dataset.pkl')
+        print 'dataset loaded'
+        dataset.masker = ns.mask.Masker(MASK_FOLDER + '/' + maskFile)
+        ### ANALYSIS ###
+        compare_term_pairs(dataset, ['emotion'], ['pain', 'memory', 'language'], evenStudySetSize=False)
+        #for term in TERMS:
+        #    analyze_expression(dataset, term, dataset_size=11405)
+        ### ANALYSIS ###
+        output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or 'output.csv' in filename)]
+        for filename in output:
+            os.rename(filename, dirname + '/' + filename)
+
 
 # Nomenclature for variables below: p = probability, F = feature present, g = given,
 # U = unselected, A = activation. So, e.g., pAgF = p(A|F) = probability of activation
