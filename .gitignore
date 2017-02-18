@@ -1,6 +1,5 @@
 *.pyc
 .*
-results/
 current_data/*
 myresults/
 *.csv

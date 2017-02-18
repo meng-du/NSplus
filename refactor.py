@@ -271,6 +271,7 @@ def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, num
     for term1 in termList1:
         expressions += get_expressions_one_to_one(term1, termList2)
     for exprTuple in expressions:
+        print exprTuple
         compare_expressions(dataset, exprTuple, evenStudySetSize, numIterations, prior)
 
 
@@ -290,31 +291,26 @@ if __name__ == '__main__':
         '(choice | decision making)',
         'emotion*',
         '(episodic | future | past | autobiographical | retrieval | prospective | memory retrieval)',
-        '(scene | semantic knowledge | semantic memory | construction | imagine*)',
-        '(multitasking | dual)'
+        '(scene | semantic knowledge | semantic memory | construction | imagine*)'
     ]
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
     for maskFile in maskFiles:
         # ns.dataset.download(path='.', unpack=True)
-        # dataset = ns.Dataset(filename='current_data/database.txt', masker=mask)
-        # dataset.add_features('current_data/features.txt')
+        dataset = ns.Dataset(filename='current_data/database.txt', masker=MASK_FOLDER + '/' + maskFile)
+        dataset.add_features('current_data/features.txt')
+        # dataset = ns.Dataset.load('current_data/dataset.pkl')
+        print 'dataset loaded'
         print maskFile
         dirname = 'mask=' + maskFile[:-4]
         if not os.path.exists(dirname):
             os.makedirs(dirname)
-        dataset = ns.Dataset.load('current_data/dataset.pkl')
-        print 'dataset loaded'
         dataset.masker = ns.mask.Masker(MASK_FOLDER + '/' + maskFile)
         ### ANALYSIS ###
-        compare_term_pairs(dataset, ['emotion'], ['pain', 'memory', 'language'], evenStudySetSize=False)
-        #for term in TERMS:
-        #    analyze_expression(dataset, term, dataset_size=11405)
+        for term in TERMS:
+            print term
+            # analyze_expression(dataset, term, dataset_size=11405)
+            compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100)
         ### ANALYSIS ###
         output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or 'output.csv' in filename)]
         for filename in output:
             os.rename(filename, dirname + '/' + filename)
-
-
-# Nomenclature for variables below: p = probability, F = feature present, g = given,
-# U = unselected, A = activation. So, e.g., pAgF = p(A|F) = probability of activation
-# in a voxel if we know that the feature is present in a study.
