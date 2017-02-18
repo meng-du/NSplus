@@ -205,7 +205,7 @@ def analyze_expression(dataset, expression, prior=None, dataset_size=None):
     metaInfo.save_images(dataset.masker)
 
 
-def compare_expressions(dataset, expressions, evenStudySetSize=True, numIterations=1, prior=None):
+def compare_expressions(dataset, expressions, evenStudySetSize=True, numIterations=1, prior=None, filename=''):
     """
     Compare each expression to all the other expressions in the given list and return MetaAnalysis objects
     :param dataset: a neurosynth Dataset instance to get studies from
@@ -261,7 +261,7 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     meanMetaResult = MetaAnalysisInfo.get_mean_images(metaInfoLists)
 
     # 5) save results TODO put this outside?
-    MetaAnalysisInfo.write_info_list_to_csv(meanMetaResult, 'output.csv')
+    MetaAnalysisInfo.write_info_list_to_csv(meanMetaResult, filename + '_output.csv')
     for meta in meanMetaResult:
         meta.save_images(dataset.masker)
 
@@ -272,14 +272,15 @@ def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, num
         expressions += get_expressions_one_to_one(term1, termList2)
     for exprTuple in expressions:
         print exprTuple
-        compare_expressions(dataset, exprTuple, evenStudySetSize, numIterations, prior)
+        filename = get_first_word_in_expression(exprTuple[0]) + '_vs_' + get_first_word_in_expression(exprTuple[1])
+        compare_expressions(dataset, exprTuple, evenStudySetSize, numIterations, prior, filename)
 
 
 def compare_terms_group(dataset, termList, evenStudySetSize=True, numIterations=1, prior=None):
     expressions = []
     for term in termList:
         expressions.append(get_expression_one_to_all(term, termList))
-    compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior)
+    compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior, filename='group')
 
 
 if __name__ == '__main__':
@@ -306,11 +307,12 @@ if __name__ == '__main__':
             os.makedirs(dirname)
         dataset.masker = ns.mask.Masker(MASK_FOLDER + '/' + maskFile)
         ### ANALYSIS ###
-        for term in TERMS:
-            print term
-            # analyze_expression(dataset, term, dataset_size=11405)
-            compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100)
+        #for term in TERMS:
+        #    print term
+        #    analyze_expression(dataset, term, dataset_size=11405)
+        compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100)
         ### ANALYSIS ###
+
         output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or 'output.csv' in filename)]
         for filename in output:
             os.rename(filename, dirname + '/' + filename)
