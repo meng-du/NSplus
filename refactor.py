@@ -3,6 +3,7 @@ import random
 import numpy as np
 import csv
 import os
+from multitask import *
 
 
 class MetaAnalysisInfo(object):
@@ -231,7 +232,10 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     # 1) get studies
     studySets = []
     for expression in expressions:
-        studySets.append(dataset.get_studies(expression=expression))
+        if expression == '(multitasking | dual)':
+            studySets.append(multitask_studies)
+        else:
+            studySets.append(dataset.get_studies(expression=expression))
 
     metaInfoLists = []  # stores lists of MetaAnalysisInfo (one list per iteration)
     for i in range(numIterations):
@@ -292,7 +296,8 @@ if __name__ == '__main__':
         '(choice | decision making)',
         'emotion*',
         '(episodic | future | past | autobiographical | retrieval | prospective | memory retrieval)',
-        '(scene | semantic knowledge | semantic memory | construction | imagine*)'
+        '(scene | semantic knowledge | semantic memory | construction | imagine*)',
+        '(multitasking | dual)'
     ]
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
     for maskFile in maskFiles:
@@ -310,7 +315,8 @@ if __name__ == '__main__':
         #for term in TERMS:
         #    print term
         #    analyze_expression(dataset, term, dataset_size=11405)
-        compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100)
+        #compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100)
+        compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
         ### ANALYSIS ###
 
         output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or 'output.csv' in filename)]

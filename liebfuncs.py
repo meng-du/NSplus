@@ -299,3 +299,8 @@ if __name__ == '__main__':
                               'specificity_z_FDR_0.01', 'specificity_z', 'pFgA_emp_prior_FDR_0.01'],
                         name='out',
                         even_studies=False)
+    compare_terms_group(dataset,
+                        ['emotion', 'language', 'self'],
+                        maps=['pA', 'pAgF', 'pFgA', 'pAgF_given_pF=0.37', 'pFgA_given_pF=0.37', 'pAgF_z', 'pFgA_z',
+                              'pAgF_z_FDR_0.01', 'pFgA_z_FDR_0.01'],
+                        name='out')
