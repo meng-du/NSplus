@@ -3,7 +3,7 @@ import random
 import numpy as np
 import csv
 import os
-from multitask import *
+from study_ids import *
 
 
 class MetaAnalysisInfo(object):
@@ -25,12 +25,19 @@ class MetaAnalysisInfo(object):
     def print_info(self):
         print [self.expression, self.studySetSize, self.contraryExpression, self.contraryStudySetSize]
 
-    def get_images_as_list(self):
+    def get_images_as_list(self, image_names=None):
+        """
+        Get a list of images prefixed with information
+        :param image_names: the names of images to be included in the result. If None, all images will be returned.
+        :return: a list of images (a list of lists of strings)
+        """
         if self.images is None:
             raise RuntimeError('Images not initialized')
         result = []
         # Note: the length of image arrays exceeds the maximum number of columns of MS Excel
         for imageName in self.images.keys():
+            if (image_names is not None) and (imageName not in image_names):
+                continue
             imageAsList = self.images[imageName].tolist()
             if self.contraryStudySetSize == -1:
                 prefix = [self.expression, self.studySetSize, imageName]
@@ -40,8 +47,8 @@ class MetaAnalysisInfo(object):
             result.append(prefix + imageAsList)
         return result
 
-    def write_images_to_csv(self, filename, delimiter=','):
-        data = np.array(self.get_images_as_list()).T
+    def write_images_to_csv(self, filename, delimiter=',', image_names=None):
+        data = np.array(self.get_images_as_list(image_names)).T
         with open(filename, 'w') as outfile:
             writer = csv.writer(outfile, delimiter=delimiter)
             for row in data:
@@ -93,6 +100,10 @@ def get_first_word_in_expression(expression):
     word = expression.split(' ', 1)[0]
     if word[0] == '(':
         word = word[1:]
+    if word == 'episodic':
+        word = 'episodic_with_autobio' if 'autobiographical' in expression else 'episodic_without_autobio'
+    if ('value' in expression) and ('choice' in expression):
+        word = 'value_choice'
     return word
 
 
@@ -190,19 +201,44 @@ def get_list_unions(lists):
     return result
 
 
-def analyze_expression(dataset, expression, prior=None, dataset_size=None):
+def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_names=None):
+    """
+    Analyze a single expression, output a csv file and a set of .nii.gz image files
+    :param dataset:
+    :param expression:
+    :param priors:
+    :param dataset_size:
+    :param image_names: the names of images to be included in the csv file. If None, all images will be included.
+                        For images named 'pFgA_given_pF=0.xx', specifying 'pFgA_given_pF' will include all of them.
+    :return:
+    """
     # get studies
-    studySet = dataset.get_studies(expression=expression)
-    # prior
+    if expression == '(topic72_multitasking | dual)':
+        studySet = multitask_studies
+    elif expression == 'topic59_default_network':
+        studySet = topic59_studies
+    else:
+        studySet = dataset.get_studies(expression=expression)
+    # add real prior
     if dataset_size is None:
         dataset_size = len(dataset.get_studies(expression='*'))  # 11405
-    if prior is None:
-        prior = 1.0 * len(studySet) / dataset_size
+    priors.append(1.0 * len(studySet) / dataset_size)
     # analyze
-    meta = ns.meta.MetaAnalysis(dataset, studySet, prior=prior)
-    metaInfo = MetaAnalysisInfo(expression, len(studySet), metaAnalysis=meta)
+    metaInfo = None
+    for prior in priors:
+        if 'pFgA_given_pF' in image_names:
+            image_names.append('pFgA_given_pF=%0.2f' % prior)
+        if 'pAgF_given_pF' in image_names:
+            image_names.append('pAgF_given_pF=%0.2f' % prior)
+        meta = ns.meta.MetaAnalysis(dataset, studySet, prior=prior)
+        if metaInfo is None:
+            metaInfo = MetaAnalysisInfo(expression, len(studySet), metaAnalysis=meta)
+        else:
+            for imgName in meta.images.keys():
+                if imgName not in metaInfo.images.keys():
+                    metaInfo.images[imgName] = meta.images[imgName]  # add new image
     # output
-    metaInfo.write_images_to_csv(get_first_word_in_expression(expression) + '_output.csv')
+    metaInfo.write_images_to_csv(get_first_word_in_expression(expression) + '_output.csv', image_names=image_names)
     metaInfo.save_images(dataset.masker)
 
 
@@ -232,10 +268,7 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     # 1) get studies
     studySets = []
     for expression in expressions:
-        if expression == '(multitasking | dual)':
-            studySets.append(multitask_studies)
-        else:
-            studySets.append(dataset.get_studies(expression=expression))
+        studySets.append(dataset.get_studies(expression=expression))
 
     metaInfoLists = []  # stores lists of MetaAnalysisInfo (one list per iteration)
     for i in range(numIterations):
@@ -290,14 +323,18 @@ def compare_terms_group(dataset, termList, evenStudySetSize=True, numIterations=
 if __name__ == '__main__':
     MASK_FOLDER = 'mPFC_masks_20170207'
     TERMS = [
-        '(social | mentaliz*)',
+        '(social | mentalizing)',
         'self',
         '(value | reward | incentive)',
         '(choice | decision making)',
+        '(value | reward | incentive | choice | decision making)',
         'emotion*',
         '(episodic | future | past | autobiographical | retrieval | prospective | memory retrieval)',
+        '(episodic | future | past | retrieval | prospective | memory retrieval)',
+        'autobiographical',
         '(scene | semantic knowledge | semantic memory | construction | imagine*)',
-        '(multitasking | dual)'
+        '(topic72_multitasking | dual)',
+        'topic59_default_network'
     ]
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
     for maskFile in maskFiles:
@@ -307,16 +344,16 @@ if __name__ == '__main__':
         # dataset = ns.Dataset.load('current_data/dataset.pkl')
         print 'dataset loaded'
         print maskFile
-        dirname = 'mask=' + maskFile[:-4]
+        dirname = maskFile[:-4]
         if not os.path.exists(dirname):
             os.makedirs(dirname)
-        dataset.masker = ns.mask.Masker(MASK_FOLDER + '/' + maskFile)
         ### ANALYSIS ###
-        #for term in TERMS:
-        #    print term
-        #    analyze_expression(dataset, term, dataset_size=11405)
-        #compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100)
-        compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
+        for term in TERMS:
+            print term
+            images = ['pA', 'pAgF_z', 'pAgF', 'pFgA_given_pF', 'pFgA_z']
+            analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=images)
+        # compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100)
+        # compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
         ### ANALYSIS ###
 
         output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or 'output.csv' in filename)]
