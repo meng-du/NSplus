@@ -34,7 +34,7 @@ class MetaAnalysisInfo(object):
         if self.images is None:
             raise RuntimeError('Images not initialized')
         result = []
-        # Note: the length of image arrays exceeds the maximum number of columns of MS Excel
+        # Note: the length of image arrays here exceeds the maximum number of columns in MS Excel
         for imageName in self.images.keys():
             if (image_names is not None) and (imageName not in image_names):
                 continue
@@ -76,7 +76,7 @@ class MetaAnalysisInfo(object):
             meanMetaInfoList = []
             # calculate means for each comparison across all iterations
             for metaInfos in zip(*metaInfoLists):  # iterating through columns
-                # find intersection of image names  # TODO change names to common ones instead of finding them?
+                # find intersection of image names
                 allImgNames = [metaInfo.metaAnalysis.images.keys() for metaInfo in metaInfos]
                 imgNames = set(allImgNames[0]).intersection(*allImgNames)
                 # calculate means
@@ -87,9 +87,9 @@ class MetaAnalysisInfo(object):
         return meanMetaInfoList
 
     @classmethod
-    def write_info_list_to_csv(cls, metaAnalysisInfoList, outfilename, delimiter=','):
-        results = np.concatenate([metaAnalysisInfo.get_images_as_list() for metaAnalysisInfo in metaAnalysisInfoList])
-        results = results.T  # transpose
+    def write_info_list_to_csv(cls, metaAnalysisInfoList, outfilename, delimiter=',', image_names=None):
+        results = [metaAnalysisInfo.get_images_as_list(image_names) for metaAnalysisInfo in metaAnalysisInfoList]
+        results = np.concatenate(results).T  # concatenate and transpose
         with open(outfilename, 'w') as outfile:
             writer = csv.writer(outfile, delimiter=delimiter)
             for result in results:
@@ -102,7 +102,7 @@ def get_first_word_in_expression(expression):
         word = word[1:]
     if word == 'episodic':
         word = 'episodic_with_autobio' if 'autobiographical' in expression else 'episodic_without_autobio'
-    if ('value' in expression) and ('choice' in expression):
+    if (word == 'value') and (' choice' in expression):
         word = 'value_choice'
     return word
 
@@ -142,7 +142,7 @@ def read_pkl_data(filePath, maskerPath=None):
     return dataset
 
 
-def compare_two_study_sets(dataset, studySet1, studySet2, prior=None):
+def compare_two_study_sets(dataset, studySet1, studySet2, prior=None, image_names=None):
     """
     :param dataset: a neurosynth Dataset instance
     :param studySet1, studySet2: two lists of study ids to compare
@@ -159,6 +159,8 @@ def compare_two_study_sets(dataset, studySet1, studySet2, prior=None):
         totalNum = len(studySet1) + len(studySet2)
         prior1 = 1.0 * len(studySet1) / totalNum
         prior2 = 1.0 * len(studySet2) / totalNum
+    if image_names is not None:
+        process_image_names(image_names, [prior1, prior2])
 
     # meta analysis
     metaAnalysis1Vs2 = ns.meta.MetaAnalysis(dataset, studySet1, studySet2, prior=prior1)
@@ -201,16 +203,27 @@ def get_list_unions(lists):
     return result
 
 
+def process_image_names(image_names, priors):
+    for prior in priors:
+        if ('pFgA_given_pF' in image_names) and (('pFgA_given_pF=%0.2f' % prior) not in image_names):
+            image_names.append('pFgA_given_pF=%0.2f' % prior)
+        if ('pAgF_given_pF' in image_names) and (('pAgF_given_pF=%0.2f' % prior) not in image_names):
+            image_names.append('pAgF_given_pF=%0.2f' % prior)
+
+
 def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_names=None):
+    # TODO doesn't need dataset_size. should be able to get length of database quickly?
+    # TODO don't always add real prior?
     """
-    Analyze a single expression, output a csv file and a set of .nii.gz image files
-    :param dataset:
-    :param expression:
-    :param priors:
-    :param dataset_size:
+    Analyze a single expression, output a set of .nii.gz image files and a csv file containing voxel values in images
+    :param dataset: a neurosynth Dataset instance to get studies from
+    :param expression: a string expression to be analyzed
+    :param priors: a list of float priors to be used when calculating conditional probabilities
+                   The real prior will always be calculated and added to this list
+    :param dataset_size: number of studies in the dataset. This is used to calculate the real prior.
+                         If not specified, the number will be counted, which takes more time.
     :param image_names: the names of images to be included in the csv file. If None, all images will be included.
                         For images named 'pFgA_given_pF=0.xx', specifying 'pFgA_given_pF' will include all of them.
-    :return:
     """
     # get studies
     if expression == '(topic72_multitasking | dual)':
@@ -223,13 +236,10 @@ def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_
     if dataset_size is None:
         dataset_size = len(dataset.get_studies(expression='*'))  # 11405
     priors.append(1.0 * len(studySet) / dataset_size)
+    process_image_names(image_names, priors)
     # analyze
     metaInfo = None
     for prior in priors:
-        if 'pFgA_given_pF' in image_names:
-            image_names.append('pFgA_given_pF=%0.2f' % prior)
-        if 'pAgF_given_pF' in image_names:
-            image_names.append('pAgF_given_pF=%0.2f' % prior)
         meta = ns.meta.MetaAnalysis(dataset, studySet, prior=prior)
         if metaInfo is None:
             metaInfo = MetaAnalysisInfo(expression, len(studySet), metaAnalysis=meta)
@@ -242,7 +252,7 @@ def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_
     metaInfo.save_images(dataset.masker)
 
 
-def compare_expressions(dataset, expressions, evenStudySetSize=True, numIterations=1, prior=None, filename=''):
+def compare_expressions(dataset, expressions, evenStudySetSize=True, numIterations=1, prior=None, image_names=None):
     """
     Compare each expression to all the other expressions in the given list and return MetaAnalysis objects
     :param dataset: a neurosynth Dataset instance to get studies from
@@ -252,6 +262,8 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     :param prior: (float) the prior to use when calculating conditional probabilities, i.e., the prior probability of
                   a term being used in a study; if None, the empirically estimated p(term) will be used
                   (calculated as number_of_studies_with_term  / total_number_of_studies)
+    :param image_names: the names of images to be included in the csv file. If None, all images will be included.
+                        For images named 'pFgA_given_pF=0.xx', specifying 'pFgA_given_pF' will include all of them.
     :return: a dictionary where keys are 'expressionX vs expressionY' and values are corresponding neurosynth
              MetaAnalysis objects
     """
@@ -268,7 +280,11 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     # 1) get studies
     studySets = []
     for expression in expressions:
-        studySets.append(dataset.get_studies(expression=expression))
+        studies = dataset.get_studies(expression=expression)
+        if len(studies) == 0:
+            print 'No data associated with "' + expression + '"'
+            return
+        studySets.append(studies)
 
     metaInfoLists = []  # stores lists of MetaAnalysisInfo (one list per iteration)
     for i in range(numIterations):
@@ -279,7 +295,8 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
         studySetsToCompare = get_list_unions(newStudySets)
         metaInfoLists.append([])
         for j in range(len(newStudySets)):
-            meta1VsOthers, metaOthersVs1 = compare_two_study_sets(dataset, newStudySets[j], studySetsToCompare[j], prior)
+            meta1VsOthers, metaOthersVs1 = compare_two_study_sets(dataset, newStudySets[j], studySetsToCompare[j],
+                                                                  prior, image_names)
             if len(newStudySets) == 2:
                 otherExpression = expressions[1 - j]
             else:
@@ -297,27 +314,31 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     # 4) get average image
     meanMetaResult = MetaAnalysisInfo.get_mean_images(metaInfoLists)
 
-    # 5) save results TODO put this outside?
-    MetaAnalysisInfo.write_info_list_to_csv(meanMetaResult, filename + '_output.csv')
-    for meta in meanMetaResult:
-        meta.save_images(dataset.masker)
+    # 5) save results
+    if len(expressions) == 2:
+        filename = get_first_word_in_expression(expressions[0]) + '_vs_' + get_first_word_in_expression(expressions[1])
+    else:
+        filename = 'group'
+    MetaAnalysisInfo.write_info_list_to_csv(meanMetaResult, filename + '_output.csv', image_names=image_names)
+    for metaInfo in meanMetaResult:
+        metaInfo.save_images(dataset.masker)
 
 
-def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, numIterations=1, prior=None):
+def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, numIterations=1, prior=None,
+                       image_names=None):
     expressions = []
     for term1 in termList1:
         expressions += get_expressions_one_to_one(term1, termList2)
     for exprTuple in expressions:
         print exprTuple
-        filename = get_first_word_in_expression(exprTuple[0]) + '_vs_' + get_first_word_in_expression(exprTuple[1])
-        compare_expressions(dataset, exprTuple, evenStudySetSize, numIterations, prior, filename)
+        compare_expressions(dataset, exprTuple, evenStudySetSize, numIterations, prior, image_names)
 
 
-def compare_terms_group(dataset, termList, evenStudySetSize=True, numIterations=1, prior=None):
+def compare_terms_group(dataset, termList, evenStudySetSize=True, numIterations=1, prior=None, image_names=None):
     expressions = []
     for term in termList:
         expressions.append(get_expression_one_to_all(term, termList))
-    compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior, filename='group')
+    compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior, image_names)
 
 
 if __name__ == '__main__':
@@ -332,9 +353,7 @@ if __name__ == '__main__':
         '(episodic | future | past | autobiographical | retrieval | prospective | memory retrieval)',
         '(episodic | future | past | retrieval | prospective | memory retrieval)',
         'autobiographical',
-        '(scene | semantic knowledge | semantic memory | construction | imagine*)',
-        '(topic72_multitasking | dual)',
-        'topic59_default_network'
+        '(scene | semantic knowledge | semantic memory | construction | imagine*)'
     ]
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
     for maskFile in maskFiles:
@@ -348,11 +367,11 @@ if __name__ == '__main__':
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         ### ANALYSIS ###
-        for term in TERMS:
-            print term
-            images = ['pA', 'pAgF_z', 'pAgF', 'pFgA_given_pF', 'pFgA_z']
-            analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=images)
-        # compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100)
+        images = ['pFgA_given_pF', 'pFgA_z']
+        # for term in TERMS:
+        #     print term
+        #     analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=images)
+        compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=500, image_names=images)
         # compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
         ### ANALYSIS ###
 
