@@ -2,6 +2,18 @@ from metaext import *
 import os
 
 
+def quick_test():
+    dataset = ns.Dataset.load('current_data/dataset.pkl')
+    TERMS = ['emotion*', 'self', 'autobiographical']
+    for term in TERMS:
+        print term
+        analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=images)
+    print 'pairs'
+    compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100, image_names=images)
+    print 'group'
+    compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
+
+
 if __name__ == '__main__':
     MASK_FOLDER = 'mPFC_masks_20170207'
     TERMS = [

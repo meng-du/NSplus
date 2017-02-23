@@ -340,4 +340,3 @@ def compare_terms_group(dataset, termList, evenStudySetSize=True, numIterations=
     for term in termList:
         expressions.append(get_expression_one_to_all(term, termList))
     compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior, image_names)
-
