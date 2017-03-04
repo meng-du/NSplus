@@ -5,29 +5,28 @@ import os
 def quick_test():
     dataset = ns.Dataset.load('current_data/dataset.pkl')
     TERMS = ['emotion*', 'self', 'autobiographical']
-    for term in TERMS:
-        print term
-        analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=images)
-    print 'pairs'
-    compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=100, image_names=images)
-    print 'group'
-    compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
+    # for term in TERMS:
+    #     print term
+    #     analyze_expression(dataset, term, priors=[0.5], dataset_size=11405)
+    # print 'pairs'
+    # compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=False)
+    print 'conjunction'
+    compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunction_images=[('pFgA_z', 1.5)],
+                                            numIterations=1, save_files=True)
+    # print 'group'
+    # compare_term_group(dataset, TERMS, evenStudySetSize=False)
 
 
 if __name__ == '__main__':
+    # quick_test()
     MASK_FOLDER = 'mPFC_masks_20170207'
     TERMS = [
         '(social | mentalizing)',
-        'self',
-        '(value | reward | incentive)',
-        '(choice | decision making)',
-        '(value | reward | incentive | choice | decision making)',
-        'emotion*',
         '(episodic | future | past | autobiographical | retrieval | prospective | memory retrieval)',
-        '(episodic | future | past | retrieval | prospective | memory retrieval)',
-        'autobiographical',
         '(scene | semantic knowledge | semantic memory | construction | imagine*)'
     ]
+    IMAGES = ['pFgA_given_pF', 'pFgA_z']
+    CONJUNCTION = [('pFgA_given_pF=0.50', 0.60)]
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
     for maskFile in maskFiles:
         # ns.dataset.download(path='.', unpack=True)
@@ -40,40 +39,23 @@ if __name__ == '__main__':
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         ### ANALYSIS ###
-        images = ['pFgA_given_pF', 'pFgA_z']
-        # for term in TERMS:
-        #     print term
-        #     analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=images)
-        compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=True, numIterations=500, image_names=images)
+        results = []
+        for term in TERMS:
+            print term
+            results.append(analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=IMAGES, save_files=False))
+        MetaExtension.get_conjunction_image(results, CONJUNCTION[0][1], CONJUNCTION[0][0],
+                                            file_prefix='social_episodic_scene', save_files=False)
+        # compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunction_images=CONJUNCTION,
+        #                                         numIterations=500, image_names=IMAGES, save_files=True)
+        # MetaExtension.get_conjunction_image(results, 0.60, image_name='pFgA_given_pF=0.50')
         # compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
         ### ANALYSIS ###
 
-        output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or 'output.csv' in filename)]
+        output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or '.csv' in filename)]
         for filename in output:
             os.rename(filename, dirname + '/' + filename)
 
 '''
-only keep voxels that pass the .60 threshold for each test, if >=.60 for all four of these it gets a 1:
-social_vs_emotion__pFgA_given_pF=0.50.nii
-social_vs_episodic_pFgA_given_pF=0.50.nii
-social_vs_self_pFgA_given_pF=0.50.nii
-social_vs_value_pFgA_given_pF=0.50.nii
 
-setting the threshold for each file to 1.96:
-social_vs_emotion__pFgA_z.nii.gz
-social_vs_scene_pFgA_z.nii.gz
-social_vs_self_pFgA_z.nii.gz
-social_vs_value_pFgA_z.nii.gz
-
-just BA11 ROI, number > .60 (2 overlap vs. all three overlap).:
-social_pFgA_given_pF=0.50.nii.gz
-episodic_pFgA_given_pF=0.50.nii.gz
-scene_pFgA_given_pF=0.50.nii.gz
-
-
-social_vs_emotion__pFgA_z.nii.gz
-social_vs_scene_pFgA_z.nii.gz
-social_vs_self_pFgA_z.nii.gz
-social_vs_value_pFgA_z.nii.gz
 
 '''
