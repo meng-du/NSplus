@@ -21,12 +21,18 @@ if __name__ == '__main__':
     # quick_test()
     MASK_FOLDER = 'mPFC_masks_20170207'
     TERMS = [
+        '(emotion &~ (emotional faces | emotional stimuli | * face | face* | *perception))',
+        '(choice | decision making)',
+        '(episodic | future | past | retrieval | prospective | memory retrieval)',
+        '(scene | semantic knowledge | semantic memory | construction | imagine*)',
+        'self',
         '(social | mentalizing)',
-        '(episodic | future | past | autobiographical | retrieval | prospective | memory retrieval)',
-        '(scene | semantic knowledge | semantic memory | construction | imagine*)'
+        '(value | reward | incentive)'
     ]
-    IMAGES = ['pFgA_given_pF', 'pFgA_z']
-    CONJUNCTION = [('pFgA_given_pF=0.50', 0.60)]
+    # IMAGES = None
+    # IMAGES = ['pA', 'pAgF', 'pAgF_z', 'pFgA_given_pF', 'pFgA_z']  # single
+    IMAGES = ['pFgA_given_pF', 'pFgA_z']  # pairwise
+    CONJUNCTIONS = [('pFgA_given_pF=0.50', 0.50), ('pFgA_given_pF=0.50', 0.55), ('pFgA_given_pF=0.50', 0.60)]
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
     for maskFile in maskFiles:
         # ns.dataset.download(path='.', unpack=True)
@@ -40,13 +46,14 @@ if __name__ == '__main__':
             os.makedirs(dirname)
         ### ANALYSIS ###
         results = []
-        for term in TERMS:
-            print term
-            results.append(analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=IMAGES, save_files=False))
-        MetaExtension.get_conjunction_image(results, CONJUNCTION[0][1], CONJUNCTION[0][0],
-                                            file_prefix='social_episodic_scene', save_files=False)
-        # compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunction_images=CONJUNCTION,
-        #                                         numIterations=500, image_names=IMAGES, save_files=True)
+        # for term in TERMS:
+        #     print term
+        #     results.append(analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=IMAGES))
+        # MetaExtension.get_conjunction_image(results, CONJUNCTION[0][1], CONJUNCTION[0][0],
+        #                                     file_prefix='social_episodic_emotion')
+        compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunction_images=CONJUNCTIONS,
+                                                numIterations=500, image_names=IMAGES)
+        # compare_term_pairs(dataset, TERMS, TERMS, numIterations=500)
         # MetaExtension.get_conjunction_image(results, 0.60, image_name='pFgA_given_pF=0.50')
         # compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
         ### ANALYSIS ###
@@ -54,8 +61,3 @@ if __name__ == '__main__':
         output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or '.csv' in filename)]
         for filename in output:
             os.rename(filename, dirname + '/' + filename)
-
-'''
-
-
-'''

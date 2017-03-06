@@ -90,8 +90,8 @@ class MetaExtension(object):
         result = cls(info, images={image_name: conjunction})
         if save_files:
             filename = file_prefix + '_' if file_prefix is not None else ''
-            result.write_images_to_csv(filename + image_name + '_conjunction.csv')
-            result.save_images(metaext_list[0].mask, filename + 'conjunction')
+            result.write_images_to_csv(filename + image_name + '>' + str(threshold) + '_conjunction.csv')
+            result.save_images(metaext_list[0].mask, filename, '>' + str(threshold) + '_conjunction')
         return result
 
     def write_images_to_csv(self, filename, delimiter=',', image_names=None):
@@ -112,7 +112,7 @@ class MetaExtension(object):
             for result in results:
                 writer.writerow(result)
 
-    def save_images(self, mask=None, file_prefix=None):
+    def save_images(self, mask=None, file_prefix=None, file_postfix=''):
         # TODO create a new directory
         if self.images is None:
             raise RuntimeError('Images not initialized')
@@ -120,7 +120,7 @@ class MetaExtension(object):
             filename = file_prefix if file_prefix is not None else self.get_filename()
             if len(filename) > 0 and filename[len(filename) - 1] != '_':
                 filename += '_'
-            filename += imageName + '.nii.gz'
+            filename += imageName + file_postfix + '.nii.gz'
             mask = mask if mask is not None else self.mask
             ns.imageutils.save_img(self.images[imageName], filename=filename, masker=mask)
 
@@ -142,18 +142,22 @@ def filenamer(info_dict):
     """
     Goes together with the info_dict above
     """
-    filename = get_first_word_in_expression(info_dict['expr'])
+    filename = get_shorthand_expression(info_dict['expr'])
     if 'contrary_expr' in info_dict:
-        filename += '_vs_' + get_first_word_in_expression(info_dict['contrary_expr'])
+        filename += '_vs_' + get_shorthand_expression(info_dict['contrary_expr'])
     return filename
 
 
-def get_first_word_in_expression(expression):
+def get_shorthand_expression(expression):
     word = expression.split(' ', 1)[0]
     if word[0] == '(':
         word = word[1:]
-    # if word == 'episodic': TODO
-    #     word = 'episodic_with_autobio' if 'autobiographical' in expression else 'episodic_without_autobio'
+    if expression.startswith('(emotion &~ (emotional faces | emotional stimuli | * face | face* | *perception))'):
+        word = 'emotion_experience'
+    if expression.startswith('(emotion & (emotional faces | emotional stimuli | * face | face* | *perception))'):
+        word = 'emotion_perception'
+    if word == 'episodic':
+        word = 'episodic' if 'autobiographical' in expression else 'episodic_without_autobio'
     # if (word == 'value') and (' choice' in expression):
     #     word = 'value_choice'
     return word
@@ -291,7 +295,7 @@ def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_
                     metaExt.images[imgName] = meta.images[imgName]  # add new image
     # output
     if save_files:
-        metaExt.write_images_to_csv(get_first_word_in_expression(expression) + '_output.csv', image_names=image_names)
+        metaExt.write_images_to_csv(get_shorthand_expression(expression) + '_output.csv', image_names=image_names)
         metaExt.save_images(dataset.masker)
     return metaExt
 
@@ -404,7 +408,7 @@ def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conju
                                  save_files)
     conjunctions = []
     for metaExts in results:
-        prefix = get_first_word_in_expression(metaExts[0].info['expr'])
+        prefix = get_shorthand_expression(metaExts[0].info['expr'])
         for image in conjunction_images:
             conjunction = MetaExtension.get_conjunction_image(metaExts, threshold=image[1], image_name=image[0],
                                                               file_prefix=prefix, save_files=save_files)
