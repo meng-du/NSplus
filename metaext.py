@@ -71,28 +71,111 @@ class MetaExtension(object):
         return mean_meta_ext_list
 
     @classmethod
-    def get_conjunction_image(cls, metaext_list, threshold, image_name='pFgA_z', save_files=True, file_prefix=None):
+    def _get_conjunction_array(cls, metaext_list, lower_threshold=None, upper_threshold=None, image_name='pFgA_z'):
         """
-        From images with the specified name in the given list, create a new MetaExtension object with one image, where
-        the value at a voxel is the number of images in which this voxel value passes (>=) the given threshold.
-        MetaExtension objects must have the same mask.
-        :param metaext_list: a list of MetaExtension objects
-        :param threshold: a float number criterion for voxel values
-        :param image_name: a string name of the image to create conjunction map from
-        :param save_files: a boolean whether or not to save the result as .csv and .nii.gz files
-        :param file_prefix: a string to be prefixed to .csv and .nii.gz file names
-        :return: a MetaExtension object with the conjunction image
+        Helper function
+        :return: the conjunction image as an nd array, and a string describing the conjunction criterion
         """
+        if lower_threshold is None and upper_threshold is None:
+            raise ValueError('No threshold specified')
         sourceImgs = np.array([metaext.images[image_name] for metaext in metaext_list])
-        conjunction = np.sum(sourceImgs > threshold, axis=0).astype(np.float64)
+        if upper_threshold is None:
+            conjunction = np.sum(sourceImgs > lower_threshold, axis=0).astype(np.float64)
+            comparison_name = '>' + str(lower_threshold)
+        elif lower_threshold is None:
+            conjunction = np.sum(sourceImgs < upper_threshold, axis=0).astype(np.float64)
+            comparison_name = '<' + str(upper_threshold)
+        else:
+            if lower_threshold < upper_threshold:
+                conjunction = np.sum((sourceImgs > lower_threshold) & (sourceImgs < upper_threshold), axis=0) \
+                              .astype(np.float64)
+                comparison_name = str(lower_threshold) + '-' + str(upper_threshold)
+            elif lower_threshold > upper_threshold:
+                conjunction = np.sum((lower_threshold < sourceImgs or sourceImgs < upper_threshold), axis=0) \
+                              .astype(np.float64)
+                comparison_name = '>' + str(lower_threshold) + 'or' + '<' + str(upper_threshold)
+            else:
+                raise ValueError('Lower and upper thresholds must be different values')
+
+        return conjunction, comparison_name
+
+    @classmethod
+    def _save_conjunction_files(cls, metaext_list, conjunction, comparison_name, save_files,
+                                image_name, conjunction_info=None, file_prefix=None):
+        """
+        :param conjunction_info: an extra string containing information regarding the conjunction.
+        """
         analysis_names = [metaext.get_filename() for metaext in metaext_list]
-        info = OrderedDict([('source_images', ', '.join(analysis_names))])
+        if conjunction_info is None:
+            info = OrderedDict([('source_images', ', '.join(analysis_names))])
+        else:
+            info = OrderedDict([('source_images', ', '.join(analysis_names)), ('info', conjunction_info)])
         result = cls(info, images={image_name: conjunction})
         if save_files:
             filename = file_prefix + '_' if file_prefix is not None else ''
-            result.write_images_to_csv(filename + image_name + '>' + str(threshold) + '_conjunction.csv')
-            result.save_images(metaext_list[0].mask, filename, '>' + str(threshold) + '_conjunction')
+            result.write_images_to_csv(filename + image_name + comparison_name + '_conjunction.csv')
+            result.save_images(metaext_list[0].mask, filename, comparison_name + '_conjunction')
         return result
+
+    @classmethod
+    def get_conjunction_image(cls, metaext_list, lower_threshold=None, upper_threshold=None, image_name='pFgA_z',
+                              file_prefix=None, save_files=True):
+        """
+        From images with the specified image_name in the given list, create a new MetaExtension object with one image,
+        where the value at a voxel is the number of images in which this voxel value passes the given threshold
+        criterion.
+        If both lower_threshold and upper_threshold are specified, and lower_threshold > upper_threshold, the voxels
+        that are EITHER greater than the lower_threshold OR less the upper_threshold will be counted; otherwise if
+        lower_threshold < upper_threshold, the voxels that are BOTH greater than the lower_threshold AND less the
+        upper_threshold will be counted.
+        MetaExtension objects must have the same mask.
+        :param metaext_list: a list of MetaExtension objects
+        :param upper_threshold: a float value criterion for voxels
+        :param lower_threshold: a float value criterion for voxels
+        :param image_name: a string name of the image to create conjunction map from
+        :param save_files: a boolean whether or not to save the result as .csv and .nii.gz files
+        :param file_prefix: a string to be prefixed to .csv and .nii.gz conjunction file names
+        :return: a MetaExtension object with the conjunction image
+        """
+        conjunction, comparison_name = cls._get_conjunction_array(metaext_list, lower_threshold, upper_threshold,
+                                                                  image_name)
+        return \
+            cls._save_conjunction_files(metaext_list, conjunction, comparison_name, save_files, image_name,
+                                        file_prefix=file_prefix)
+
+    @classmethod
+    def get_conjunction_image_with_separate_criteria(cls, metaext_list, thresholds, binary=False, image_name='pFgA_z',
+                                                     save_files=True, file_prefix=None):
+        """
+        From images with the specified image_name in the given list, create a new MetaExtension object with one image,
+        where the value at a voxel is the number of images in which this voxel value passes the given threshold criterion.
+        If both lower_threshold and upper_threshold are specified, and lower_threshold > upper_threshold, the voxels
+        that are EITHER greater than the lower_threshold OR less the upper_threshold will be counted; otherwise if
+        lower_threshold < upper_threshold, the voxels that are BOTH greater than the lower_threshold AND less the
+        upper_threshold will be counted.
+        MetaExtension objects must have the same mask.
+        :param metaext_list: a list of MetaExtension objects
+        :param thresholds: a list of tuples [(lower_threshold_1, upper_threshold_1), (lower_threshold_2,
+                           upper_threshold_2), ...]. Its length should be the same as metaext_list
+        :param binary: if True, any voxel with value == number_of_images will be substituted with a 1, and other voxel
+                       values will be substituted with 0s
+        :param image_name: a string name of the image to create conjunction map from
+        :param save_files: a boolean whether or not to save the result as .csv and .nii.gz files
+        :param file_prefix: a string to be prefixed to .csv and .nii.gz conjunction file names
+        :return: a MetaExtension object with the conjunction image
+        """
+        individual_conjs = []
+        info = ''
+        for metaext, threshold in zip(metaext_list, thresholds):
+            individual_conj, comparison_name = cls._get_conjunction_array([metaext], threshold[0], threshold[1],
+                                                                          image_name)
+            individual_conjs.append(individual_conj)
+            info += comparison_name + ', '
+        info = info[:-2]
+        conjunction = np.sum(individual_conjs, axis=0)
+        if binary:
+            conjunction = (conjunction == len(individual_conjs)).astype(np.float64)
+        return cls._save_conjunction_files(metaext_list, conjunction, '', save_files, image_name, info, file_prefix)
 
     def write_images_to_csv(self, filename, delimiter=',', image_names=None):
         # TODO could add row names (self.info.keys()) before image list
@@ -397,23 +480,26 @@ def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, num
     return results
 
 
-def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conjunction_images, evenStudySetSize=True,
+def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conjunctions, evenStudySetSize=True,
                                             numIterations=100, prior=None, image_names=None, save_files=True):
     """
     Create conjunction maps for term1A (from list 1) vs term2A/term2B/term2C/... (from list 2), term1B vs term2A/term2B/
     term2C/..., etc.
-    :param conjunction_images: a list of tuples [(image_name_1, threshold_1), (image_name_2, threshold_2), ...]
+    :param conjunctions: a list of tuples [(image_name_1, lower_threshold_1, upper_threshold_1),
+                                           (image_name_2, lower_threshold_2, upper_threshold_2),
+                                           ...]
     """
     results = compare_term_pairs(dataset, termList1, termList2, evenStudySetSize, numIterations, prior, image_names,
                                  save_files)
-    conjunctions = []
+    conj_results = []
     for metaExts in results:
         prefix = get_shorthand_expression(metaExts[0].info['expr'])
-        for image in conjunction_images:
-            conjunction = MetaExtension.get_conjunction_image(metaExts, threshold=image[1], image_name=image[0],
+        for image in conjunctions:
+            conjunction = MetaExtension.get_conjunction_image(metaExts, lower_threshold=image[1],
+                                                              upper_threshold=image[2], image_name=image[0],
                                                               file_prefix=prefix, save_files=save_files)
-            conjunctions.append(conjunction)
-    return conjunctions
+            conj_results.append(conjunction)
+    return conj_results
 
 
 def compare_term_group(dataset, termList, evenStudySetSize=True, numIterations=1, prior=None, image_names=None,

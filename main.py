@@ -11,7 +11,7 @@ def quick_test():
     # print 'pairs'
     # compare_term_pairs(dataset, TERMS, TERMS, evenStudySetSize=False)
     print 'conjunction'
-    compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunction_images=[('pFgA_z', 1.5)],
+    compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunctions=[('pFgA_z', 1.5)],
                                             numIterations=1, save_files=True)
     # print 'group'
     # compare_term_group(dataset, TERMS, evenStudySetSize=False)
@@ -21,18 +21,20 @@ if __name__ == '__main__':
     # quick_test()
     MASK_FOLDER = 'mPFC_masks_20170207'
     TERMS = [
-        '(emotion &~ (emotional faces | emotional stimuli | * face | face* | *perception))',
-        '(choice | decision making)',
-        '(episodic | future | past | retrieval | prospective | memory retrieval)',
-        '(scene | semantic knowledge | semantic memory | construction | imagine*)',
-        'self',
         '(social | mentalizing)',
-        '(value | reward | incentive)'
+        'self',
+        'emotion*',
+        '(value | reward | incentive)',
+        '(episodic | future | past | retrieval | prospective | memory retrieval)'
     ]
+    analysis_name = 'social_self_emotion*_value_episodic'
+    print analysis_name
     # IMAGES = None
-    # IMAGES = ['pA', 'pAgF', 'pAgF_z', 'pFgA_given_pF', 'pFgA_z']  # single
-    IMAGES = ['pFgA_given_pF', 'pFgA_z']  # pairwise
-    CONJUNCTIONS = [('pFgA_given_pF=0.50', 0.50), ('pFgA_given_pF=0.50', 0.55), ('pFgA_given_pF=0.50', 0.60)]
+    SINGLE_IMGS = ['pA', 'pAgF', 'pAgF_z', 'pFgA_given_pF', 'pFgA_z']  # single
+    PAIR_IMGS = ['pFgA_given_pF', 'pFgA_z']  # pairwise
+    CONJUNCTION = ('pFgA_given_pF=0.50', 0.60, None)
+    SINGLE_CONJ = (0.60, None)
+    PAIR_CONJ = (0.40, 0.60)
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
     for maskFile in maskFiles:
         # ns.dataset.download(path='.', unpack=True)
@@ -46,18 +48,38 @@ if __name__ == '__main__':
             os.makedirs(dirname)
         ### ANALYSIS ###
         results = []
-        # for term in TERMS:
-        #     print term
-        #     results.append(analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=IMAGES))
-        # MetaExtension.get_conjunction_image(results, CONJUNCTION[0][1], CONJUNCTION[0][0],
-        #                                     file_prefix='social_episodic_emotion')
-        compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunction_images=CONJUNCTIONS,
-                                                numIterations=500, image_names=IMAGES)
+        for term in TERMS:
+            print term
+            results.append(analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=SINGLE_IMGS))
+        # results.append(compare_term_pairs(dataset, [TERMS[0]], [TERMS[1]], numIterations=500,
+        #                                   image_names=PAIR_IMGS)[0][0])
+        # MetaExtension.get_conjunction_image_with_separate_criteria(results, [SINGLE_CONJ, SINGLE_CONJ, PAIR_CONJ],
+        #                                                            binary=True, image_name='pFgA_given_pF=0.50',
+        #                                                            file_prefix=analysis_name)
+        MetaExtension.get_conjunction_image(results, lower_threshold=CONJUNCTION[1], upper_threshold=CONJUNCTION[2],
+                                            image_name=CONJUNCTION[0], file_prefix='')
+        # compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunctions=[CONJUNCTION],
+        #                                         numIterations=500, image_names=PAIR_IMGS)
         # compare_term_pairs(dataset, TERMS, TERMS, numIterations=500)
-        # MetaExtension.get_conjunction_image(results, 0.60, image_name='pFgA_given_pF=0.50')
+        # MetaExtension.get_conjunction_image(results, lower_threshold=0.60, image_name='pFgA_given_pF=0.50')
         # compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
         ### ANALYSIS ###
 
+        # directories
+        source_files = [filename for filename in os.listdir('.')
+                       if ('.nii.gz' in filename or '.csv' in filename) and ('conjunction' not in filename)]
+        if not os.path.exists('source_files'):
+            os.makedirs('source_files')
+        for filename in source_files:
+            os.rename(filename, 'source_files/' + filename)
+
         output = [filename for filename in os.listdir('.') if ('.nii.gz' in filename or '.csv' in filename)]
+        output.append('source_files')
         for filename in output:
             os.rename(filename, dirname + '/' + filename)
+
+    for thing in os.listdir('.'):
+        if thing.startswith('BA'):
+            if not os.path.exists(analysis_name):
+                os.makedirs(analysis_name)
+            os.rename(thing, analysis_name + '/' + thing)
