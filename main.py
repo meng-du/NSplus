@@ -33,6 +33,7 @@ if __name__ == '__main__':
     SINGLE_IMGS = ['pA', 'pAgF', 'pAgF_z', 'pFgA_given_pF', 'pFgA_z']  # single
     PAIR_IMGS = ['pFgA_given_pF', 'pFgA_z']  # pairwise
     CONJUNCTION = ('pFgA_given_pF=0.50', 0.60, None)
+    SELECTIVITY = [('pFgA_given_pF=0.50', (0.50, 0.60))]
     SINGLE_CONJ = (0.60, None)
     PAIR_CONJ = (0.40, 0.60)
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
@@ -47,19 +48,20 @@ if __name__ == '__main__':
         if not os.path.exists(dirname):
             os.makedirs(dirname)
         ### ANALYSIS ###
-        results = []
-        for term in TERMS:
-            print term
-            results.append(analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=SINGLE_IMGS))
+        # results = []
+        # for term in TERMS:
+        #     print term
+        #     results.append(analyze_expression(dataset, term, priors=[0.5], dataset_size=11405, image_names=SINGLE_IMGS))
         # results.append(compare_term_pairs(dataset, [TERMS[0]], [TERMS[1]], numIterations=500,
         #                                   image_names=PAIR_IMGS)[0][0])
         # MetaExtension.get_conjunction_image_with_separate_criteria(results, [SINGLE_CONJ, SINGLE_CONJ, PAIR_CONJ],
         #                                                            binary=True, image_name='pFgA_given_pF=0.50',
         #                                                            file_prefix=analysis_name)
-        MetaExtension.get_conjunction_image(results, lower_threshold=CONJUNCTION[1], upper_threshold=CONJUNCTION[2],
-                                            image_name=CONJUNCTION[0], file_prefix='')
-        # compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, conjunctions=[CONJUNCTION],
-        #                                         numIterations=500, image_names=PAIR_IMGS)
+        # MetaExtension.get_conjunction_image(metaext_list=results, lower_threshold=CONJUNCTION[1],
+        #                                     upper_threshold=CONJUNCTION[2], image_name=CONJUNCTION[0], file_prefix='')
+        # compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, [CONJUNCTION], image_names=PAIR_IMGS)
+        selresults = compare_term_pairs_with_selectivity_map(dataset, TERMS, TERMS, SELECTIVITY, image_names=PAIR_IMGS)
+        MetaExtension.get_max_image(selresults[0], image_name=SELECTIVITY[0][0], file_prefix=analysis_name)
         # compare_term_pairs(dataset, TERMS, TERMS, numIterations=500)
         # MetaExtension.get_conjunction_image(results, lower_threshold=0.60, image_name='pFgA_given_pF=0.50')
         # compare_terms_group(dataset, TERMS, evenStudySetSize=True, numIterations=100)
@@ -67,7 +69,7 @@ if __name__ == '__main__':
 
         # directories
         source_files = [filename for filename in os.listdir('.')
-                       if ('.nii.gz' in filename or '.csv' in filename) and ('conjunction' not in filename)]
+                       if ('.nii.gz' in filename or '.csv' in filename) and ('selectivity' not in filename)]
         if not os.path.exists('source_files'):
             os.makedirs('source_files')
         for filename in source_files:

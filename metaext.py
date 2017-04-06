@@ -6,7 +6,8 @@ from collections import OrderedDict
 
 
 class MetaExtension(object):
-    def __init__(self, info=(), meta_analysis=None, images=None, filenamer_func=None, mask=None):
+    def __init__(self, info=(), meta_analysis=None, images=None, name='', filenamer_func=None, mask=None):
+        # TODO assign a name to each MetaExtension rather than a function
         # TODO remove meta_analysis
         """
         Create a MetaExtension instance
@@ -19,6 +20,7 @@ class MetaExtension(object):
         self.info = info
         self.mask = meta_analysis.dataset.masker if meta_analysis is not None else mask
         self.images = images
+        self.name = name
         self.filenamer = filenamer_func
         if images is None and meta_analysis is not None:
             self.images = meta_analysis.images
@@ -71,6 +73,65 @@ class MetaExtension(object):
         return mean_meta_ext_list
 
     @classmethod
+    def _save_computed_image(cls, metaext_list, computed_img, comparison_name, computation_type, save_files, image_name,
+                             image_info=None, file_prefix=None):
+        """
+        :param image_info: an extra string containing information regarding the computed image.
+        """
+        # TODO change image_info to a dict?
+        analysis_names = [(metaext.name if len(metaext.name) > 0 else metaext.get_filename())
+                          for metaext in metaext_list]
+        if image_info is None:
+            info = OrderedDict([('source_images', ', '.join(analysis_names))])
+        else:
+            info = OrderedDict([('source_images', ', '.join(analysis_names)), ('info', image_info)])
+        prefix = file_prefix + '_' if (file_prefix is not None) and len(file_prefix) > 0 else ''
+        csv_name = prefix + image_name + comparison_name + '_' + computation_type
+        result = cls(info, images={image_name: computed_img}, name=csv_name, mask=metaext_list[0].mask)
+        if save_files:
+            result.write_images_to_csv(csv_name + '.csv')
+            comparison_name += '_' if (comparison_name is not None) and len(comparison_name) > 0 else ''
+            result.save_images(metaext_list[0].mask, prefix, comparison_name + computation_type)
+        return result
+
+    @classmethod
+    def get_selectivity_image(cls, metaext_list, thresholds, image_name='pFgA_z', save_files=True, file_prefix=None):
+        """
+        Given a list of pairwise comparison results featuring one expression, compute a new MetaExtension object with
+        one image, where the integer values at a voxel means the level of superiority the featured expression has over
+        the compared expressions. For example, given the comparisons (expr0_vs_expr1, expr0_vs_expr2, expr0_vs_expr3),
+        and thresholds (0.50, 0.60), a voxel would have 0 if its value < 0.50 in any of the three comparisons; or 1 if
+        its value > 0.50 in all of the three comparisons, but < 0.60 in any of them; or 2 if its value > 0.60 in all of
+        the three comparisons.
+        The maximum value at a voxel in the result image equals the length of the thresholds list.
+        :param metaext_list: a list of MetaExtension objects resulted from a pairwise comparison
+        :param thresholds: (a list of floats) points that define different levels of superiority
+        :param image_name: a string name of the image to create the selectivity map from
+        :param save_files: a boolean whether or not to save the result as .csv and .nii.gz files
+        :param file_prefix: a string to be prefixed to .csv and .nii.gz conjunction file names
+        :return: a MetaExtension object with the selectivity image
+        """
+        if thresholds is None or len(thresholds) == 0:
+            raise ValueError('No threshold specified')
+        sourceImgs = np.array([metaext.images[image_name] for metaext in metaext_list])
+        selectivity = np.zeros(sourceImgs.shape[1]).astype(np.float64)  # empty array of same length as the source image
+        for threshold in thresholds:
+            selectivity += np.all(sourceImgs > threshold, axis=0).astype(np.float64)
+
+        info = str(thresholds)[1:-1]
+        return cls._save_computed_image(metaext_list, selectivity, '', 'selectivity', save_files, image_name, info,
+                                        file_prefix)
+    @classmethod
+    def get_max_image(cls, metaext_list, image_name='pFgA_z', save_files=True, file_prefix=None):
+        """
+        Given a MetaExtension list, compute a new MetaExtension object with one image, where the value at each voxel is
+        the maximum value at that voxel in the given list
+        """
+        sourceImgs = np.array([metaext.images[image_name] for metaext in metaext_list])
+        maximum = np.amax(sourceImgs, axis=0)
+        return cls._save_computed_image(metaext_list, maximum, '', 'maximum', save_files, image_name, None, file_prefix)
+
+    @classmethod
     def _get_conjunction_array(cls, metaext_list, lower_threshold=None, upper_threshold=None, image_name='pFgA_z'):
         """
         Helper function
@@ -100,28 +161,10 @@ class MetaExtension(object):
         return conjunction, comparison_name
 
     @classmethod
-    def _save_conjunction_files(cls, metaext_list, conjunction, comparison_name, save_files,
-                                image_name, conjunction_info=None, file_prefix=None):
-        """
-        :param conjunction_info: an extra string containing information regarding the conjunction.
-        """
-        analysis_names = [metaext.get_filename() for metaext in metaext_list]
-        if conjunction_info is None:
-            info = OrderedDict([('source_images', ', '.join(analysis_names))])
-        else:
-            info = OrderedDict([('source_images', ', '.join(analysis_names)), ('info', conjunction_info)])
-        result = cls(info, images={image_name: conjunction})
-        if save_files:
-            filename = file_prefix + '_' if file_prefix is not None else ''
-            result.write_images_to_csv(filename + image_name + comparison_name + '_conjunction.csv')
-            result.save_images(metaext_list[0].mask, filename, comparison_name + '_conjunction')
-        return result
-
-    @classmethod
     def get_conjunction_image(cls, metaext_list, lower_threshold=None, upper_threshold=None, image_name='pFgA_z',
-                              file_prefix=None, save_files=True):
+                              save_files=True, file_prefix=None):
         """
-        From images with the specified image_name in the given list, create a new MetaExtension object with one image,
+        From images with the specified image_name in the given list, compute a new MetaExtension object with one image,
         where the value at a voxel is the number of images in which this voxel value passes the given threshold
         criterion.
         If both lower_threshold and upper_threshold are specified, and lower_threshold > upper_threshold, the voxels
@@ -132,7 +175,7 @@ class MetaExtension(object):
         :param metaext_list: a list of MetaExtension objects
         :param upper_threshold: a float value criterion for voxels
         :param lower_threshold: a float value criterion for voxels
-        :param image_name: a string name of the image to create conjunction map from
+        :param image_name: a string name of the image to create the conjunction map from
         :param save_files: a boolean whether or not to save the result as .csv and .nii.gz files
         :param file_prefix: a string to be prefixed to .csv and .nii.gz conjunction file names
         :return: a MetaExtension object with the conjunction image
@@ -140,8 +183,8 @@ class MetaExtension(object):
         conjunction, comparison_name = cls._get_conjunction_array(metaext_list, lower_threshold, upper_threshold,
                                                                   image_name)
         return \
-            cls._save_conjunction_files(metaext_list, conjunction, comparison_name, save_files, image_name,
-                                        file_prefix=file_prefix)
+            cls._save_computed_image(metaext_list, conjunction, comparison_name, 'conjunction', save_files, image_name,
+                                     file_prefix=file_prefix)
 
     @classmethod
     def get_conjunction_image_with_separate_criteria(cls, metaext_list, thresholds, binary=False, image_name='pFgA_z',
@@ -159,7 +202,7 @@ class MetaExtension(object):
                            upper_threshold_2), ...]. Its length should be the same as metaext_list
         :param binary: if True, any voxel with value == number_of_images will be substituted with a 1, and other voxel
                        values will be substituted with 0s
-        :param image_name: a string name of the image to create conjunction map from
+        :param image_name: a string name of the image to create the conjunction map from
         :param save_files: a boolean whether or not to save the result as .csv and .nii.gz files
         :param file_prefix: a string to be prefixed to .csv and .nii.gz conjunction file names
         :return: a MetaExtension object with the conjunction image
@@ -175,7 +218,8 @@ class MetaExtension(object):
         conjunction = np.sum(individual_conjs, axis=0)
         if binary:
             conjunction = (conjunction == len(individual_conjs)).astype(np.float64)
-        return cls._save_conjunction_files(metaext_list, conjunction, '', save_files, image_name, info, file_prefix)
+        return cls._save_computed_image(metaext_list, conjunction, '', 'conjunction', save_files, image_name, info,
+                                        file_prefix)
 
     def write_images_to_csv(self, filename, delimiter=',', image_names=None):
         # TODO could add row names (self.info.keys()) before image list
@@ -222,6 +266,7 @@ def create_info_dict(expression, num_studies, contrary_expr=None, contrary_num_s
 
 
 def filenamer(info_dict):
+    # TODO assign a name to each MetaExtension rather than a function
     """
     Goes together with the info_dict above
     """
@@ -235,12 +280,8 @@ def get_shorthand_expression(expression):
     word = expression.split(' ', 1)[0]
     if word[0] == '(':
         word = word[1:]
-    if expression.startswith('(emotion &~ (emotional faces | emotional stimuli | * face | face* | *perception))'):
-        word = 'emotion_experience'
-    if expression.startswith('(emotion & (emotional faces | emotional stimuli | * face | face* | *perception))'):
-        word = 'emotion_perception'
-    if word == 'episodic':
-        word = 'episodic' if 'autobiographical' in expression else 'episodic_without_autobio'
+    # if word == 'episodic':
+    #     word = 'episodic' if 'autobiographical' in expression else 'episodic_without_autobio'
     # if (word == 'value') and (' choice' in expression):
     #     word = 'value_choice'
     return word
@@ -463,8 +504,9 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     return meanMetaResult
 
 
-def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, numIterations=100, prior=None,
+def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, numIterations=500, prior=None,
                        image_names=None, save_files=True):
+    # TODO combine with the next two / feed results from this to next two rather than calling this func from there?
     """
     :return: a list of lists of MetaExtensions, e.g. [[term1A vs term2A, term1A vs term2B]]
     """
@@ -481,7 +523,7 @@ def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, num
 
 
 def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conjunctions, evenStudySetSize=True,
-                                            numIterations=100, prior=None, image_names=None, save_files=True):
+                                            numIterations=500, prior=None, image_names=None, save_files=True):
     """
     Create conjunction maps for term1A (from list 1) vs term2A/term2B/term2C/... (from list 2), term1B vs term2A/term2B/
     term2C/..., etc.
@@ -494,12 +536,36 @@ def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conju
     conj_results = []
     for metaExts in results:
         prefix = get_shorthand_expression(metaExts[0].info['expr'])
-        for image in conjunctions:
-            conjunction = MetaExtension.get_conjunction_image(metaExts, lower_threshold=image[1],
-                                                              upper_threshold=image[2], image_name=image[0],
-                                                              file_prefix=prefix, save_files=save_files)
+        for request in conjunctions:
+            conjunction = MetaExtension.get_conjunction_image(metaext_list=metaExts, lower_threshold=request[1],
+                                                              upper_threshold=request[2], image_name=request[0],
+                                                              save_files=save_files, file_prefix=prefix)
             conj_results.append(conjunction)
     return conj_results
+
+
+def compare_term_pairs_with_selectivity_map(dataset, termList1, termList2, selectivity, evenStudySetSize=True,
+                                            numIterations=500, prior=None, image_names=None, save_files=True):
+    """
+    Create selectivity maps for term1A (from list 1) vs term2A/term2B/term2C/... (from list 2),
+                                term1B vs term2A/term2B/term2C/..., etc.
+    :param selectivity: a list of tuples [(image_name_1, (threshold_1_a, threshold_1_b, ...)),
+                                          (image_name_2, (threshold_2_a, threshold_2_b, ...)),
+                                          ...]
+    :return [selectivity_map for s in selectivity]
+    """
+    # TODO the above comment...
+    results = compare_term_pairs(dataset, termList1, termList2, evenStudySetSize, numIterations, prior, image_names,
+                                 save_files)
+    select_results = [[] for i in range(len(selectivity))]
+    for metaExts in results:
+        prefix = get_shorthand_expression(metaExts[0].info['expr'])
+        for i, request in enumerate(selectivity):
+            result = MetaExtension.get_selectivity_image(metaext_list=metaExts, thresholds=request[1],
+                                                         image_name=request[0], save_files=save_files,
+                                                         file_prefix=prefix)
+            select_results[i].append(result)
+    return select_results
 
 
 def compare_term_group(dataset, termList, evenStudySetSize=True, numIterations=1, prior=None, image_names=None,
