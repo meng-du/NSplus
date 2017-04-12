@@ -6,6 +6,7 @@ from collections import OrderedDict
 
 
 class MetaExtension(object):
+    # TODO inherit meta?
     def __init__(self, info=(), meta_analysis=None, images=None, name='', filenamer_func=None, mask=None):
         # TODO assign a name to each MetaExtension rather than a function
         # TODO remove meta_analysis
@@ -90,8 +91,7 @@ class MetaExtension(object):
         result = cls(info, images={image_name: computed_img}, name=csv_name, mask=metaext_list[0].mask)
         if save_files:
             result.write_images_to_csv(csv_name + '.csv')
-            comparison_name += '_' if (comparison_name is not None) and len(comparison_name) > 0 else ''
-            result.save_images(metaext_list[0].mask, prefix, comparison_name + computation_type)
+            result.save_images(metaext_list[0].mask, prefix, comparison_name + '_' + computation_type)
         return result
 
     @classmethod
@@ -121,6 +121,7 @@ class MetaExtension(object):
         info = str(thresholds)[1:-1]
         return cls._save_computed_image(metaext_list, selectivity, '', 'selectivity', save_files, image_name, info,
                                         file_prefix)
+
     @classmethod
     def get_max_image(cls, metaext_list, image_name='pFgA_z', save_files=True, file_prefix=None):
         """
@@ -247,6 +248,8 @@ class MetaExtension(object):
             filename = file_prefix if file_prefix is not None else self.get_filename()
             if len(filename) > 0 and filename[len(filename) - 1] != '_':
                 filename += '_'
+            if len(file_postfix) > 0 and file_postfix[0] != '_':
+                file_postfix = '_' + file_postfix
             filename += imageName + file_postfix + '.nii.gz'
             mask = mask if mask is not None else self.mask
             ns.imageutils.save_img(self.images[imageName], filename=filename, masker=mask)
@@ -403,7 +406,7 @@ def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_
     studySet = dataset.get_studies(expression=expression)
     # add real prior
     if dataset_size is None:
-        dataset_size = len(dataset.get_studies(expression='*'))  # 11405
+        dataset_size = len(dataset.get_studies(expression='*'))  # 11405 TODO
     priors.append(1.0 * len(studySet) / dataset_size)
     process_image_names(image_names, priors)
     # analyze
