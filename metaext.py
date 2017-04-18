@@ -376,6 +376,9 @@ def get_list_unions(lists):
 
 
 def process_image_names(image_names, priors):
+    """
+    Just appending priors to 'pFgA_given_pF'
+    """
     if image_names is None:
         return
     for prior in priors:
@@ -385,8 +388,8 @@ def process_image_names(image_names, priors):
             image_names.append('pAgF_given_pF=%0.2f' % prior)
 
 
-def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_names=None, save_files=True):
-    # TODO doesn't need dataset_size. should be able to get length of database quickly?
+def analyze_expression(dataset, expression, priors=(), image_names=None, save_files=True):
+    # TODO mask
     # TODO don't always add real prior?
     # TODO parameter += customized study ids, as an alternative to dataset.get_studies
     """
@@ -405,8 +408,7 @@ def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_
     # get studies
     studySet = dataset.get_studies(expression=expression)
     # add real prior
-    if dataset_size is None:
-        dataset_size = len(dataset.get_studies(expression='*'))  # 11405 TODO
+    dataset_size = len(dataset.image_table.ids)
     priors.append(1.0 * len(studySet) / dataset_size)
     process_image_names(image_names, priors)
     # analyze
@@ -414,7 +416,7 @@ def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_
     for prior in priors:
         meta = ns.meta.MetaAnalysis(dataset, studySet, prior=prior)
         if metaExt is None:
-            metaExt = MetaExtension(info=create_info_dict(expression,  len(studySet)), meta_analysis=meta,
+            metaExt = MetaExtension(info=create_info_dict(expression, len(studySet)), meta_analysis=meta,
                                     filenamer_func=filenamer)
         else:
             for imgName in meta.images.keys():
@@ -429,6 +431,7 @@ def analyze_expression(dataset, expression, priors=(), dataset_size=None, image_
 
 def compare_expressions(dataset, expressions, evenStudySetSize=True, numIterations=1, prior=None, two_way=True,
                         image_names=None, save_files=True):
+    # TODO mask
     """
     Compare each expression to all the other expressions in the given list and return MetaAnalysis objects
     :param dataset: a neurosynth Dataset instance to get studies from
@@ -577,3 +580,39 @@ def compare_term_group(dataset, termList, evenStudySetSize=True, numIterations=1
     for term in termList:
         expressions.append(get_expression_one_to_all(term, termList))
     return compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior, image_names, save_files)
+
+
+def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_file=None):
+    # TODO rank by function
+    """
+    Rank all terms in the dataset by the average voxel value in a given image
+    :param dataset: a neurosynth Dataset instance to get studies from
+    :param rank_by: a string image name to get an average voxel value from
+    :param extra_expr: a list of string extra expressions to rank, besides the single terms from the database
+    :param csv_file: a string file name, or None if not save as a file
+    :return: a numpy array of ordered terms and corresponding average voxel values
+             ([term1, term2, ...],
+              [avg_image_A_1, avg_image_A_2, ...],
+              [avg_image_B_1, avg_image_B_2, ...], ...)
+    """
+    # meta analysis
+    metaexts = [analyze_expression(dataset, term, priors=[0.5], save_files=False)
+                for term in dataset.get_feature_names() if not term[0].isdigit()]
+    for extra in extra_expr:
+        metaexts.append(analyze_expression(dataset, extra, priors=[0.5], save_files=False))
+    # make a result matrix
+    avg_imgs = [np.mean(metaext.images.values(), axis=1) for metaext in metaexts]
+    term_list = [metaext.info['expr'] for metaext in metaexts]
+    matrix_as_list = [tuple([term_list[i]] + [avg_img for avg_img in avg_imgs[i]]) for i in range(len(term_list))]
+    matrix = np.array(matrix_as_list,
+                      dtype=[('term', '|S32')] + [(img, 'float64') for img in metaexts[0].images])
+    matrix.sort(order=rank_by, axis=0)
+    # save/return results
+    if csv_file:
+        with open(csv_file, 'w') as outfile:
+            writer = csv.writer(outfile, delimiter=',')
+            writer.writerow(matrix.dtype.names)  # header
+            # content
+            for row in reversed(matrix):
+                writer.writerow(row)
+    return matrix
