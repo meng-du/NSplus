@@ -406,10 +406,12 @@ def analyze_expression(dataset, expression, priors=(), image_names=None, save_fi
     :return: an MetaExtension object
     """
     # get studies
+    print expression
     try:
         studySet = dataset.get_studies(expression=expression)
     except AttributeError:
         studySet = dataset.get_studies(features=expression)  # in case expression doesn't work
+
     # add real prior
     dataset_size = len(dataset.image_table.ids)
     priors.append(1.0 * len(studySet) / dataset_size)
