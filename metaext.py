@@ -407,7 +407,11 @@ def analyze_expression(dataset, expression, priors=(), image_names=None, save_fi
     """
     # get studies
     print expression
-    studySet = dataset.get_studies(expression=expression)
+    try:
+        studySet = dataset.get_studies(expression=expression)
+    except AttributeError:
+        studySet = dataset.get_studies(features=expression)  # in case expression doesn't work
+
     # add real prior
     dataset_size = len(dataset.image_table.ids)
     priors.append(1.0 * len(studySet) / dataset_size)
@@ -462,7 +466,10 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     # 1) get studies
     studySets = []
     for expression in expressions:
-        studies = dataset.get_studies(expression=expression)
+        try:
+            studies = dataset.get_studies(expression=expression)
+        except AttributeError:
+            studies = dataset.get_studies(features=expression)  # in case expression doesn't work
         if len(studies) == 0:
             print 'No data associated with "' + expression + '"'
             return
