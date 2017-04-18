@@ -406,6 +406,7 @@ def analyze_expression(dataset, expression, priors=(), image_names=None, save_fi
     :return: an MetaExtension object
     """
     # get studies
+    print expression
     studySet = dataset.get_studies(expression=expression)
     # add real prior
     dataset_size = len(dataset.image_table.ids)
