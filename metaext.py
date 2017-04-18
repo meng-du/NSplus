@@ -610,8 +610,7 @@ def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_file=None):
     avg_imgs = [np.mean(metaext.images.values(), axis=1) for metaext in metaexts]
     term_list = [metaext.info['expr'] for metaext in metaexts]
     matrix_as_list = [tuple([term_list[i]] + [avg_img for avg_img in avg_imgs[i]]) for i in range(len(term_list))]
-    matrix = np.array(matrix_as_list,
-                      dtype=[('term', '|S32')] + [(img, 'float64') for img in metaexts[0].images])
+    matrix = np.array(matrix_as_list, dtype=[('term', '|S32')] + [(img, 'float64') for img in metaexts[0].images])
     matrix.sort(order=rank_by, axis=0)
     # save/return results
     if csv_file:

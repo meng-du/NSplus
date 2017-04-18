@@ -28,7 +28,7 @@ if __name__ == '__main__':
         '(value | reward | incentive)',
         '(episodic | future | past | retrieval | prospective | memory retrieval)'
     ]
-    analysis_name = 'events'
+    analysis_name = 'pairwise_conjunctions'
     print analysis_name
     # IMAGES = None
     SINGLE_IMGS = ['pA', 'pAgF', 'pAgF_z', 'pFgA_given_pF', 'pFgA_z']  # single
@@ -50,9 +50,9 @@ if __name__ == '__main__':
             os.makedirs(dirname)
         ### ANALYSIS ###
         results = []
-        for term in TERMS:
-            print term
-            results.append(analyze_expression(dataset, term, priors=[0.5], image_names=SINGLE_IMGS))
+        # for term in TERMS:
+        #     print term
+        #     results.append(analyze_expression(dataset, term, priors=[0.5], image_names=SINGLE_IMGS))
         # results.append(compare_term_pairs(dataset, [TERMS[0]], [TERMS[1]], numIterations=500,
         #                                   image_names=PAIR_IMGS)[0][0])
         # MetaExtension.get_conjunction_image_with_separate_criteria(results, [SINGLE_CONJ, SINGLE_CONJ, PAIR_CONJ],
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         #                                                            file_prefix=analysis_name)
         # MetaExtension.get_conjunction_image(metaext_list=results, lower_threshold=CONJUNCTION[1],
         #                                     upper_threshold=CONJUNCTION[2], image_name=CONJUNCTION[0], file_prefix='')
-        # compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, [CONJUNCTION], image_names=PAIR_IMGS)
+        compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, [CONJUNCTION], image_names=PAIR_IMGS)
         # selresults = compare_term_pairs_with_selectivity_map(dataset, TERMS, TERMS, SELECTIVITY, image_names=PAIR_IMGS)
         # MetaExtension.get_max_image(selresults[0], image_name=SELECTIVITY[0][0], file_prefix=analysis_name)
         # compare_term_pairs(dataset, TERMS, TERMS, numIterations=500)
