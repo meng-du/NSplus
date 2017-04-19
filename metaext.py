@@ -388,7 +388,7 @@ def process_image_names(image_names, priors):
             image_names.append('pAgF_given_pF=%0.2f' % prior)
 
 
-def analyze_expression(dataset, expression, priors=(), image_names=None, save_files=True):
+def analyze_expression(dataset, expression, priors=(), add_real_prior=False, image_names=None, save_files=True):
     # TODO mask
     # TODO don't always add real prior?
     # TODO parameter += customized study ids, as an alternative to dataset.get_studies
@@ -413,8 +413,9 @@ def analyze_expression(dataset, expression, priors=(), image_names=None, save_fi
         studySet = dataset.get_studies(features=expression)  # in case expression doesn't work
 
     # add real prior
-    dataset_size = len(dataset.image_table.ids)
-    priors.append(1.0 * len(studySet) / dataset_size)
+    if add_real_prior:
+        dataset_size = len(dataset.image_table.ids)
+        priors.append(1.0 * len(studySet) / dataset_size)
     process_image_names(image_names, priors)
     # analyze
     metaExt = None
@@ -590,8 +591,9 @@ def compare_term_group(dataset, termList, evenStudySetSize=True, numIterations=1
     return compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior, image_names, save_files)
 
 
-def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_file=None):
-    # TODO rank by function
+def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_file=None, mask=None):
+    # TODO rank by function?
+    # TODO mask
     """
     Rank all terms in the dataset by the average voxel value in a given image
     :param dataset: a neurosynth Dataset instance to get studies from
@@ -604,15 +606,23 @@ def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_file=None):
               [avg_image_B_1, avg_image_B_2, ...], ...)
     """
     # meta analysis
-    metaexts = [analyze_expression(dataset, term, priors=[0.5], save_files=False)
-                for term in dataset.get_feature_names() if not term[0].isdigit()]
+    metaexts = []
+    # metaexts = [analyze_expression(dataset, term, priors=[0.5], save_files=False)
+    #             for term in dataset.get_feature_names() if not term[0].isdigit()]
     for extra in extra_expr:
         metaexts.append(analyze_expression(dataset, extra, priors=[0.5], save_files=False))
+    # images
+    img_names = metaexts[0].images.keys()
+    img_names.sort()
     # make a result matrix
-    avg_imgs = [np.mean(metaext.images.values(), axis=1) for metaext in metaexts]
+    if mask is not None:
+        avg_imgs = [np.mean([np.array(metaext.images[img])[mask] for img in img_names], axis=1)
+                    for metaext in metaexts]
+    else:
+        avg_imgs = [np.mean([metaext.images[img] for img in img_names], axis=1) for metaext in metaexts]
     term_list = [metaext.info['expr'] for metaext in metaexts]
     matrix_as_list = [tuple([term_list[i]] + [avg_img for avg_img in avg_imgs[i]]) for i in range(len(term_list))]
-    matrix = np.array(matrix_as_list, dtype=[('term', '|S32')] + [(img, 'float64') for img in metaexts[0].images])
+    matrix = np.array(matrix_as_list, dtype=[('term', '|S64')] + [(img, 'float64') for img in metaexts[0].images])
     matrix.sort(order=rank_by, axis=0)
     # save/return results
     if csv_file:
