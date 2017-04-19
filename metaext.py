@@ -606,9 +606,8 @@ def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_file=None, ma
               [avg_image_B_1, avg_image_B_2, ...], ...)
     """
     # meta analysis
-    metaexts = []
-    # metaexts = [analyze_expression(dataset, term, priors=[0.5], save_files=False)
-    #             for term in dataset.get_feature_names() if not term[0].isdigit()]
+    metaexts = [analyze_expression(dataset, term, priors=[0.5], save_files=False)
+                for term in dataset.get_feature_names() if not term[0].isdigit()]
     for extra in extra_expr:
         metaexts.append(analyze_expression(dataset, extra, priors=[0.5], save_files=False))
     # images

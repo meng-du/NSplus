@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
         # directories
         source_files = [filename for filename in os.listdir('.')
-                       if ('.nii.gz' in filename or '.csv' in filename) and ('selectivity' not in filename)]
+                        if ('.nii.gz' in filename or '.csv' in filename) and ('conjunction' not in filename)]
         if not os.path.exists('source_files'):
             os.makedirs('source_files')
         for filename in source_files:
