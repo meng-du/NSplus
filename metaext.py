@@ -3,12 +3,13 @@ import random
 import numpy as np
 import csv
 from collections import OrderedDict
+from scipy.stats import rankdata
 
 
 class MetaExtension(object):
     # TODO inherit meta?
     def __init__(self, info=(), meta_analysis=None, images=None, name='', filenamer_func=None, mask=None):
-        # TODO assign a name to each MetaExtension rather than a function
+        # TODO assign a name to each MetaExtension rather than using a function
         # TODO remove meta_analysis
         """
         Create a MetaExtension instance
@@ -591,44 +592,100 @@ def compare_term_group(dataset, termList, evenStudySetSize=True, numIterations=1
     return compare_expressions(dataset, expressions, evenStudySetSize, numIterations, prior, image_names, save_files)
 
 
-def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_file=None, mask=None):
-    # TODO rank by function?
-    # TODO mask
+def analyze_all_terms(dataset, extra_expr=()):
     """
-    Rank all terms in the dataset by the average voxel value in a given image
-    :param dataset: a neurosynth Dataset instance to get studies from
-    :param rank_by: a string image name to get an average voxel value from
-    :param extra_expr: a list of string extra expressions to rank, besides the single terms from the database
-    :param csv_file: a string file name, or None if not save as a file
+    Generate a MetaExtension object for each term/expression in the dataset and the given extra expression list
+    :return: a tuple (a list of MetaExtensions, a list of sorted image names)
+    """
+    metaexts = [analyze_expression(dataset, term, priors=[0.5], save_files=False)
+                for term in dataset.get_feature_names() if not term[0].isdigit()]
+    for extra in extra_expr:
+        metaexts.append(analyze_expression(dataset, extra, priors=[0.5], save_files=False))
+
+    img_names = metaexts[0].images.keys()
+    img_names.sort()
+    return metaexts, img_names
+
+
+def get_image_means(metaexts, img_names, mask=None):
+    """
+    Get a mean for all of the voxel values in each image
+    """
+    if mask is not None:
+        return [np.mean([np.array(metaext.images[img])[mask] for img in img_names], axis=1) for metaext in metaexts]
+    else:
+        return [np.mean([metaext.images[img] for img in img_names], axis=1) for metaext in metaexts]
+
+
+def _sort_and_save(metaexts, means, img_names, rank_by='pFgA_given_pF=0.50', descending=True, csv_file=None):
+    """
     :return: a numpy array of ordered terms and corresponding average voxel values
              ([term1, term2, ...],
               [avg_image_A_1, avg_image_A_2, ...],
               [avg_image_B_1, avg_image_B_2, ...], ...)
     """
-    # meta analysis
-    metaexts = [analyze_expression(dataset, term, priors=[0.5], save_files=False)
-                for term in dataset.get_feature_names() if not term[0].isdigit()]
-    for extra in extra_expr:
-        metaexts.append(analyze_expression(dataset, extra, priors=[0.5], save_files=False))
-    # images
-    img_names = metaexts[0].images.keys()
-    img_names.sort()
-    # make a result matrix
-    if mask is not None:
-        avg_imgs = [np.mean([np.array(metaext.images[img])[mask] for img in img_names], axis=1)
-                    for metaext in metaexts]
-    else:
-        avg_imgs = [np.mean([metaext.images[img] for img in img_names], axis=1) for metaext in metaexts]
     term_list = [metaext.info['expr'] for metaext in metaexts]
-    matrix_as_list = [tuple([term_list[i]] + [avg_img for avg_img in avg_imgs[i]]) for i in range(len(term_list))]
+    matrix_as_list = [tuple([term_list[i]] + [mean for mean in means[i]]) for i in range(len(term_list))]
     matrix = np.array(matrix_as_list, dtype=[('term', '|S64')] + [(img, 'float64') for img in img_names])
     matrix.sort(order=rank_by, axis=0)
+    if descending:
+        matrix = matrix[::-1]
     # save/return results
     if csv_file:
         with open(csv_file, 'w') as outfile:
             writer = csv.writer(outfile, delimiter=',')
             writer.writerow(matrix.dtype.names)  # header
             # content
-            for row in reversed(matrix):
+            for row in matrix:
                 writer.writerow(row)
     return matrix
+
+
+def rank_avg_voxel(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), descending=True, csv_file=None, mask=None):
+    # TODO use neurosynth mask?
+    """
+    Rank all terms in the dataset by the average voxel value in a given image
+    :param dataset: a neurosynth Dataset instance
+    :param rank_by: a string image name to get an average value from
+    :param extra_expr: a list of string extra expressions
+    :param descending: (boolean) if True, voxels with larger values will appear at the top
+    :param csv_file: a string file name, or None if not save as a file
+    :param mask: an numpy array of booleans, which has the same length as the images in the dataset
+    """
+    metaexts, img_names = analyze_all_terms(dataset, extra_expr)
+    # make a result matrix
+    img_means = get_image_means(metaexts, img_names, mask)
+    return _sort_and_save(metaexts, img_means, img_names, rank_by, descending, csv_file)
+
+
+def _rankdata_helper(imgs, voxel, descending, ties):
+    if descending:
+        if ties == 'max':
+            ties = 'min'
+        if ties == 'min':
+            ties = 'max'
+        return imgs.shape[0] + 1 - rankdata(imgs[:, voxel], method=ties)
+    # ascending
+    return rankdata(imgs[:, voxel], method=ties)
+
+
+def rank_avg_rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), descending=True, ties='average', csv_file=None,
+                  mask=None):
+    # TODO use neurosynth mask?
+    """
+    For the specified image (rank_by), get a rank order for the values in each voxel, and then average the ranks
+    across all voxels
+    :param descending: (boolean) if True, voxels with larger values will have smaller ranks
+    :param ties: (string) the method used to assign ranks to tied elements. The options are 'average', 'min', 'max',
+                 'dense' and 'ordinal'. See scipy.stats.rankdata for details.
+    """
+    metaexts, img_names = analyze_all_terms(dataset, extra_expr)
+    img_means = get_image_means(metaexts, img_names)
+    if mask is not None:
+        imgs = np.array([np.array(metaext.images[rank_by])[mask] for metaext in metaexts])
+    else:
+        imgs = np.array([np.array(metaext.images[rank_by]) for metaext in metaexts])
+    rank_means = np.array([np.mean([_rankdata_helper(imgs, voxel, descending, ties) for voxel in range(len(imgs[0]))],
+                                   axis=0)]).T
+    img_names = [rank_by + '_rank'] + img_names
+    return _sort_and_save(metaexts, np.hstack((rank_means, img_means)), img_names, rank_by + '_rank', False, csv_file)

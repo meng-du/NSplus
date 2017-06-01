@@ -22,15 +22,15 @@ if __name__ == '__main__':
             print term, mask.sum()
             log.append((term, mask.sum()))
 
-            rank(dataset,
-                 rank_by='pFgA_given_pF=0.50',
-                 extra_expr=[
-                    '(social | mentalizing)',
-                    'emotion*',
-                    '(value | reward | incentive)',
-                    '(episodic | future | past | retrieval | prospective | memory retrieval)'],
-                 csv_file=term + '_' + maskFile[:-4] + '_rank.csv',
-                 mask=mask)
+            rank_avg_voxel(dataset,
+                           rank_by='pFgA_given_pF=0.50',
+                           extra_expr=[
+                              '(social | mentalizing)',
+                              'emotion*',
+                              '(value | reward | incentive)',
+                              '(episodic | future | past | retrieval | prospective | memory retrieval)'],
+                           csv_file=term + '_' + maskFile[:-4] + '_rank.csv',
+                           mask=mask)
     import json
     with open('log.json', 'w') as outfile:
         outfile.write(json.dumps(log))
