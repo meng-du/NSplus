@@ -3,22 +3,23 @@ import numpy as np
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVR, LinearSVR
 from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+from sklearn.pipeline import Pipeline
+from sklearn.decomposition import PCA, KernelPCA
 import os
 import logging
 
 os.environ["JOBLIB_TEMP_FOLDER"] = '/u/scratch2/m/mengdu/'
 
 # logging
-logging.basicConfig(filename='lsvr_results.log', level=logging.INFO, format='%(asctime)s %(message)s')
+# logging.basicConfig(filename='svr_results.log', level=logging.INFO, format='%(asctime)s %(message)s')
 
-# dataset = ns.Dataset(filename='current_data/database.txt', masker='mPFC_masks_20170207/BA10_d1_mid_ventral.nii')
-# dataset.add_features('current_data/features.txt')
-# dataset.save('current_data/ba10mv_dataset.pkl')
+# dataset = ns.Dataset(filename='database.txt', masker='BA10_d1_mid_anterior.nii')
+# dataset.add_features('features.txt')
+# dataset.save('ba10ma_dataset.pkl')
 # quit()
-dataset = ns.Dataset.load('current_data/dataset.pkl')
-term_frequencies = dataset.get_feature_data(features='social')  # shape = (11406,)
+dataset = ns.Dataset.load('ba10mv_dataset.pkl')
+term_frequencies = dataset.get_feature_data(features='reward')  # shape = (11406,)
 activations = dataset.get_image_data().T  # shape = (11406, 228453)
-print term_frequencies.shape, activations.shape
 assert np.all(term_frequencies.index == dataset.image_table.ids)  # make sure the ids match
 logging.info('Neurosynth database loaded')
 
@@ -28,11 +29,19 @@ def tag_accuracy(estimator, X, y):
     # TODO
     return 1.0
 
+
 # regression
 # linear SVR
+lsvr_pipe = Pipeline([('reduce_dim', KernelPCA()), ('regression', LinearSVR())])
+lsvr_grid = {'reduce_dim__n_components': [5, 10, 30, 70, 120],
+             'reduce_dim__svd_solver': ['auto', 'randomized'],   # PCA
+             # 'reduce_dim__kernel': ['linear', 'poly', 'rbf'],    # KernelPCA
+             # 'reduce_dim__degree': np.arange(2, 6),              # KernelPCA
+             # 'reduce_dim__gamma': 10.0 ** np.arange(-5, 3),      # KernelPCA
+             'regression__C': 10.0 ** np.arange(-3, 3)}
 lsvr = GridSearchCV(
-    estimator=LinearSVR(),
-    param_grid={'C': 10.0 ** np.arange(-3, 3)},
+    estimator=lsvr_pipe,
+    param_grid=lsvr_grid,
     scoring='r2',
     cv=10,
     n_jobs=-1,  # use all CPUs
@@ -45,9 +54,14 @@ print '-------------\n'
 logging.info(['BEST LSVR SCORE', lsvr.best_score_])
 logging.info(['BEST LSVR PARAMS', lsvr.best_params_])
 # rbf SVR
+# svr_pipe = Pipeline([('reduce_dim', PCA()), ('regression', SVR())])
+# svr_grid = {'reduce_dim__n_components': [5, 10, 30, 70, 120],
+#             'reduce_dim__svd_solver': ['auto', 'randomized'],   # PCA
+#             'regression__gamma': 10.0 ** np.arange(-5, 3),
+#             'regression__C': 10.0 ** np.arange(-3, 3)}
 # svr = GridSearchCV(
-#     estimator=SVR(),
-#     param_grid={'gamma': 10.0 ** np.arange(-5, 2), 'C': 10.0 ** np.arange(-3, 3)},
+#     estimator=svr_pipe,
+#     param_grid=svr_grid,
 #     scoring='r2',
 #     cv=10,
 #     n_jobs=-1,
@@ -61,10 +75,15 @@ logging.info(['BEST LSVR PARAMS', lsvr.best_params_])
 # logging.info(['BEST SVR PARAMS', svr.best_params_])
 # # random forest
 # # TODO CV unnecessary for rf?
+# rf_pipe = Pipeline([('reduce_dim', PCA()), ('regression', RandomForestRegressor())])
+# rf_grid = {'reduce_dim__n_components': [5, 10, 30, 70, 120],
+#            'reduce_dim__svd_solver': ['auto', 'randomized'],   # PCA
+#            'regression__n_estimators': [20, 40, 80, 160, 800, 1600],
+#            'regression__max_features': [0.33, 'sqrt'],
+#            'regression__min_samples_split': [0.99, 2, 5]}
 # rf = GridSearchCV(
-#     estimator=RandomForestRegressor(),
-#     param_grid={'n_estimators': [20, 40, 80, 160, 800, 1600], 'max_features': [0.33, 'sqrt'],
-#                 'min_samples_split': [3, 5, 7]},
+#     estimator=rf_pipe,
+#     param_grid=rf_grid,
 #     scoring='r2',
 #     cv=10,
 #     n_jobs=-1,
