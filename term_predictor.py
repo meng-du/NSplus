@@ -11,11 +11,11 @@ os.environ["JOBLIB_TEMP_FOLDER"] = '/u/scratch2/m/mengdu/'
 # logging
 logging.basicConfig(filename='results.log', level=logging.INFO, format='%(asctime)s %(message)s')
 
-# dataset = ns.Dataset(filename='current_data/database.txt')#, masker='BA10_d1_mid_ventral.nii')
-# dataset.add_features('current_data/features.txt')
-dataset.save('current_data/dataset.pkl')
+dataset = ns.Dataset(filename='current_data/database.txt', masker='mPFC_masks_20170207/BA10_d1_mid_ventral.nii')
+dataset.add_features('current_data/features.txt')
+dataset.save('current_data/ba10mv_dataset.pkl')
 quit()
-dataset = ns.Dataset.load('current_data/dataset.pkl')  #ba10mv_
+dataset = ns.Dataset.load('current_data/ba10mv_dataset.pkl')
 features = dataset.get_feature_data()  # get term frequencies, shape = (11406, 3169)
 activations = dataset.get_image_data().T  # get activations, shape = (11406, 228453)
 assert np.all(features.index == dataset.image_table.ids)  # make sure the ids match
