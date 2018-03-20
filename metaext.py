@@ -92,7 +92,7 @@ class MetaExtension(object):
         csv_name = prefix + image_name + comparison_name + '_' + computation_type
         result = cls(info, images={image_name: computed_img}, name=csv_name, mask=metaext_list[0].mask)
         if save_files:
-            result.write_images_to_csv(csv_name + '.csv')
+            result.write_images_to_csv('output/' + csv_name + '.csv')  # TODO path
             result.save_images(metaext_list[0].mask, prefix, comparison_name + '_' + computation_type)
         return result
 
@@ -165,7 +165,7 @@ class MetaExtension(object):
 
     @classmethod
     def get_conjunction_image(cls, metaext_list, lower_threshold=None, upper_threshold=None, image_name='pFgA_z',
-                              save_files=True, file_prefix=None):
+                              save_files=True, file_prefix=None):  # TODO change file_prefix to a info dict?
         """
         From images with the specified image_name in the given list, compute a new MetaExtension object with one image,
         where the value at a voxel is the number of images in which this voxel value passes the given threshold
@@ -517,7 +517,7 @@ def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conju
                                            ...]
     """
     results = compare_term_pairs(dataset, termList1, termList2, evenStudySetSize, numIterations, prior, fdr,
-                                 image_names, save_files)
+                                 image_names, save_files)  # TODO separate this save_files and the one below
     conj_results = []
     for metaExts in results:
         prefix = get_shorthand_expression(metaExts[0].info['expr'])
