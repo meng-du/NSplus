@@ -42,6 +42,7 @@ class MetaExtension(object):
         result = []
         # Note: the length of image arrays here exceeds the maximum number of columns in MS Excel
         for imageName in self.images.keys():
+            print image_names, imageName
             if (image_names is not None) and (imageName not in image_names):
                 continue
             imageAsList = self.images[imageName].tolist()
@@ -314,34 +315,6 @@ def get_expression_one_to_all(term, termList):
     return term + ' &~ ' + otherTerms
 
 
-def compare_two_study_sets(dataset, studySet1, studySet2, prior=None, image_names=None):
-    """
-    :param dataset: a neurosynth Dataset instance
-    :param studySet1, studySet2: two lists of study ids to compare
-    :param prior: (float) the prior to use when calculating conditional probabilities, i.e., the prior probability of
-                  a term being used in a study; if None, the empirically estimated p(term) will be used
-                  (calculated as number_of_studies_with_term  / total_number_of_studies)
-    :param image_names:
-    :return: two neurosynth MetaAnalysis objects (studySet1 vs studySet2, studySet2 vs studySet1)
-    """
-    # get priors
-    if prior:
-        prior1 = prior
-        prior2 = prior
-    else:
-        totalNum = len(studySet1) + len(studySet2)
-        prior1 = 1.0 * len(studySet1) / totalNum
-        prior2 = 1.0 * len(studySet2) / totalNum
-    if image_names is not None:
-        process_image_names(image_names, [prior1, prior2])
-
-    # meta analysis
-    metaAnalysis1Vs2 = ns.meta.MetaAnalysis(dataset, studySet1, studySet2, prior=prior1)
-    metaAnalysis2Vs1 = ns.meta.MetaAnalysis(dataset, studySet2, studySet1, prior=prior2)
-
-    return metaAnalysis1Vs2, metaAnalysis2Vs1
-
-
 def even_study_set_size(studySets):
     """
     Reduce the sizes of all study sets to the smallest study set in that list, by random sampling
@@ -376,22 +349,26 @@ def get_list_unions(lists):
     return result
 
 
-def process_image_names(image_names, priors):
+def process_image_names(image_names, prior, fdr):
     """
-    Just appending priors to 'pFgA_given_pF'
+    Just appending priors to 'pFgA_given_pF', and fdr to 'pFgA_z_FDR'
     """
     if image_names is None:
         return
-    for prior in priors:
-        if ('pFgA_given_pF' in image_names) and (('pFgA_given_pF=%0.2f' % prior) not in image_names):
-            image_names.append('pFgA_given_pF=%0.2f' % prior)
-        if ('pAgF_given_pF' in image_names) and (('pAgF_given_pF=%0.2f' % prior) not in image_names):
-            image_names.append('pAgF_given_pF=%0.2f' % prior)
+    # prior
+    if ('pFgA_given_pF' in image_names) and (('pFgA_given_pF=%0.2f' % prior) not in image_names):
+        image_names.append('pFgA_given_pF=%0.2f' % prior)
+    if ('pAgF_given_pF' in image_names) and (('pAgF_given_pF=%0.2f' % prior) not in image_names):
+        image_names.append('pAgF_given_pF=%0.2f' % prior)
+    # fdr
+    if ('pFgA_z_FDR' in image_names) and (('pFgA_z_FDR_%s' % fdr) not in image_names):
+        image_names.append('pFgA_z_FDR_%s' % fdr)
+    if ('pAgF_z_FDR' in image_names) and (('pAgF_z_FDR_%s' % fdr) not in image_names):
+        image_names.append('pAgF_z_FDR_%s' % fdr)
 
 
-def analyze_expression(dataset, expression, priors=(), add_real_prior=False, image_names=None, save_files=True):
+def analyze_expression(dataset, expression, prior=0.5, fdr=0.01, image_names=None, save_files=True):
     # TODO mask
-    # TODO don't always add real prior?
     # TODO parameter += customized study ids, as an alternative to dataset.get_studies
     """
     Analyze a single expression, output a set of .nii.gz image files and a csv file containing voxel values in images
@@ -399,8 +376,7 @@ def analyze_expression(dataset, expression, priors=(), add_real_prior=False, ima
     :param expression: a string expression to be analyzed
     :param priors: a list of float priors to be used when calculating conditional probabilities
                    The real prior will always be calculated and added to this list
-    :param dataset_size: number of studies in the dataset. This is used to calculate the real prior.
-                         If not specified, the number will be counted, which takes more time.
+    :param fdr: the FDR threshold to use when correcting for multiple comparisons
     :param image_names: the names of images to be included in the csv file. If None, all images will be included.
                         For images named 'pFgA_given_pF=0.xx', specifying 'pFgA_given_pF' will include all of them.
     :param save_files: a boolean whether or not to save the result as .csv and .nii.gz files
@@ -413,22 +389,11 @@ def analyze_expression(dataset, expression, priors=(), add_real_prior=False, ima
     except AttributeError:
         studySet = dataset.get_studies(features=expression)  # in case expression doesn't work
 
-    # add real prior
-    if add_real_prior:
-        dataset_size = len(dataset.image_table.ids)
-        priors.append(1.0 * len(studySet) / dataset_size)
-    process_image_names(image_names, priors)
+    process_image_names(image_names, prior, fdr)
     # analyze
-    metaExt = None
-    for prior in priors:
-        meta = ns.meta.MetaAnalysis(dataset, studySet, prior=prior)
-        if metaExt is None:
-            metaExt = MetaExtension(info=create_info_dict(expression, len(studySet)), meta_analysis=meta,
-                                    filenamer_func=filenamer)
-        else:
-            for imgName in meta.images.keys():
-                if imgName not in metaExt.images.keys():
-                    metaExt.images[imgName] = meta.images[imgName]  # add new image
+    meta = ns.meta.MetaAnalysis(dataset, studySet, prior=prior, q=fdr)
+    metaExt = MetaExtension(info=create_info_dict(expression, len(studySet)), meta_analysis=meta,
+                            filenamer_func=filenamer)
     # output
     if save_files:
         metaExt.write_images_to_csv(get_shorthand_expression(expression) + '_output.csv', image_names=image_names)
@@ -436,8 +401,8 @@ def analyze_expression(dataset, expression, priors=(), add_real_prior=False, ima
     return metaExt
 
 
-def compare_expressions(dataset, expressions, evenStudySetSize=True, numIterations=1, prior=None, two_way=True,
-                        image_names=None, save_files=True):
+def compare_expressions(dataset, expressions, evenStudySetSize=True, numIterations=1, prior=0.5, fdr=0.01,
+                        two_way=True, image_names=None, save_files=True):
     # TODO mask
     """
     Compare each expression to all the other expressions in the given list and return MetaAnalysis objects
@@ -446,12 +411,13 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     :param evenStudySetSize: if true, the larger study set will be randomly sampled to the size of the smaller set
     :param numIterations: (int) when study set sizes are evened, iterate more than once to sample multiple times
     :param prior: (float) the prior to use when calculating conditional probabilities, i.e., the prior probability of
-                  a term being used in a study; if None, the empirically estimated p(term) will be used
-                  (calculated as number_of_studies_with_term  / total_number_of_studies)
+                  a term being used in a study
+    :param fdr: the FDR threshold to use when correcting for multiple comparisons
     :param two_way: compare both expression1 vs expression2 and expression2 vs expression1 if true, otherwise only
                     compare expression1 vs expression2
     :param image_names: the names of images to be included in the csv file. If None, all images will be included.
-                        For images named 'pFgA_given_pF=0.xx', specifying 'pFgA_given_pF' will include all of them.
+                        For images named 'pFgA_given_pF=0.xx' or 'pFgA_z_FDR=0.xx', specifying 'pFgA_given_pF' or
+                        'pFgA_z_FDR' will include all of them.
     :param save_files: (boolean) save the results as .csv and .nii.gz files
     :return: a list of MetaExtension objects
     """
@@ -477,6 +443,7 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
             return
         studySets.append(studies)
 
+    process_image_names(image_names, prior, fdr)
     metaExtLists = []  # stores lists of MetaExtension (one list per iteration)
     for i in range(numIterations):
         # 2) reduce sizes
@@ -486,8 +453,10 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
         studySetsToCompare = get_list_unions(newStudySets)
         metaExtLists.append([])
         for j in range(len(newStudySets)):
-            meta1VsOthers, metaOthersVs1 = compare_two_study_sets(dataset, newStudySets[j], studySetsToCompare[j],
-                                                                  prior, image_names)
+            # neurosynth meta analysis
+            meta1VsOthers = ns.meta.MetaAnalysis(dataset, newStudySets[j], studySetsToCompare[j], prior=prior, q=fdr)
+            metaOthersVs1 = ns.meta.MetaAnalysis(dataset, studySetsToCompare[j], newStudySets[j], prior=prior, q=fdr)
+
             if len(newStudySets) == 2:
                 otherExpression = expressions[1 - j]
             else:
@@ -520,7 +489,7 @@ def compare_expressions(dataset, expressions, evenStudySetSize=True, numIteratio
     return meanMetaResult
 
 
-def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, numIterations=500, prior=None,
+def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, numIterations=500, prior=0.5, fdr=0.01,
                        image_names=None, save_files=True):
     # TODO combine with the next two / feed results from this to next two rather than calling this func from there?
     """
@@ -532,14 +501,14 @@ def compare_term_pairs(dataset, termList1, termList2, evenStudySetSize=True, num
         results.append([])
         for exprTuple in exprGroup:
             print exprTuple
-            result = compare_expressions(dataset, exprTuple, evenStudySetSize, numIterations, prior, False,
+            result = compare_expressions(dataset, exprTuple, evenStudySetSize, numIterations, prior, fdr, False,
                                          image_names, save_files)  # should be a list of length 1
             results[i].append(result[0])
     return results
 
 
 def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conjunctions, evenStudySetSize=True,
-                                            numIterations=500, prior=None, image_names=None, save_files=True):
+                                            numIterations=500, prior=0.5, fdr=0.01, image_names=None, save_files=True):
     """
     Create conjunction maps for term1A (from list 1) vs term2A/term2B/term2C/... (from list 2), term1B vs term2A/term2B/
     term2C/..., etc.
@@ -547,8 +516,8 @@ def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conju
                                            (image_name_2, lower_threshold_2, upper_threshold_2),
                                            ...]
     """
-    results = compare_term_pairs(dataset, termList1, termList2, evenStudySetSize, numIterations, prior, image_names,
-                                 save_files)
+    results = compare_term_pairs(dataset, termList1, termList2, evenStudySetSize, numIterations, prior, fdr,
+                                 image_names, save_files)
     conj_results = []
     for metaExts in results:
         prefix = get_shorthand_expression(metaExts[0].info['expr'])
@@ -561,7 +530,7 @@ def compare_term_pairs_with_conjunction_map(dataset, termList1, termList2, conju
 
 
 def compare_term_pairs_with_selectivity_map(dataset, termList1, termList2, selectivity, evenStudySetSize=True,
-                                            numIterations=500, prior=None, image_names=None, save_files=True):
+                                            numIterations=500, prior=0.5, image_names=None, save_files=True):
     """
     Create selectivity maps for term1A (from list 1) vs term2A/term2B/term2C/... (from list 2),
                                 term1B vs term2A/term2B/term2C/..., etc.
@@ -584,7 +553,7 @@ def compare_term_pairs_with_selectivity_map(dataset, termList1, termList2, selec
     return select_results
 
 
-def compare_term_group(dataset, termList, evenStudySetSize=True, numIterations=1, prior=None, image_names=None,
+def compare_term_group(dataset, termList, evenStudySetSize=True, numIterations=1, prior=0.5, image_names=None,
                        save_files=True):
     expressions = []
     for term in termList:
