@@ -42,7 +42,6 @@ class MetaExtension(object):
         result = []
         # Note: the length of image arrays here exceeds the maximum number of columns in MS Excel
         for imageName in self.images.keys():
-            print image_names, imageName
             if (image_names is not None) and (imageName not in image_names):
                 continue
             imageAsList = self.images[imageName].tolist()
@@ -92,7 +91,7 @@ class MetaExtension(object):
         csv_name = prefix + image_name + comparison_name + '_' + computation_type
         result = cls(info, images={image_name: computed_img}, name=csv_name, mask=metaext_list[0].mask)
         if save_files:
-            result.write_images_to_csv('output/' + csv_name + '.csv')  # TODO path
+            result.write_images_to_csv(csv_name + '.csv')  # TODO path
             result.save_images(metaext_list[0].mask, prefix, comparison_name + '_' + computation_type)
         return result
 
