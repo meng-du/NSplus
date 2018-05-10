@@ -31,12 +31,12 @@ if __name__ == '__main__':
     analysis_name = 'pairwise_conjunctions'
     print analysis_name
     # IMAGES = None
-    SINGLE_IMGS = ['pA', 'pAgF', 'pAgF_z', 'pFgA_given_pF', 'pFgA_z']  # single
-    PAIR_IMGS = ['pFgA_given_pF', 'pFgA_z']  # pairwise
-    CONJUNCTION = ('pFgA_given_pF=0.50', 0.60, None)
-    SELECTIVITY = [('pFgA_given_pF=0.50', (0.50, 0.60))]
-    SINGLE_CONJ = (0.60, None)
-    PAIR_CONJ = (0.40, 0.60)
+    # SINGLE_IMGS = ['pA', 'pAgF', 'pAgF_z', 'pFgA_given_pF', 'pFgA_z']  # single
+    # PAIR_IMGS = ['pFgA_z_FDR', 'pFgA_z']  # pairwise
+    CONJUNCTIONS = [('pFgA_z', 1.6449, None), ('pFgA_z', 1.96, None)]
+    # SELECTIVITY = [('pFgA_given_pF=0.50', (0.50, 0.60))]
+    # SINGLE_CONJ = (0.60, None)
+    # PAIR_CONJ = (0.40, 0.60)
     maskFiles = [mask for mask in os.listdir(MASK_FOLDER) if mask[0] != '.']
     for maskFile in maskFiles:
         # ns.dataset.download(path='.', unpack=True)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
         #                                                            file_prefix=analysis_name)
         # MetaExtension.get_conjunction_image(metaext_list=results, lower_threshold=CONJUNCTION[1],
         #                                     upper_threshold=CONJUNCTION[2], image_name=CONJUNCTION[0], file_prefix='')
-        compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, [CONJUNCTION], image_names=PAIR_IMGS)
+        compare_term_pairs_with_conjunction_map(dataset, TERMS, TERMS, CONJUNCTIONS, fdr=0.05)
         # selresults = compare_term_pairs_with_selectivity_map(dataset, TERMS, TERMS, SELECTIVITY, image_names=PAIR_IMGS)
         # MetaExtension.get_max_image(selresults[0], image_name=SELECTIVITY[0][0], file_prefix=analysis_name)
         # compare_term_pairs(dataset, TERMS, TERMS, numIterations=500)
