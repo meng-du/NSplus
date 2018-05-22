@@ -1,4 +1,4 @@
-from metaext import *
+from compare import *
 import os
 
 
