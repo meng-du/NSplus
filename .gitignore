@@ -1,4 +1,4 @@
 *.pyc
 .*
-current_data/*
+neurosynth_data/*
 results*

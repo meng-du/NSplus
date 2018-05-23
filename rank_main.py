@@ -8,8 +8,8 @@ if __name__ == '__main__':
     for maskFile in maskFiles:
         dataset = ns.Dataset(filename='current_data/database.txt', masker=MASK_FOLDER + '/' + maskFile)
         dataset.add_features('current_data/features.txt')
-        print 'dataset loaded'
-        print maskFile
+        print('dataset loaded')
+        print(maskFile)
 
         rank_avg_rank(dataset,
                       rank_by='pFgA_given_pF=0.50',
