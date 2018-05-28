@@ -1,4 +1,4 @@
-import neurosynth as ns
+from datasetplus import DatasetPlus
 import rank
 from sys import version_info
 if version_info.major == 2:
@@ -14,9 +14,10 @@ elif version_info.major == 3:
 
 
 class RankingPage(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
+    def __init__(self, parent, dataset, **kwargs):
+        super(RankingPage, self).__init__(parent, **kwargs)
         self.parent = parent
+        self.dataset = dataset
         self.nb_label = 'Ranking'
         self.roi_filename = None
 
@@ -55,68 +56,107 @@ class RankingPage(tk.Frame):
                                                     'Are you sure you want to continue?')
             if not no_roi:
                 return
-        if self.roi_filename is not None:
+        else:
             # load ROI mask to database
-            self.parent.dataset.masker = ns.mask.Masker(self.roi_filename)
-            self.parent.dataset.create_image_table()
-            if feature_filename is not None:
-                self.add_features(feature_filename, **kwargs)
+            Status().update_status('Loading ROI...')
+            self.parent.dataset.mask(self.roi_filename)
+            Status().update_status('Ranking terms...')
+        # TODO run
+        import time
+        time.sleep(2)
+        Status().update_status('Done.')
 
 
-class StatusBar(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
-        self.parent = parent
+class _Singleton(type):
+    """
+    Metaclass for singletons. See https://stackoverflow.com/a/6798042/3290263
+    """
+    _instances = {}
 
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(_Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class Singleton(_Singleton('SingletonMeta', (object,), {})): pass
+
+
+class Status(Singleton):
+    def __init__(self, parent, **kwargs):
         self.status = 'Ready'
-        self.statusbar = tk.Label(self, text=self.status, bd=1, relief=tk.SUNKEN, anchor='w')
-        self.statusbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.history = []
 
-    def update_status(self, status):
+        # GUI
+        self.statusbar = tk.Frame(parent, **kwargs)
+        self.text_width = 50
+        self.statusbar_label = tk.Label(parent, text=self.status.ljust(self.text_width),
+                                        bd=1, relief=tk.SUNKEN, anchor='w',  padx=3,
+                                        font=('Menlo', 12), bg='#6d6d6d', fg='#d6d6d6')
+        self.statusbar_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def update_status(self, status='Ready', is_error=False):
+        """
+        :param status: string
+        :param is_error: (boolean) the text will show as red if True
+        """
         self.status = status
-        self.statusbar.config(text=status)
+        self.history.append(status)
+        if len(status) > self.text_width:
+            statusbar_text = status[:(self.text_width - 3)] + '...'
+        else:
+            statusbar_text = status.ljust(self.text_width)
+        if is_error:
+            self.statusbar_label.config(text=statusbar_text, fg='#ff0000')
+        else:
+            self.statusbar_label.config(text=statusbar_text)
 
     def is_ready(self):
         return self.status == 'Ready'
 
-    def ready_now(self):
-        self.status = 'Ready'
-        self.statusbar.config(text=self.status)
-
 
 class MainApp(tk.Frame):
-    def __init__(self, parent, *args, **kwargs):
-        tk.Frame.__init__(self, parent, *args, **kwargs)
+    def __init__(self, parent, **kwargs):
+        super(MainApp, self).__init__(parent, **kwargs)
         self.parent = parent
+        self.dataset = None
 
         parent.title('NeuroSynth+')
         # parent.geometry('350x200')
 
         # notebook layout
         self.notebook = ttk.Notebook(parent)
-        self.nb_pages = [RankingPage(self.notebook)]
+        self.nb_pages = [RankingPage(self.notebook, self.dataset)]
         for page in self.nb_pages:
             self.notebook.add(page, text=page.nb_label)
         self.notebook.pack(expand=1, fill='both')
 
-        # tasks & status bar
-        self.task_queue = []
-        self.status = StatusBar(parent)
-
         # load NeuroSynth database
-        self.dataset = self.load_database()
+        # self.load_database()
 
-    def load_database(self, data_file='neurosynth_data/database.txt', *args, **kwargs):
-        self.status.update_status('Loading database...')
-        dataset = ns.Dataset(data_file, *args, **kwargs)
-        self.status.ready_now()
-        return dataset
+    def load_database(self, data_file=None):
+        """
+        :param data_file: (string) path to a pickled data file
+        """
+        Status().update_status('Loading database...')
+        if data_file is None:
+            self.dataset = DatasetPlus.load_default_database()
+        else:
+            self.dataset = DatasetPlus.load(data_file)
+        Status().update_status()
 
 
 def main():
+    # try:
     root = tk.Tk()
-    MainApp(root).pack(side='top', fill='both')
+    main_app = MainApp(root)
+    main_app.pack(side='top', fill='both')
+    Status(root)
     root.mainloop()
+    # except Exception as e:
+    #     if status is None:
+    #         messagebox.showerror('Error', str(e))
+    #     else:
+    #         status.update_status(str(e), is_error=True)
 
 
 if __name__ == '__main__':

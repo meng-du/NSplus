@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 from scipy.stats import rankdata
-from metaext import get_image_means, analyze_all_terms
+from analyze import get_image_mean, analyze_all_terms
 
 
 def _sort_and_save(metaexts, means, img_names, rank_by='pFgA_given_pF=0.50', descending=True, csv_file=None):
@@ -39,7 +39,7 @@ def rank_avg_voxel(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), descend
     :param csv_file: a string file name, or None if not save as a file
     :param mask: an numpy array of booleans, which has the same length as the images in the dataset
     """
-    metaexts, img_names = analyze_all_terms(dataset, extra_expr)
+    metas = analyze_all_terms(dataset, extra_expr)
     # make a result matrix
     img_means = get_image_means(metaexts, img_names, mask)
     return _sort_and_save(metaexts, img_means, img_names, rank_by, descending, csv_file)
@@ -66,7 +66,7 @@ def rank_avg_rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), descendi
     :param ties: (string) the method used to assign ranks to tied elements. The options are 'average', 'min', 'max',
                  'dense' and 'ordinal'. See scipy.stats.rankdata for details.
     """
-    metaexts, img_names = analyze_all_terms(dataset, extra_expr)
+    metaexts = analyze_all_terms(dataset, extra_expr)
     img_means = get_image_means(metaexts, img_names)
     if mask is not None:
         imgs = np.array([np.array(metaext.images[rank_by])[mask] for metaext in metaexts])
