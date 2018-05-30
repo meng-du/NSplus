@@ -1,3 +1,4 @@
+import numpy as np
 from metaplus import MetaAnalysisPlus
 
 
@@ -14,7 +15,8 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     :param study_ids: a list of study ids to be analyzed
     :param prior: a float priors to be used when calculating conditional probabilities
     :param fdr: the FDR threshold to use when correcting for multiple comparisons
-    :param image_names: the names of images to be included in the csv file. If None, all images will be included.
+    :param image_names: (list of strings) names of images to be included in the output files.
+                        If None, all images will be included.
     :param save_csv: (boolean) whether results are saved as a csv file
     :param save_images: (boolean) whether results are saved as a csv file
     :return: an MetaAnalysisPlus object
@@ -53,12 +55,3 @@ def analyze_all_terms(dataset, extra_expr=()):
     metas = [analyze_expression(dataset, expr, save_csv=False, save_images=False)
              for expr in all_exprs]
     return metas
-
-
-def get_image_mean(meta, img_names):
-    """
-    Get a mean for all of the voxel values in each image
-    :return:
-    """
-    # TODO sort/get image names as headers?
-    return np.mean([meta.images[img] for img in img_names], axis=1)

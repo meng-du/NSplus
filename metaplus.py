@@ -20,6 +20,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     # Information #
 
     class Info(OrderedDict):
+        # TODO convert to log file (with output file names etc)
         def __init__(self, *args, **kwargs):
             super(MetaAnalysisPlus.Info, self).__init__(*args, **kwargs)
             self.name = self.get_shorthand()

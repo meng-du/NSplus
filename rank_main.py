@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
         rank_avg_rank(dataset,
                       rank_by='pFgA_given_pF=0.50',
-                      csv_file=maskFile[:-4] + '_rank.csv')
+                      csv_name=maskFile[:-4] + '_rank.csv')
 
         # maskdir = 'results_v5/pairwise_conjunctions_1/' + maskFile[:-4] + '/'
         # maskcsvs = [csvfile for csvfile in os.listdir(maskdir) if csvfile.endswith('csv')]
