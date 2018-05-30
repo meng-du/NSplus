@@ -5,24 +5,58 @@ import pandas as pd
 import neurosynth as ns
 
 
+class NsInfo(OrderedDict):
+    """
+    Handle information strings (e.g. NeuroSynth expressions and image names)
+    """
+    img_names = ['pA', 'pAgF', 'pFgA', 'consistency_z', 'specificity_z']
+    prior_img_names = ['pAgF_given_pF=', 'pFgA_given_pF=']
+    fdr_img_names = ['pAgF_z_FDR_', 'pFgA_z_FDR_']
+
+    # TODO convert to log file (with output file names etc)
+    def __init__(self, *args, **kwargs):
+        super(NsInfo, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def get_shorthand_expr(expr):
+        abbr = expr.split(' ', maxsplit=1)[0]
+        return abbr.strip(punctuation)
+
+    @staticmethod
+    def get_num_from_img_name(image_name):
+        if image_name in NsInfo.img_names:
+            return {}
+        for prior_name in NsInfo.prior_img_names:
+            if prior_name in image_name:
+                num = image_name[len(prior_name):]
+                return {'prior': float(num)}
+        for fdr_name in NsInfo.fdr_img_names:
+            if fdr_name in image_name:
+                num = image_name[len(fdr_name):]
+                return {'fdr': float(num)}
+        return {}
+
+
 class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     """
     An extension of the NeuroSynth MetaAnalysis class.
     """
+
     def __init__(self, info, *args, **kwargs):
         """
         :param info: a list of string tuples containing information regarding the
                      meta analysis, e.g. [('expr', 'social'), ('num_studies', 1000)]
         """
         super(MetaAnalysisPlus, self).__init__(*args, **kwargs)
-        self.info = self.Info(info)
+        self.info = NsInfo(info)
 
     # Information #
-
-    class Info(OrderedDict):
-        # TODO convert to log file (with output file names etc)
+    class Info(NsInfo):
         def __init__(self, *args, **kwargs):
-            super(MetaAnalysisPlus.Info, self).__init__(*args, **kwargs)
+            """
+            Initialize with 'expr', and 'contrary_expr' if comparing to another expression
+            """
+            super(NsInfo, self).__init__(*args, **kwargs)
             self.name = self.get_shorthand()
 
         def get_shorthand(self):
@@ -31,15 +65,10 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             """
             name = ''
             if 'expr' in self:
-                name = MetaAnalysisPlus.Info.get_shorthand_expr(self['expr'])
+                name = NsInfo.get_shorthand_expr(self['expr'])
             if 'contrary_expr' in self:
-                name += '_vs_' + MetaAnalysisPlus.Info.get_shorthand_expr(self['contrary_expr'])
+                name += '_vs_' + NsInfo.get_shorthand_expr(self['contrary_expr'])
             return name
-
-        @staticmethod
-        def get_shorthand_expr(expr):
-            abbr = expr.split(' ', maxsplit=1)[0]
-            return abbr.strip(punctuation)
 
     # Methods for File Output #
 

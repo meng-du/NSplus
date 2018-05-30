@@ -22,20 +22,36 @@ class RankingPage(tk.Frame):
         self.roi_filename = None
 
         # page contents
-        self.label_select = tk.Label(self, text='Select an ROI mask:')
-        self.label_select.grid(row=0, column=0, padx=10, pady=(10, 2))
-
-        self.btn_file = tk.Button(self,
-                                  command=self.get_filename_from_button,
-                                  text=' Browse ',
-                                  highlightthickness=0)
-        self.btn_file.grid(row=1, column=0, padx=10, pady=(2, 10))
-
-        self.label_filename = tk.Label(self,
-                                       text='',
-                                       width=20)
+        # 1 select mask
+        # 1a instruction label
+        tk.Label(self, text='Select an ROI mask:') \
+            .grid(row=0, column=0, padx=10, pady=(10, 2))
+        # 1b browse button
+        tk.Button(self,
+                  command=self.get_filename_from_button,
+                  text=' Browse ',
+                  highlightthickness=0) \
+            .grid(row=1, column=0, padx=10, pady=(2, 10))
+        # 1c file name label
+        self.label_filename = tk.Label(self, text='', width=20)
         self.label_filename.grid(row=1, column=1, padx=(0, 10), sticky='w')
 
+        # 2 select image
+        # 2a instruction label
+        tk.Label(self, text='Rank terms by:') \
+            .grid(row=2, column=0, padx=10, pady=(10, 2))
+        # 2b radio buttons
+        self.image_labels = {}  # TODO
+        img_var = tk.StringVar()
+        for i, text in enumerate(self.image_labels.keys()):
+            tk.Radiobutton(parent,
+                           text=text,
+                           padx=20,
+                           variable=img_var,
+                           value=self.image_labels[text]) \
+                .pack(anchor=tk.W)
+
+        #  run button
         self.btn_file = tk.Button(self,
                                   command=self.run,
                                   text=' Start Ranking ',
@@ -62,8 +78,8 @@ class RankingPage(tk.Frame):
             self.parent.dataset.mask(self.roi_filename)
             Status().update_status('Ranking terms...')
         # TODO run
-        import time
-        time.sleep(2)
+        out_filename = ''
+        rank.rank(self.dataset, rank_by=selected_img, csv_name=out_filename)
         Status().update_status('Done.')
 
 

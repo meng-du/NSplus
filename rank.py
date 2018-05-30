@@ -1,9 +1,9 @@
 import numpy as np
-import csv
 from scipy.stats import rankdata
 from analyze import analyze_all_terms
+from metaplus import NsInfo
 
-# TODO: reuires numpy>1.7.0
+# TODO: requires numpy>1.7.0
 
 
 def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', reverse=True,
@@ -25,10 +25,6 @@ def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', revers
     # save/return results
     if csv_name:
         np.savetxt(csv_name, matrix, delimiter=',', header=','.join(matrix.dtype.names))
-        # with open(csv_name, 'w') as outfile:
-        #     writer = csv.writer(outfile, delimiter=',')
-        #     writer.writerow(matrix.dtype.names)  # header
-        #     writer.writerows(matrix)  # content
     return matrix
 
 
@@ -48,7 +44,10 @@ def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=None,
     """
     Rank all of the terms in NeuroSynth by the voxel values in specified image (rank_by).
     :param dataset: a NeuroSynth Dataset instance masked by an ROI
-    :param rank_by: (string) an image name to get voxel values from
+    :param rank_by: (string) an image name to get voxel values from. Available images are:
+                    'pAgF', 'pFgA', 'pAgF_given_pF=0.50', 'pFgA_given_pF=0.50',
+                    'consistency_z', 'specificity_z', 'pAgF_z_FDR_<fdr>', 'pFgA_z_FDR_<fdr>',
+                    where <fdr> can be any float number
     :param extra_expr: (list of strings) a list of extra expressions to be analyzed and
                        included in the results
     :param csv_name: (string) output file name, or None if not saving a file
@@ -62,7 +61,8 @@ def rank(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=None,
                  when rank_first=True. The options are 'average', 'min', 'max', 'dense'
                  and 'ordinal'. See scipy.stats.rankdata for details
     """
-    metas = analyze_all_terms(dataset, extra_expr)
+    img_info = NsInfo.get_num_from_img_name(rank_by)
+    metas = analyze_all_terms(dataset, extra_expr, **img_info)
     img_names = metas[0].images.keys()
     img_means = [np.mean([meta.images[img] for img in img_names], axis=1) for meta in metas]
     if rank_first:

@@ -1,4 +1,3 @@
-import numpy as np
 from metaplus import MetaAnalysisPlus
 
 
@@ -45,13 +44,17 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     return meta
 
 
-def analyze_all_terms(dataset, extra_expr=()):
+def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
+    # TODO with extra lists of study IDs?
     """
-    Do a meta analysis for each term/expression in either the dataset or the extra expression list
-    :return: a tuple (a list of MetaAnalysisPlus objects, a list of sorted image names)
+    Do a meta analysis for each term/expression in either the dataset or the extra
+    expression list
+    :return: a list of MetaAnalysisPlus objects
     """
-    all_exprs = [term for term in dataset.get_feature_names() if not term[0].isdigit()] + extra_expr
+    all_exprs = [term for term in dataset.get_feature_names() if not term[0].isdigit()] + \
+                extra_expr
     all_exprs = set(all_exprs)
-    metas = [analyze_expression(dataset, expr, save_csv=False, save_images=False)
+    metas = [analyze_expression(dataset, expr, prior=prior, fdr=fdr,
+                                save_csv=False, save_images=False)
              for expr in all_exprs]
     return metas
