@@ -20,43 +20,71 @@ class RankingPage(tk.Frame):
         self.dataset = dataset
         self.nb_label = 'Ranking'
         self.roi_filename = None
+        row_i = -1
 
         # page contents
         # 1 select mask
-        # 1a instruction label
+        #   instruction label
+        row_i += 1
         tk.Label(self, text='Select an ROI mask:') \
-            .grid(row=0, column=0, padx=10, pady=(10, 2))
-        # 1b browse button
+            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+        #   browse button
+        row_i += 1
         tk.Button(self,
                   command=self.get_filename_from_button,
                   text=' Browse ',
                   highlightthickness=0) \
-            .grid(row=1, column=0, padx=10, pady=(2, 10))
-        # 1c file name label
+            .grid(row=row_i, column=0, padx=10, pady=(2, 10))
+        #   file name label
         self.label_filename = tk.Label(self, text='', width=20)
-        self.label_filename.grid(row=1, column=1, padx=(0, 10), sticky='w')
+        self.label_filename.grid(row=row_i, column=1, padx=(0, 10), sticky='w')
 
         # 2 select image
-        # 2a instruction label
+        #   instruction label
+        row_i += 1
         tk.Label(self, text='Rank terms by:') \
-            .grid(row=2, column=0, padx=10, pady=(10, 2))
-        # 2b radio buttons
-        self.image_labels = {}  # TODO
-        img_var = tk.StringVar()
-        for i, text in enumerate(self.image_labels.keys()):
-            tk.Radiobutton(parent,
+            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+        #   radio buttons
+        self.image_labels = {
+            'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
+            'Forward inference z score (consistency)': 'consistency_z',
+            'Forward inference with multiple comparisons correction (FDR=0.05)': 'pAgF_z_FDR_0.05',
+            'Reverse inference with a uniform prior=0.5': 'pFgA_given_pF=0.50',
+            'Reverse inference z score (specificity)': 'specificity_z',
+            'Reverse inference with multiple comparisons correction (FDR=0.05)': 'pFgA_z_FDR_0.05'
+        }
+        self.img_var = tk.StringVar(value='pFgA_given_pF=0.50')
+        for text in self.image_labels.keys():
+            row_i += 1
+            tk.Radiobutton(self,
                            text=text,
-                           padx=20,
-                           variable=img_var,
+                           variable=self.img_var,
                            value=self.image_labels[text]) \
-                .pack(anchor=tk.W)
+                .grid(row=row_i, column=0, columnspan=2, padx=30, sticky='w')
 
-        #  run button
+        # 3 select procedure
+        #   instruction label
+        row_i += 1
+        tk.Label(self, text='Procedure:') \
+            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+        #   radio buttons
+        self.proc_var = tk.BooleanVar(value=False)  # whether to rank first
+        for i, text in enumerate(['Average the values across ROI first, then rank terms',
+                                  'Rank terms at each voxel first, then average ranks across ROI']):
+            row_i += 1
+            tk.Radiobutton(self,
+                           text=text,
+                           variable=self.proc_var,
+                           value=bool(i)) \
+                .grid(row=row_i, column=0, columnspan=2, padx=30, sticky='w')
+
+        # 4 run button
+        row_i += 1
         self.btn_file = tk.Button(self,
                                   command=self.run,
                                   text=' Start Ranking ',
                                   highlightthickness=0)
-        self.btn_file.grid(row=2, columnspan=2, padx=10, pady=10)
+        self.btn_file.grid(row=row_i, columnspan=2, padx=1, pady=10)
 
     def get_filename_from_button(self):
         self.roi_filename = askopenfilename(initialdir='./',
@@ -77,9 +105,11 @@ class RankingPage(tk.Frame):
             Status().update_status('Loading ROI...')
             self.parent.dataset.mask(self.roi_filename)
             Status().update_status('Ranking terms...')
-        # TODO run
-        out_filename = ''
-        rank.rank(self.dataset, rank_by=selected_img, csv_name=out_filename)
+        selected_img = self.img_var.get()
+        selected_proc = self.proc_var.get()
+        out_filename = ''  # TODO
+        rank.rank(self.dataset, rank_by=selected_img, rank_first=selected_proc,
+                  csv_name=out_filename)
         Status().update_status('Done.')
 
 
