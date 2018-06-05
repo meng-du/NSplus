@@ -1,5 +1,7 @@
 from datasetplus import DatasetPlus
 import rank
+import threading
+import time
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
@@ -14,10 +16,9 @@ elif version_info.major == 3:
 
 
 class RankingPage(tk.Frame):
-    def __init__(self, parent, dataset, **kwargs):
+    def __init__(self, parent, **kwargs):
         super(RankingPage, self).__init__(parent, **kwargs)
         self.parent = parent
-        self.dataset = dataset
         self.nb_label = 'Ranking'
         self.roi_filename = None
         row_i = -1
@@ -102,15 +103,19 @@ class RankingPage(tk.Frame):
                 return
         else:
             # load ROI mask to database
-            Status().update_status('Loading ROI...')
-            self.parent.dataset.mask(self.roi_filename)
-            Status().update_status('Ranking terms...')
+            if not Global().update_status('Loading ROI...', user_op=True):
+                return
+            th = threading.Thread(target=Global().dataset.mask, args=[self.roi_filename])
+            th.start()
+            th.join()
+        if not Global().update_status('Ranking terms...', user_op=(self.roi_filename is None)):
+            return
         selected_img = self.img_var.get()
         selected_proc = self.proc_var.get()
-        out_filename = ''  # TODO
-        rank.rank(self.dataset, rank_by=selected_img, rank_first=selected_proc,
+        out_filename = '/Users/mengdu/Repos/neurosynthExtension/test_rank.csv'  # TODO
+        rank.rank(Global().dataset, rank_by=selected_img, rank_first=selected_proc,
                   csv_name=out_filename)
-        Status().update_status('Done.')
+        Global().update_status('Done.')
 
 
 class _Singleton(type):
@@ -127,68 +132,94 @@ class _Singleton(type):
 class Singleton(_Singleton('SingletonMeta', (object,), {})): pass
 
 
-class Status(Singleton):
+class Global(Singleton):
+    """
+    A class that maintains the NeuroSynth dataset instance and the current app status
+    """
     def __init__(self, parent, **kwargs):
         self.status = 'Ready'
+        self.has_error = False
         self.history = []
+        self.dataset = None
+        self.status_mutex = threading.Lock()
 
         # GUI
         self.statusbar = tk.Frame(parent, **kwargs)
-        self.text_width = 50
+        self.text_width = 70
         self.statusbar_label = tk.Label(parent, text=self.status.ljust(self.text_width),
                                         bd=1, relief=tk.SUNKEN, anchor='w',  padx=3,
                                         font=('Menlo', 12), bg='#6d6d6d', fg='#d6d6d6')
         self.statusbar_label.pack(side=tk.BOTTOM, fill=tk.X)
 
-    def update_status(self, status='Ready', is_error=False):
-        """
-        :param status: string
-        :param is_error: (boolean) the text will show as red if True
-        """
+    def _update_status(self, status, is_error=False):  # not thread safe
         self.status = status
+        self.has_error = is_error
         self.history.append(status)
         if len(status) > self.text_width:
             statusbar_text = status[:(self.text_width - 3)] + '...'
         else:
             statusbar_text = status.ljust(self.text_width)
-        if is_error:
-            self.statusbar_label.config(text=statusbar_text, fg='#ff0000')
-        else:
-            self.statusbar_label.config(text=statusbar_text)
+        text_color = '#ff0000' if is_error else '#d6d6d6'
+        self.statusbar_label.config(text=statusbar_text, fg=text_color)
+
+    def update_status(self, status='Ready', is_error=False, user_op=False):  # thread safe
+        """
+        :param status: string
+        :param is_error: (boolean) the text will show as red if True
+        :param user_op: (boolean) whether a status change is requested by user.
+                        If True and the current status is not 'Ready', the request will
+                        be declined, in which case this function returns False and the
+                        status bar shows a warning
+        :return: (boolean) whether the status has been updated successfully
+        """
+        prev = False
+        with self.status_mutex:
+            if (not user_op) or self.is_ready():
+                self._update_status(status, is_error)
+            else:
+                prev = self.status, self.has_error
+                self._update_status('Still running the last task... Please try again later',
+                                    is_error=True)
+
+        def back_to_prev(prev_status, prev_has_error):
+            time.sleep(2)
+            with self.status_mutex:
+                if not self.is_ready():  # last task still running
+                    self._update_status(prev_status, is_error=prev_has_error)
+
+        if prev:
+            th = threading.Thread(target=back_to_prev, args=prev)
+            th.start()
+
+        return not bool(prev)
 
     def is_ready(self):
         return self.status == 'Ready'
+
+    def load_pkl_database(self):
+        """
+        Call this function after a Status has been initiated
+        :param data_file: (string) path to a pickled data file
+        """
+        self.update_status('Loading database...')
+        self.dataset = DatasetPlus.load_default_database()
+        self.update_status()
 
 
 class MainApp(tk.Frame):
     def __init__(self, parent, **kwargs):
         super(MainApp, self).__init__(parent, **kwargs)
         self.parent = parent
-        self.dataset = None
 
         parent.title('NeuroSynth+')
         # parent.geometry('350x200')
 
         # notebook layout
         self.notebook = ttk.Notebook(parent)
-        self.nb_pages = [RankingPage(self.notebook, self.dataset)]
+        self.nb_pages = [RankingPage(self.notebook)]
         for page in self.nb_pages:
             self.notebook.add(page, text=page.nb_label)
         self.notebook.pack(expand=1, fill='both')
-
-        # load NeuroSynth database
-        # self.load_database()
-
-    def load_database(self, data_file=None):
-        """
-        :param data_file: (string) path to a pickled data file
-        """
-        Status().update_status('Loading database...')
-        if data_file is None:
-            self.dataset = DatasetPlus.load_default_database()
-        else:
-            self.dataset = DatasetPlus.load(data_file)
-        Status().update_status()
 
 
 def main():
@@ -196,7 +227,10 @@ def main():
     root = tk.Tk()
     main_app = MainApp(root)
     main_app.pack(side='top', fill='both')
-    Status(root)
+    Global(root)
+    # load NeuroSynth database in another thread
+    th = threading.Thread(target=Global.load_pkl_database, args=[Global()])
+    th.start()
     root.mainloop()
     # except Exception as e:
     #     if status is None:

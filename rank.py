@@ -1,4 +1,5 @@
 import numpy as np
+import csv
 from scipy.stats import rankdata
 from analyze import analyze_all_terms
 from metaplus import NsInfo
@@ -24,7 +25,10 @@ def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', revers
         matrix = matrix[::-1]
     # save/return results
     if csv_name:
-        np.savetxt(csv_name, matrix, delimiter=',', header=','.join(matrix.dtype.names))
+        with open(csv_name, 'w', encoding='utf-8') as outfile:
+            writer = csv.writer(outfile, delimiter=',')
+            writer.writerow(matrix.dtype.names)  # header
+            writer.writerows(matrix)  # content
     return matrix
 
 

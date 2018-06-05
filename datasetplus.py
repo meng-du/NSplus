@@ -17,4 +17,6 @@ class DatasetPlus(ns.Dataset):
     def load_default_database(cls):
         data_file = os.path.join(os.path.dirname(__file__), 'neurosynth_data',
                                  'database_v0.6_with_features.pkl')
-        return cls.load(data_file)
+        dataset = cls.load(data_file)
+        dataset.__class__ = DatasetPlus  # TODO better way?
+        return dataset
