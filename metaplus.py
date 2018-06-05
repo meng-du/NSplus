@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from string import punctuation
-import numpy as np
 import pandas as pd
 import neurosynth as ns
 

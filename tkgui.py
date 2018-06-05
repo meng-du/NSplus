@@ -49,10 +49,10 @@ class RankingPage(tk.Frame):
         self.image_labels = {
             'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
             'Forward inference z score (consistency)': 'consistency_z',
-            'Forward inference with multiple comparisons correction (FDR=0.05)': 'pAgF_z_FDR_0.05',
+            'Forward inference with multiple comparisons correction (FDR=0.01)': 'pAgF_z_FDR_0.01',
             'Reverse inference with a uniform prior=0.5': 'pFgA_given_pF=0.50',
             'Reverse inference z score (specificity)': 'specificity_z',
-            'Reverse inference with multiple comparisons correction (FDR=0.05)': 'pFgA_z_FDR_0.05'
+            'Reverse inference with multiple comparisons correction (FDR=0.01)': 'pFgA_z_FDR_0.01'
         }
         self.img_var = tk.StringVar(value='pFgA_given_pF=0.50')
         for text in self.image_labels.keys():
@@ -115,7 +115,7 @@ class RankingPage(tk.Frame):
         out_filename = '/Users/mengdu/Repos/neurosynthExtension/test_rank.csv'  # TODO
         rank.rank(Global().dataset, rank_by=selected_img, rank_first=selected_proc,
                   csv_name=out_filename)
-        Global().update_status('Done.')
+        Global().update_status('Done. A file is saved to ' + out_filename)
 
 
 class _Singleton(type):
@@ -145,7 +145,7 @@ class Global(Singleton):
 
         # GUI
         self.statusbar = tk.Frame(parent, **kwargs)
-        self.text_width = 70
+        self.text_width = 80
         self.statusbar_label = tk.Label(parent, text=self.status.ljust(self.text_width),
                                         bd=1, relief=tk.SUNKEN, anchor='w',  padx=3,
                                         font=('Menlo', 12), bg='#6d6d6d', fg='#d6d6d6')
