@@ -1,17 +1,17 @@
 from datasetplus import DatasetPlus
 import rank
+import os
 from threading import Thread, Lock
-import time
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
     import ttk
-    from tkFileDialog import askopenfilename
+    from tkFileDialog import askopenfilename, askdirectory
     import tkMessageBox as messagebox
 elif version_info.major == 3:
     import tkinter as tk
     from tkinter import ttk
-    from tkinter.filedialog import askopenfilename
+    from tkinter.filedialog import askopenfilename, askdirectory
     from tkinter import messagebox
 
 
@@ -25,7 +25,8 @@ class RankingPage(tk.Frame):
         super(RankingPage, self).__init__(parent, **kwargs)
         self.parent = parent
         self.nb_label = 'Ranking'
-        self.roi_filename = None
+        self.roi_filename = ''
+        self.outdir = ''
         row_i = -1
 
         # page contents
@@ -35,15 +36,15 @@ class RankingPage(tk.Frame):
         tk.Label(self, text='Select an ROI mask:') \
             .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
         #   browse button
-        row_i += 1
         tk.Button(self,
                   command=self.get_filename_from_button,
                   text=' Browse ',
                   highlightthickness=0) \
-            .grid(row=row_i, column=0, padx=10, pady=(2, 10))
+            .grid(row=row_i, column=0, padx=(30, 0), pady=(8, 0))
         #   file name label
-        self.label_filename = tk.Label(self, text='', width=20)
-        self.label_filename.grid(row=row_i, column=1, padx=(0, 10), sticky='w')
+        row_i += 1
+        self.label_filename = tk.Label(self, text='', font=('Menlo', 12), fg='#424242', width=60)
+        self.label_filename.grid(row=row_i, column=0, columnspan=2)
 
         # 2 select image
         #   instruction label
@@ -84,13 +85,29 @@ class RankingPage(tk.Frame):
                            value=bool(i)) \
                 .grid(row=row_i, column=0, columnspan=2, padx=30, sticky='w')
 
-        # 4 run button
+        # 4 output directory
+        row_i += 1
+        #   instruction label
+        tk.Label(self, text='Output directory:') \
+            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+        #   browse button
+        tk.Button(self,
+                  command=self.get_outdir_from_button,  # TODO
+                  text=' Browse ',
+                  highlightthickness=0) \
+            .grid(row=row_i, column=0, pady=(8, 0))
+        #   directory label
+        row_i += 1
+        self.label_outdir = tk.Label(self, text='', font=('Menlo', 12), fg='#424242', width=70)
+        self.label_outdir.grid(row=row_i, column=0, columnspan=2)
+
+        # 5 run button
         row_i += 1
         self.btn_file = tk.Button(self,
                                   command=self.start,
                                   text=' Start Ranking ',
                                   highlightthickness=0)
-        self.btn_file.grid(row=row_i, columnspan=2, padx=1, pady=10)
+        self.btn_file.grid(row=row_i, columnspan=2, padx=1, pady=20)
 
     def get_filename_from_button(self):
         self.roi_filename = askopenfilename(initialdir='./',
@@ -100,19 +117,27 @@ class RankingPage(tk.Frame):
                                                        ('all files', '*.*')))
         self.label_filename.config(text=self.roi_filename.split('/')[-1])
 
+    def get_outdir_from_button(self):
+        self.outdir = askdirectory(initialdir='./')
+        self.label_outdir.config(text=self.outdir)
+
     def start(self):
         """
         Load ROI and then call the rank method
         """
-        selected_meta = self.img_var.get()
-        selected_proc = self.proc_var.get()
-        out_filename = '/Users/mengdu/Repos/neurosynthExtension/test_rank.csv'  # TODO
-        if self.roi_filename is None:
-            no_roi = messagebox.askyesno('Warning', 'You didn\'t specify an ROI file. '
-                                                    'Are you sure you want to continue?')
-            if not no_roi:
+        if len(self.outdir) == 0:
+            messagebox.showerror('Error', 'Please select an output directory')
+            return
+        meta_img = self.img_var.get()
+        procedure = self.proc_var.get()
+        out_filename = os.path.join(self.outdir, 'test_rank.csv')  # TODO
+        if len(self.roi_filename) == 0:
+            continuing = messagebox.askyesno('Warning',
+                                             'You didn\'t specify an ROI file. '
+                                             'Are you sure you want to continue?')
+            if not continuing:
                 return
-            self.rank(selected_meta, selected_proc, out_filename)
+            self.rank(meta_img, procedure, out_filename)
         else:
             # load ROI mask to database
             if not Global().update_status('Loading ROI...', user_op=True):
@@ -120,10 +145,12 @@ class RankingPage(tk.Frame):
             Thread(target=load_roi, args=[self.roi_filename]).start()
             # call rank() later
             Global().root.bind('<<Done_roi>>',
-                               lambda e: self.rank(selected_meta, selected_proc, out_filename))
+                               lambda e: self.rank(meta_img, procedure, out_filename))
 
     def rank(self, selected_meta, selected_proc, out_filename):
-        if not Global().update_status('Sorting terms...', user_op=(self.roi_filename is None)):
+        Global().root.unbind('<<Done_roi>>')
+        if not Global().update_status('Sorting terms...',
+                                      user_op=(len(self.roi_filename) == 0)):
             return
 
         def _rank():
