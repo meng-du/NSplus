@@ -17,10 +17,9 @@ def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascend
                       for i in range(len(metas))]
     df = pd.DataFrame(matrix_as_list, columns=['term', '# studies'] + img_names)
     df = df.drop(columns='pA').sort_values(rank_by, ascending=ascending)
+    df.index = range(1, df.shape[0] + 1)
     if csv_name:
-        df.index += 1
         df.to_csv(csv_name)
-        df.index -= 1
     return df
 
 

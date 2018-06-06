@@ -1,6 +1,6 @@
 from datasetplus import DatasetPlus
 import rank
-import threading
+from threading import Thread, Lock
 import time
 from sys import version_info
 if version_info.major == 2:
@@ -13,6 +13,11 @@ elif version_info.major == 3:
     from tkinter import ttk
     from tkinter.filedialog import askopenfilename
     from tkinter import messagebox
+
+
+def load_roi(roi_filename):
+    Global().dataset.mask(roi_filename)
+    Global().root.event_generate('<<Done_roi>>')  # trigger event
 
 
 class RankingPage(tk.Frame):
@@ -43,7 +48,7 @@ class RankingPage(tk.Frame):
         # 2 select image
         #   instruction label
         row_i += 1
-        tk.Label(self, text='Rank terms by:') \
+        tk.Label(self, text='Sort terms by:') \
             .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
         #   radio buttons
         self.image_labels = {
@@ -82,7 +87,7 @@ class RankingPage(tk.Frame):
         # 4 run button
         row_i += 1
         self.btn_file = tk.Button(self,
-                                  command=self.run,
+                                  command=self.start,
                                   text=' Start Ranking ',
                                   highlightthickness=0)
         self.btn_file.grid(row=row_i, columnspan=2, padx=1, pady=10)
@@ -95,27 +100,41 @@ class RankingPage(tk.Frame):
                                                        ('all files', '*.*')))
         self.label_filename.config(text=self.roi_filename.split('/')[-1])
 
-    def run(self):
+    def start(self):
+        """
+        Load ROI and then call the rank method
+        """
+        selected_meta = self.img_var.get()
+        selected_proc = self.proc_var.get()
+        out_filename = '/Users/mengdu/Repos/neurosynthExtension/test_rank.csv'  # TODO
         if self.roi_filename is None:
             no_roi = messagebox.askyesno('Warning', 'You didn\'t specify an ROI file. '
                                                     'Are you sure you want to continue?')
             if not no_roi:
                 return
+            self.rank(selected_meta, selected_proc, out_filename)
         else:
             # load ROI mask to database
             if not Global().update_status('Loading ROI...', user_op=True):
                 return
-            th = threading.Thread(target=Global().dataset.mask, args=[self.roi_filename])
-            th.start()
-            th.join()
-        if not Global().update_status('Ranking terms...', user_op=(self.roi_filename is None)):
+            Thread(target=load_roi, args=[self.roi_filename]).start()
+            # call rank() later
+            Global().root.bind('<<Done_roi>>',
+                               lambda e: self.rank(selected_meta, selected_proc, out_filename))
+
+    def rank(self, selected_meta, selected_proc, out_filename):
+        if not Global().update_status('Sorting terms...', user_op=(self.roi_filename is None)):
             return
-        selected_img = self.img_var.get()
-        selected_proc = self.proc_var.get()
-        out_filename = '/Users/mengdu/Repos/neurosynthExtension/test_rank.csv'  # TODO
-        rank.rank(Global().dataset, rank_by=selected_img, rank_first=selected_proc,
-                  csv_name=out_filename)
-        Global().update_status('Done. A file is saved to ' + out_filename)
+
+        def _rank():
+            rank.rank(Global().dataset, rank_by=selected_meta, rank_first=selected_proc,
+                      csv_name=out_filename)  # ranking
+            Global().root.event_generate('<<Done_ranking>>')  # trigger event
+
+        Thread(target=_rank).start()
+        Global().root.bind('<<Done_ranking>>', lambda e:
+            Global().update_status('Done. A file is saved to ' + out_filename))
+
 
 
 class _Singleton(type):
@@ -136,17 +155,18 @@ class Global(Singleton):
     """
     A class that maintains the NeuroSynth dataset instance and the current app status
     """
-    def __init__(self, parent, **kwargs):
+    def __init__(self, root, **kwargs):
+        self.root = root
         self.status = 'Ready'
         self.has_error = False
         self.history = []
         self.dataset = None
-        self.status_mutex = threading.Lock()
+        self.status_mutex = Lock()
 
         # GUI
-        self.statusbar = tk.Frame(parent, **kwargs)
+        self.statusbar = tk.Frame(root, **kwargs)
         self.text_width = 80
-        self.statusbar_label = tk.Label(parent, text=self.status.ljust(self.text_width),
+        self.statusbar_label = tk.Label(root, text=self.status.ljust(self.text_width),
                                         bd=1, relief=tk.SUNKEN, anchor='w',  padx=3,
                                         font=('Menlo', 12), bg='#6d6d6d', fg='#d6d6d6')
         self.statusbar_label.pack(side=tk.BOTTOM, fill=tk.X)
@@ -178,23 +198,22 @@ class Global(Singleton):
                 self._update_status(status, is_error)
             else:
                 prev = self.status, self.has_error
-                self._update_status('Still running the last task... Please try again later',
+                self._update_status('Another task is running... Please try again later',
                                     is_error=True)
 
         def back_to_prev(prev_status, prev_has_error):
-            time.sleep(2)
+            # show error for 2 seconds and then go back to the previous status
             with self.status_mutex:
                 if not self.is_ready():  # last task still running
                     self._update_status(prev_status, is_error=prev_has_error)
 
         if prev:
-            th = threading.Thread(target=back_to_prev, args=prev)
-            th.start()
+            self.statusbar.after(2000, back_to_prev, *prev)
 
         return not bool(prev)
 
     def is_ready(self):
-        return self.status == 'Ready'
+        return self.status == 'Ready' or self.status.startswith('Done')
 
     def load_pkl_database(self):
         """
@@ -229,8 +248,8 @@ def main():
     main_app.pack(side='top', fill='both')
     Global(root)
     # load NeuroSynth database in another thread
-    th = threading.Thread(target=Global.load_pkl_database, args=[Global()])
-    th.start()
+    Thread(target=Global.load_pkl_database, args=[Global()]).start()
+    # start GUI
     root.mainloop()
     # except Exception as e:
     #     if status is None:
