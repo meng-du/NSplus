@@ -1,2 +1,2 @@
-# NeuroSynth Extension
+# NeuroSynthPlus
 Work in progress...

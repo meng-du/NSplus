@@ -1,4 +1,5 @@
 from metaplus import MetaAnalysisPlus
+# import concurrent.futures  # requires futures for python 2.x
 
 
 def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01,
@@ -21,7 +22,7 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     :return: an MetaAnalysisPlus object
     """
     if len(expression) == 0 and len(study_ids) == 0:
-        raise ValueError('Nothing specified for analysis')
+        raise ValueError('No expression specified for analysis')
 
     # get studies
     try:
@@ -30,7 +31,7 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
         study_set = dataset.get_studies(features=expression)  # in case expression doesn't work
     study_set = list(set(study_set) | set(study_ids))
     if len(study_set) == 0:
-        raise ValueError('No study found with the given expression')
+        raise ValueError('No study found for the given expression')
 
     # analyze
     info = [('expr', expression), ('num_studies', len(study_set))]
@@ -42,6 +43,9 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     if save_images:
         meta.save_images()
     return meta
+
+# def _analyze_expression(kwargs):
+#     return analyze_expression(**kwargs)
 
 
 def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
@@ -55,7 +59,16 @@ def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
     if len(extra_expr) > 0:
         all_exprs += extra_expr
     all_exprs = set(all_exprs)
-    metas = [analyze_expression(dataset, expr, prior=prior, fdr=fdr,
-                                save_csv=False, save_images=False)
-             for expr in all_exprs]
+
+    # if multiprocess:  # multiprocessing is slower?
+    #     with concurrent.futures.ProcessPoolExecutor() as executor:
+    #         args = [dict(dataset=dataset, expression=expr, prior=prior, fdr=fdr,
+    #                      save_csv=False, save_images=False) for expr in all_exprs]
+    #         metas = executor.map(_analyze_expression, args)
+    #     return list(metas)
+    metas = []
+    for i, expr in enumerate(all_exprs):
+        print('Analyzing "%s" (%d/%d)' % (expr, i + 1, len(all_exprs)))
+        metas.append(analyze_expression(dataset, expr, prior=prior, fdr=fdr,
+                                        save_csv=False, save_images=False))
     return metas

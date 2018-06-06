@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import csv
 from scipy.stats import rankdata
 from analyze import analyze_all_terms
 from metaplus import NsInfo
@@ -13,12 +12,11 @@ def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascend
     """
     :return: a pandas dataframe of ordered terms and corresponding voxel values
     """
-    term_list = [meta.info['expr'] for meta in metas]
-    matrix_as_list = [[term_list[i]] + [mean for mean in means[i]]
-                      for i in range(len(term_list))]
-    df = pd.DataFrame(matrix_as_list, columns=['term'] + img_names)
-    df = df.drop(columns='pA')
-    df.sort_values(rank_by, ascending=ascending)
+    matrix_as_list = [[metas[i].info['expr'], metas[i].info['num_studies']] +
+                      [mean for mean in means[i]]
+                      for i in range(len(metas))]
+    df = pd.DataFrame(matrix_as_list, columns=['term', '# studies'] + img_names)
+    df = df.drop(columns='pA').sort_values(rank_by, ascending=ascending)
     if csv_name:
         df.index += 1
         df.to_csv(csv_name)
