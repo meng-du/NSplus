@@ -1,6 +1,7 @@
 from datasetplus import DatasetPlus
 import rank
 import os
+from datetime import datetime
 from threading import Thread, Lock
 from sys import version_info
 if version_info.major == 2:
@@ -92,7 +93,7 @@ class RankingPage(tk.Frame):
             .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
         #   browse button
         tk.Button(self,
-                  command=self.get_outdir_from_button,  # TODO
+                  command=self.get_outdir_from_button,
                   text=' Browse ',
                   highlightthickness=0) \
             .grid(row=row_i, column=0, pady=(8, 0))
@@ -125,19 +126,34 @@ class RankingPage(tk.Frame):
         """
         Load ROI and then call the rank method
         """
-        if len(self.outdir) == 0:
-            messagebox.showerror('Error', 'Please select an output directory')
+        if not os.path.isdir(self.outdir):
+            messagebox.showerror('Error', 'Please select a valid output directory')
             return
         meta_img = self.img_var.get()
         procedure = self.proc_var.get()
-        out_filename = os.path.join(self.outdir, 'test_rank.csv')  # TODO
+
+        # output file name
         if len(self.roi_filename) == 0:
             continuing = messagebox.askyesno('Warning',
                                              'You didn\'t specify an ROI file. '
                                              'Are you sure you want to continue?')
             if not continuing:
                 return
-            self.rank(meta_img, procedure, out_filename)
+            outfile_name = 'whole_brain_ranked_by_%s' % meta_img
+            outfile = os.path.join(self.outdir, outfile_name + '.csv')
+        else:
+            _, roi_name = os.path.split(self.roi_filename)
+            outfile_name = '%s_ranked_by_%s' % (roi_name.split('.')[0], meta_img)
+            outfile = os.path.join(self.outdir, outfile_name + '.csv')
+
+        if os.path.isfile(outfile):
+            outfile_name += '_' + str(datetime.now()).split('.')[0] \
+                .replace('-', '').replace(':', '').replace(' ', '_')
+            outfile = os.path.join(self.outdir, outfile_name + '.csv')
+
+        # start running
+        if len(self.roi_filename) == 0:
+            self.rank(meta_img, procedure, outfile)
         else:
             # load ROI mask to database
             if not Global().update_status('Loading ROI...', user_op=True):
@@ -145,23 +161,22 @@ class RankingPage(tk.Frame):
             Thread(target=load_roi, args=[self.roi_filename]).start()
             # call rank() later
             Global().root.bind('<<Done_roi>>',
-                               lambda e: self.rank(meta_img, procedure, out_filename))
+                               lambda e: self.rank(meta_img, procedure, outfile))
 
-    def rank(self, selected_meta, selected_proc, out_filename):
+    def rank(self, selected_meta, selected_proc, csv_name):
         Global().root.unbind('<<Done_roi>>')
-        if not Global().update_status('Sorting terms...',
+        if not Global().update_status('Analyzing terms...',
                                       user_op=(len(self.roi_filename) == 0)):
             return
 
         def _rank():
             rank.rank(Global().dataset, rank_by=selected_meta, rank_first=selected_proc,
-                      csv_name=out_filename)  # ranking
+                      csv_name=csv_name)  # ranking
             Global().root.event_generate('<<Done_ranking>>')  # trigger event
 
         Thread(target=_rank).start()
         Global().root.bind('<<Done_ranking>>', lambda e:
-            Global().update_status('Done. A file is saved to ' + out_filename))
-
+            Global().update_status('Done. A file is saved to ' + csv_name))
 
 
 class _Singleton(type):
