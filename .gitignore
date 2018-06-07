@@ -1,4 +1,3 @@
 *.pyc
 .*
-neurosynth_data/*
-results*
+neurosynthplus/neurosynth_data/*

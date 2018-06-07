@@ -284,20 +284,22 @@ class MainApp(tk.Frame):
 
 
 def main():
-    # try:
-    root = tk.Tk()
-    main_app = MainApp(root)
-    main_app.pack(side='top', fill='both')
-    Global(root)
-    # load NeuroSynth database in another thread
-    Thread(target=Global.load_pkl_database, args=[Global()]).start()
-    # start GUI
-    root.mainloop()
-    # except Exception as e:
-    #     if status is None:
-    #         messagebox.showerror('Error', str(e))
-    #     else:
-    #         status.update_status(str(e), is_error=True)
+    gui_started = False
+    try:
+        root = tk.Tk()
+        main_app = MainApp(root)
+        main_app.pack(side='top', fill='both')
+        Global(root)
+        # load NeuroSynth database in another thread
+        Thread(target=Global.load_pkl_database, args=[Global()]).start()
+        # start GUI
+        gui_started = True
+        root.mainloop()
+    except Exception as e:
+        if gui_started:
+            Global().update_status(str(e), is_error=True)
+        else:
+            messagebox.showerror('Error', str(e))
 
 
 if __name__ == '__main__':
