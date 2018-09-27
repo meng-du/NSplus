@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 
 setup(
     name='neurosynthPlus',
     version='alpha',
+    description='Meta-src package based on NeuroSynth',
     url='https://github.com/MetaD/neurosynthPlus',
     license='MIT',
     author='Meng Du',

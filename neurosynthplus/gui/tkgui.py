@@ -1,6 +1,9 @@
-from datasetplus import DatasetPlus
-import rank
+from __future__ import absolute_import
+from ..src.datasetplus import DatasetPlus
+from ..src import rank
+from .autocomplete import AutocompleteEntry
 import os
+import re
 from datetime import datetime
 from threading import Thread, Lock
 from sys import version_info
@@ -21,6 +24,56 @@ def load_roi(roi_filename):
     Global().root.event_generate('<<Done_roi>>')  # trigger event
 
 
+class AnalysisPage(tk.Frame):
+    def __init__(self, parent, **kwargs):
+        super(AnalysisPage, self).__init__(parent, **kwargs)
+        self.parent = parent
+        self.nb_label = 'Analysis'
+        self.outdir = ''
+        row_i = -1
+
+        # page contents
+        # instruction label
+        row_i += 1
+        tk.Label(self, text='Enter term or expression:') \
+            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+
+        # term/expression entry
+        row_i += 1
+        self.ac_entry = AutocompleteEntry([], self, listboxLength=10, width=32,
+                                          matchesFunction=AnalysisPage.matches_term)
+        self.ac_entry.grid(row=row_i, column=0, padx=15, pady=(2, 10))
+
+        def update_ac_list(event):  # do it after database loaded
+            self.ac_entry.autocompleteList = Global().dataset.get_feature_names()
+        self.parent.master.parent.bind('<<Database_loaded>>', update_ac_list)
+
+        # analyze button
+        row_i += 1
+        self.btn_start = tk.Button(self,
+                                   command=self.start,
+                                   text=' Analyze ',
+                                   highlightthickness=0)
+        self.btn_start.grid(row=row_i, padx=1, pady=20)
+
+    def start(self):
+        pass
+
+    @staticmethod
+    def matches_term(field_value, ac_list_entry):
+        pattern = re.compile(re.escape(field_value) + '.*', re.IGNORECASE)
+        return re.match(pattern, ac_list_entry)
+
+
+class ComparisonPage(tk.Frame):
+    def __init__(self, parent, **kwargs):
+        super(ComparisonPage, self).__init__(parent, **kwargs)
+        self.parent = parent
+        self.nb_label = 'Comparison'
+        self.outdir = ''
+        row_i = -1
+
+
 class RankingPage(tk.Frame):
     def __init__(self, parent, **kwargs):
         super(RankingPage, self).__init__(parent, **kwargs)
@@ -31,7 +84,7 @@ class RankingPage(tk.Frame):
         row_i = -1
 
         # page contents
-        # 1 select mask
+        # 1 mask selection
         #   instruction label
         row_i += 1
         tk.Label(self, text='Select an ROI mask:') \
@@ -47,7 +100,7 @@ class RankingPage(tk.Frame):
         self.label_filename = tk.Label(self, text='', font=('Menlo', 12), fg='#424242', width=60)
         self.label_filename.grid(row=row_i, column=0, columnspan=2)
 
-        # 2 select image
+        # 2 image selection
         #   instruction label
         row_i += 1
         tk.Label(self, text='Sort terms by:') \
@@ -55,11 +108,11 @@ class RankingPage(tk.Frame):
         #   radio buttons
         self.image_labels = {
             'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
-            'Forward inference z score (consistency)': 'consistency_z',
-            'Forward inference with multiple comparisons correction (FDR=0.01)': 'pAgF_z_FDR_0.01',
+            'Forward inference z score (uniformity test)': 'uniformity-test_z',
+            'Forward inference with multiple comparisons correction (FDR=0.01)': 'uniformity-test_z_FDR_0.01',
             'Reverse inference with a uniform prior=0.5': 'pFgA_given_pF=0.50',
-            'Reverse inference z score (specificity)': 'specificity_z',
-            'Reverse inference with multiple comparisons correction (FDR=0.01)': 'pFgA_z_FDR_0.01'
+            'Reverse inference z score (association test)': 'association-test_z',
+            'Reverse inference with multiple comparisons correction (FDR=0.01)': 'association-test_z_FDR_0.01'
         }
         self.img_var = tk.StringVar(value='pFgA_given_pF=0.50')
         for text in self.image_labels.keys():
@@ -70,7 +123,7 @@ class RankingPage(tk.Frame):
                            value=self.image_labels[text]) \
                 .grid(row=row_i, column=0, columnspan=2, padx=30, sticky='w')
 
-        # 3 select procedure
+        # 3 procedure selection
         #   instruction label
         row_i += 1
         tk.Label(self, text='Procedure:') \
@@ -104,11 +157,11 @@ class RankingPage(tk.Frame):
 
         # 5 run button
         row_i += 1
-        self.btn_file = tk.Button(self,
-                                  command=self.start,
-                                  text=' Start Ranking ',
-                                  highlightthickness=0)
-        self.btn_file.grid(row=row_i, columnspan=2, padx=1, pady=20)
+        self.btn_start = tk.Button(self,
+                                   command=self.start,
+                                   text=' Start Ranking ',
+                                   highlightthickness=0)
+        self.btn_start.grid(row=row_i, columnspan=2, padx=1, pady=20)
 
     def get_filename_from_button(self):
         self.roi_filename = askopenfilename(initialdir='./',
@@ -221,7 +274,9 @@ class Global(Singleton):
             statusbar_text = status[:(self.text_width - 3)] + '...'
         else:
             statusbar_text = status.ljust(self.text_width)
-        text_color = '#ff0000' if is_error else '#d6d6d6'
+        text_color = '#ff0000' if is_error else '#e3e3e3'
+        if status == 'Ready':
+            text_color = '#cdf9f1'
         self.statusbar_label.config(text=statusbar_text, fg=text_color)
 
     def update_status(self, status='Ready', is_error=False, user_op=False):  # thread safe
@@ -259,12 +314,16 @@ class Global(Singleton):
 
     def load_pkl_database(self):
         """
-        Call this function after a Status has been initiated
-        :param data_file: (string) path to a pickled data file
+        Call this function after a Global instance has been initiated
         """
-        self.update_status('Loading database...')
-        self.dataset = DatasetPlus.load_default_database()
-        self.update_status()
+        try:
+            self.update_status('Loading database...')
+            self.dataset = DatasetPlus.load_default_database()
+            self.update_status()
+            self.root.event_generate('<<Database_loaded>>')  # trigger event
+        except Exception as e:
+            messagebox.showerror('Error: failed to load database', str(e))
+            self.update_status('Error: failed to load database. ' + str(e), is_error=True)
 
 
 class MainApp(tk.Frame):
@@ -276,8 +335,10 @@ class MainApp(tk.Frame):
         # parent.geometry('350x200')
 
         # notebook layout
-        self.notebook = ttk.Notebook(parent)
-        self.nb_pages = [RankingPage(self.notebook)]
+        self.notebook = ttk.Notebook(self)
+        self.nb_pages = [RankingPage(self.notebook),
+                         AnalysisPage(self.notebook),
+                         ComparisonPage(self.notebook)]
         for page in self.nb_pages:
             self.notebook.add(page, text=page.nb_label)
         self.notebook.pack(expand=1, fill='both')
@@ -296,6 +357,7 @@ def main():
         gui_started = True
         root.mainloop()
     except Exception as e:
+        print(e)
         if gui_started:
             Global().update_status(str(e), is_error=True)
         else:

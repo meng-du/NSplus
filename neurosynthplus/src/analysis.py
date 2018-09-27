@@ -1,4 +1,4 @@
-from metaplus import MetaAnalysisPlus
+from .metaplus import MetaAnalysisPlus
 # import concurrent.futures  # requires futures for python 2.x
 
 
@@ -22,7 +22,7 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     :return: an MetaAnalysisPlus object
     """
     if len(expression) == 0 and len(study_ids) == 0:
-        raise ValueError('No expression specified for analysis')
+        raise ValueError('No expression specified for src')
 
     # get studies
     try:
@@ -51,7 +51,7 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
 def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
     # TODO with extra lists of study IDs?
     """
-    Do a meta analysis for each term/expression in either the dataset or the extra
+    Do a meta src for each term/expression in either the dataset or the extra
     expression list
     :return: a list of MetaAnalysisPlus objects
     """

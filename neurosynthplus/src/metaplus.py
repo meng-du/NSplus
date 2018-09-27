@@ -44,7 +44,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     def __init__(self, info, *args, **kwargs):
         """
         :param info: a list of string tuples containing information regarding the
-                     meta analysis, e.g. [('expr', 'social'), ('num_studies', 1000)]
+                     meta src, e.g. [('expr', 'social'), ('num_studies', 1000)]
         """
         super(MetaAnalysisPlus, self).__init__(*args, **kwargs)
         self.info = NsInfo(info)
@@ -60,7 +60,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
 
         def get_shorthand(self):
             """
-            Return a short description of the meta analysis (to be used for file names)
+            Return a short description of the meta src (to be used for file names)
             """
             name = ''
             if 'expr' in self:

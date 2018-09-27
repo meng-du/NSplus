@@ -1,10 +1,8 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
-from analyze import analyze_all_terms
-from metaplus import NsInfo
-
-# TODO: requires numpy>1.7.0
+from .analysis import analyze_all_terms
+from .metaplus import NsInfo
 
 
 def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascending=False,
