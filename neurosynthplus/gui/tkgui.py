@@ -36,13 +36,14 @@ class AnalysisPage(tk.Frame):
         # instruction label
         row_i += 1
         tk.Label(self, text='Enter term or expression:') \
-            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+            .grid(row=row_i, padx=10, pady=(10, 2), sticky='w')
 
         # term/expression entry
         row_i += 1
-        self.ac_entry = AutocompleteEntry([], self, listboxLength=10, width=32,
-                                          matchesFunction=AnalysisPage.matches_term)
-        self.ac_entry.grid(row=row_i, column=0, padx=15, pady=(2, 10))
+        self.ac_entry = AutocompleteEntry([], self, listboxLength=8, width=55,
+                                          matchesFunction=AnalysisPage.matches_term,
+                                          setFunction=AnalysisPage.set_selection)
+        self.ac_entry.grid(row=row_i, padx=15, pady=(2, 10))
 
         def update_ac_list(event):  # do it after database loaded
             self.ac_entry.autocompleteList = Global().dataset.get_feature_names()
@@ -54,15 +55,29 @@ class AnalysisPage(tk.Frame):
                                    command=self.start,
                                    text=' Analyze ',
                                    highlightthickness=0)
-        self.btn_start.grid(row=row_i, padx=1, pady=20)
+        self.btn_start.grid(row=row_i, padx=1, pady=(130, 10))
 
     def start(self):
         pass
 
     @staticmethod
     def matches_term(field_value, ac_list_entry):
-        pattern = re.compile(re.escape(field_value) + '.*', re.IGNORECASE)
+        last_word = re.findall(r'[a-zA-Z0-9 ]+$', field_value)
+        if len(last_word) == 0:
+            return False
+        last_word = last_word[0].lstrip()
+        pattern = re.compile(re.escape(last_word) + '.*', re.IGNORECASE)
         return re.match(pattern, ac_list_entry)
+
+    @staticmethod
+    def set_selection(field_value, ac_list_entry):
+        last_word_index = [m.start() for m in re.finditer(r'[a-zA-Z0-9 ]+$', field_value)]
+        if len(last_word_index) == 0:
+            return field_value
+        last_word_index = last_word_index[0]
+        while field_value[last_word_index].isspace():  # strip whitespace
+            last_word_index += 1
+        return field_value[:last_word_index] + ac_list_entry
 
 
 class ComparisonPage(tk.Frame):

@@ -33,6 +33,15 @@ class AutocompleteEntry(tk.Entry):
 
             self.matchesFunction = matches
 
+        # Custom set function
+        if 'setFunction' in kwargs:
+            self.setFunction = kwargs['setFunction']
+            del kwargs['setFunction']
+        else:
+            def set_selection(field_value, ac_list_entry):
+                return ac_list_entry
+            self.setFunction = set_selection
+
         tk.Entry.__init__(self, *args, **kwargs)
         self.focus()
 
@@ -47,7 +56,7 @@ class AutocompleteEntry(tk.Entry):
         self.bind("<Right>", self.selection)
         self.bind("<Up>", self.move_up)
         self.bind("<Down>", self.move_down)
-        
+
         self.listboxUp = False
 
     def changed(self, name, index, mode):
@@ -59,11 +68,8 @@ class AutocompleteEntry(tk.Entry):
             words = self.comparison()
             if words:
                 if not self.listboxUp:
-                    self.listbox = tk.Listbox(width=self['width'], height=self.listboxLength)
-                    print(self.winfo_rootx(), self.winfo_rooty() - self.winfo_height())
-                    self.listbox.place(x=self.winfo_rootx(), y=self.winfo_rooty() - self.winfo_height())
-                    print(self.winfo_rootx(), self.winfo_rooty())
-                    print(self.listbox.winfo_rootx(), self.listbox.winfo_rooty())
+                    self.listbox = tk.Listbox(master=self.master, height=self.listboxLength)
+                    self.listbox.place(x=self.winfo_x() + 2, y=self.winfo_y() + self.winfo_height())
                     self.listboxUp = True
 
                 self.listbox.delete(0, tk.END)
@@ -76,7 +82,7 @@ class AutocompleteEntry(tk.Entry):
 
     def selection(self, event):
         if self.listboxUp:
-            self.var.set(self.listbox.get(tk.ACTIVE))
+            self.var.set(self.setFunction(self.var.get(), self.listbox.get(tk.ACTIVE)))
             self.listbox.destroy()
             self.listboxUp = False
             self.icursor(tk.END)

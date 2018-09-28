@@ -28,7 +28,7 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     try:
         study_set = dataset.get_studies(expression=expression)
     except AttributeError:
-        study_set = dataset.get_studies(features=expression)  # in case expression doesn't work
+        study_set = dataset.get_studies(features=expression)  # just in case expression doesn't work
     study_set = list(set(study_set) | set(study_ids))
     if len(study_set) == 0:
         raise ValueError('No study found for the given expression')
@@ -43,9 +43,6 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     if save_images:
         meta.save_images()
     return meta
-
-# def _analyze_expression(kwargs):
-#     return analyze_expression(**kwargs)
 
 
 def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
