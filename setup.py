@@ -2,10 +2,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='neurosynthPlus',
+    name='neurosynthplus',
     version='alpha',
-    description='Meta-src package based on NeuroSynth',
-    url='https://github.com/MetaD/neurosynthPlus',
+    description='Meta-analysis package based on NeuroSynth',
+    url='https://github.com/MetaD/neurosynthplus',
     license='MIT',
     author='Meng Du',
     author_email='mengdu@umich.edu',

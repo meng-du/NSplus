@@ -1,9 +1,10 @@
 from .metaplus import MetaAnalysisPlus
+import os
 # import concurrent.futures  # requires futures for python 2.x
 
 
 def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01,
-                       image_names=None, save_csv=True, save_images=True):
+                       image_names=None, save_csv=True, save_images=True, outdir='.'):
     """
     Analyze a single expression; output a set of .nii.gz image files and/or
     a csv file containing voxel values in images.
@@ -13,12 +14,13 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     :param dataset: a neurosynth Dataset instance to get studies from
     :param expression: a string expression to be analyzed
     :param study_ids: a list of study ids to be analyzed
-    :param prior: a float priors to be used when calculating conditional probabilities
-    :param fdr: the FDR threshold to use when correcting for multiple comparisons
+    :param prior: (float) prior to be used when calculating conditional probabilities
+    :param fdr: (float) the FDR threshold to use when correcting for multiple comparisons
     :param image_names: (list of strings) names of images to be included in the output files.
                         If None, all images will be included.
     :param save_csv: (boolean) whether results are saved as a csv file
     :param save_images: (boolean) whether results are saved as a csv file
+    :param outdir: (string) directory to save images/csv
     :return: an MetaAnalysisPlus object
     """
     if len(expression) == 0 and len(study_ids) == 0:
@@ -39,9 +41,10 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
 
     # output
     if save_csv:
-        meta.write_images_to_csv(meta.info.name + '_output.csv', image_names=image_names)
+        meta.write_images_to_csv(os.path.join(outdir, meta.info.name + '_output.csv'),
+                                 image_names=image_names)
     if save_images:
-        meta.save_images()
+        meta.save_images(image_names=image_names, outdir=outdir)
     return meta
 
 

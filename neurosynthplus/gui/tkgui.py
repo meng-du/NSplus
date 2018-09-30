@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from ..src.datasetplus import DatasetPlus
-from ..src import rank
+from ..src import rank_terms
 from .autocomplete import AutocompleteEntry
 import os
 import re
@@ -55,10 +55,15 @@ class AnalysisPage(tk.Frame):
                                    command=self.start,
                                    text=' Analyze ',
                                    highlightthickness=0)
-        self.btn_start.grid(row=row_i, padx=1, pady=(130, 10))
+        self.btn_start.grid(row=row_i, padx=10, pady=(130, 10))
 
     def start(self):
-        pass
+        if not os.path.isdir(Global().outdir):
+            messagebox.showerror('Error', 'Please select a valid output directory')
+            return
+        expression = self.ac_entry.get()
+
+        # TODO
 
     @staticmethod
     def matches_term(field_value, ac_list_entry):
@@ -85,7 +90,6 @@ class ComparisonPage(tk.Frame):
         super(ComparisonPage, self).__init__(parent, **kwargs)
         self.parent = parent
         self.nb_label = 'Comparison'
-        self.outdir = ''
         row_i = -1
 
 
@@ -95,7 +99,6 @@ class RankingPage(tk.Frame):
         self.parent = parent
         self.nb_label = 'Ranking'
         self.roi_filename = ''
-        self.outdir = ''
         row_i = -1
 
         # page contents
@@ -109,11 +112,12 @@ class RankingPage(tk.Frame):
                   command=self.get_filename_from_button,
                   text=' Browse ',
                   highlightthickness=0) \
-            .grid(row=row_i, column=0, padx=(30, 0), pady=(8, 0))
+            .grid(row=row_i, column=0, padx=(160, 0), pady=(8, 0), sticky='w')
         #   file name label
         row_i += 1
-        self.label_filename = tk.Label(self, text='', font=('Menlo', 12), fg='#424242', width=60)
-        self.label_filename.grid(row=row_i, column=0, columnspan=2)
+        self.label_filename = tk.Label(self, text='', font=('Menlo', 12),
+                                       fg='#424242', width=60, anchor='w')
+        self.label_filename.grid(row=row_i, column=0, columnspan=2, padx=5)
 
         # 2 image selection
         #   instruction label
@@ -154,23 +158,7 @@ class RankingPage(tk.Frame):
                            value=bool(i)) \
                 .grid(row=row_i, column=0, columnspan=2, padx=30, sticky='w')
 
-        # 4 output directory
-        row_i += 1
-        #   instruction label
-        tk.Label(self, text='Output directory:') \
-            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
-        #   browse button
-        tk.Button(self,
-                  command=self.get_outdir_from_button,
-                  text=' Browse ',
-                  highlightthickness=0) \
-            .grid(row=row_i, column=0, pady=(8, 0))
-        #   directory label
-        row_i += 1
-        self.label_outdir = tk.Label(self, text='', font=('Menlo', 12), fg='#424242', width=70)
-        self.label_outdir.grid(row=row_i, column=0, columnspan=2)
-
-        # 5 run button
+        # 4 run button
         row_i += 1
         self.btn_start = tk.Button(self,
                                    command=self.start,
@@ -186,15 +174,11 @@ class RankingPage(tk.Frame):
                                                        ('all files', '*.*')))
         self.label_filename.config(text=self.roi_filename.split('/')[-1])
 
-    def get_outdir_from_button(self):
-        self.outdir = askdirectory(initialdir='./')
-        self.label_outdir.config(text=self.outdir)
-
     def start(self):
         """
         Load ROI and then call the rank method
         """
-        if not os.path.isdir(self.outdir):
+        if not os.path.isdir(Global().outdir):
             messagebox.showerror('Error', 'Please select a valid output directory')
             return
         meta_img = self.img_var.get()
@@ -208,20 +192,20 @@ class RankingPage(tk.Frame):
             if not continuing:
                 return
             outfile_name = 'whole_brain_ranked_by_%s' % meta_img
-            outfile = os.path.join(self.outdir, outfile_name + '.csv')
+            outfile = os.path.join(Global().outdir, outfile_name + '.csv')
         else:
             _, roi_name = os.path.split(self.roi_filename)
             outfile_name = '%s_ranked_by_%s' % (roi_name.split('.')[0], meta_img)
-            outfile = os.path.join(self.outdir, outfile_name + '.csv')
+            outfile = os.path.join(Global().outdir, outfile_name + '.csv')
 
         if os.path.isfile(outfile):
             outfile_name += '_' + str(datetime.now()).split('.')[0] \
                 .replace('-', '').replace(':', '').replace(' ', '_')
-            outfile = os.path.join(self.outdir, outfile_name + '.csv')
+            outfile = os.path.join(Global().outdir, outfile_name + '.csv')
 
         # start running
         if len(self.roi_filename) == 0:
-            self.rank(meta_img, procedure, outfile)
+            self.run_rank(meta_img, procedure, outfile)
         else:
             # load ROI mask to database
             if not Global().update_status('Loading ROI...', user_op=True):
@@ -229,22 +213,22 @@ class RankingPage(tk.Frame):
             Thread(target=load_roi, args=[self.roi_filename]).start()
             # call rank() later
             Global().root.bind('<<Done_roi>>',
-                               lambda e: self.rank(meta_img, procedure, outfile))
+                               lambda e: self.run_rank(meta_img, procedure, outfile))
 
-    def rank(self, selected_meta, selected_proc, csv_name):
+    def run_rank(self, selected_meta, selected_proc, csv_name):
         Global().root.unbind('<<Done_roi>>')
         if not Global().update_status('Analyzing terms...',
                                       user_op=(len(self.roi_filename) == 0)):
             return
 
         def _rank():
-            rank.rank(Global().dataset, rank_by=selected_meta, rank_first=selected_proc,
-                      csv_name=csv_name)  # ranking
+            rank_terms(Global().dataset, rank_by=selected_meta, rank_first=selected_proc,
+                       csv_name=csv_name)  # ranking
             Global().root.event_generate('<<Done_ranking>>')  # trigger event
 
         Thread(target=_rank).start()
-        Global().root.bind('<<Done_ranking>>', lambda e:
-            Global().update_status('Done. A file is saved to ' + csv_name))
+        Global().root.bind('<<Done_ranking>>',
+                           lambda e: Global().update_status('Done. A file is saved to ' + csv_name))
 
 
 class _Singleton(type):
@@ -265,19 +249,21 @@ class Global(Singleton):
     """
     A class that maintains the NeuroSynth dataset instance and the current app status
     """
-    def __init__(self, root, **kwargs):
+    def __init__(self, root, app, **kwargs):
         self.root = root
         self.status = 'Ready'
         self.has_error = False
         self.history = []
         self.dataset = None
         self.status_mutex = Lock()
+        self.outdir = os.path.expanduser('~')
+        app.label_outdir.config(text=self.outdir)
 
         # GUI
         self.statusbar = tk.Frame(root, **kwargs)
         self.text_width = 80
         self.statusbar_label = tk.Label(root, text=self.status.ljust(self.text_width),
-                                        bd=1, relief=tk.SUNKEN, anchor='w',  padx=3,
+                                        bd=1, relief=tk.SUNKEN, anchor='w', padx=3,
                                         font=('Menlo', 12), bg='#6d6d6d', fg='#d6d6d6')
         self.statusbar_label.pack(side=tk.BOTTOM, fill=tk.X)
 
@@ -291,7 +277,7 @@ class Global(Singleton):
             statusbar_text = status.ljust(self.text_width)
         text_color = '#ff0000' if is_error else '#e3e3e3'
         if status == 'Ready':
-            text_color = '#cdf9f1'
+            text_color = '#90ee90'
         self.statusbar_label.config(text=statusbar_text, fg=text_color)
 
     def update_status(self, status='Ready', is_error=False, user_op=False):  # thread safe
@@ -356,16 +342,35 @@ class MainApp(tk.Frame):
                          ComparisonPage(self.notebook)]
         for page in self.nb_pages:
             self.notebook.add(page, text=page.nb_label)
-        self.notebook.pack(expand=1, fill='both')
+        self.notebook.grid(row=0)
+
+        # output directory
+        #   instruction label
+        tk.Label(self, text='Output directory:') \
+            .grid(row=1, column=0, padx=10, pady=(10, 2), sticky='w')
+        #   browse button
+        tk.Button(self,
+                  command=self.get_outdir_from_button,
+                  text=' Browse ',
+                  highlightthickness=0) \
+            .grid(row=1, column=0, padx=(140, 0), pady=(8, 0), sticky='w')
+        #   directory label
+        self.label_outdir = tk.Label(self, text='', font=('Menlo', 12),
+                                     fg='#424242', width=80, anchor='w')
+        self.label_outdir.grid(row=2, column=0, padx=12, pady=(0, 10))
+
+    def get_outdir_from_button(self):
+        Global().outdir = askdirectory(initialdir=Global().outdir)
+        self.label_outdir.config(text=Global().outdir)
 
 
-def main():
+def main_gui():
     gui_started = False
     try:
         root = tk.Tk()
         main_app = MainApp(root)
         main_app.pack(side='top', fill='both')
-        Global(root)
+        Global(root, main_app)
         # load NeuroSynth database in another thread
         Thread(target=Global.load_pkl_database, args=[Global()]).start()
         # start GUI
@@ -380,4 +385,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_gui()

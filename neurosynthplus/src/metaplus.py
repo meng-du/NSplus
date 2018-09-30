@@ -2,15 +2,16 @@ from collections import OrderedDict
 from string import punctuation
 import pandas as pd
 import neurosynth as ns
+import os
 
 
 class NsInfo(OrderedDict):
     """
     Handle information strings (e.g. NeuroSynth expressions and image names)
     """
-    img_names = ['pA', 'pAgF', 'pFgA', 'consistency_z', 'specificity_z']
+    img_names = ['pA', 'pAgF', 'pFgA', 'uniformity-test_z', 'association-test_z']
     prior_img_names = ['pAgF_given_pF=', 'pFgA_given_pF=']
-    fdr_img_names = ['pAgF_z_FDR_', 'pFgA_z_FDR_']
+    fdr_img_names = ['uniformity-test_z_FDR_', 'association-test_z_FDR_']
 
     # TODO convert to log file (with output file names etc)
     def __init__(self, *args, **kwargs):
@@ -47,9 +48,10 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                      meta src, e.g. [('expr', 'social'), ('num_studies', 1000)]
         """
         super(MetaAnalysisPlus, self).__init__(*args, **kwargs)
-        self.info = NsInfo(info)
+        self.info = MetaAnalysisPlus.Info(info)
 
     # Information #
+
     class Info(NsInfo):
         def __init__(self, *args, **kwargs):
             """
@@ -92,7 +94,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         df = self._get_images_with_info(image_names)
         df.to_csv(filename, sep=delimiter, header=False)
 
-    def save_images(self, prefix=None, postfix='', image_names=None):
+    def save_images(self, prefix=None, postfix='', image_names=None, outdir='.'):
         if self.images is None:  # TODO unnecessary?
             raise RuntimeError('Images not initialized')
 
@@ -107,6 +109,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             filename += img_name + postfix + '.nii.gz'
             # save image
             ns.imageutils.save_img(self.images[img_name],
-                                   filename=filename, masker=self.dataset.masker)
+                                   filename=os.path.join(outdir, filename),
+                                   masker=self.dataset.masker)
 
         # TODO: print/save self.info & corresponding file names
