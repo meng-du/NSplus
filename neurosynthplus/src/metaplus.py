@@ -83,7 +83,9 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         if self.images is None:  # TODO unnecessary?
             raise RuntimeError('Images not initialized')
 
-        images = list(set(image_names) & self.images.keys())  # find intersection
+        images = self.images.keys()
+        if image_names is not None:
+            images = list(set(image_names) & images)  # find intersection
         info_list = [list(self.info.values()) + [img_name] for img_name in images]
         info_df = pd.DataFrame(info_list, index=list(self.info.keys()) + ['image'])
         image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images])
@@ -98,7 +100,9 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         if self.images is None:  # TODO unnecessary?
             raise RuntimeError('Images not initialized')
 
-        images = list(set(image_names) & self.images.keys())  # find intersection
+        images = self.images.keys()
+        if image_names is not None:
+            images = list(set(image_names) & images)  # find intersection
         for img_name in images:
             # file name
             filename = prefix if prefix is not None else self.info.name

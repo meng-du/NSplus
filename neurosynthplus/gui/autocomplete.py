@@ -52,8 +52,8 @@ class AutocompleteEntry(tk.Entry):
             self.var = self["textvariable"] = tk.StringVar()
 
         self.var.trace('w', self.changed)
-        self.bind("<Return>", self.selection)
-        self.bind("<Right>", self.selection)
+        self.bind("<Return>", lambda e: self.selection('key'))
+        self.bind("<Right>", lambda e: self.selection('key'))
         self.bind("<Up>", self.move_up)
         self.bind("<Down>", self.move_down)
 
@@ -75,17 +75,27 @@ class AutocompleteEntry(tk.Entry):
                 self.listbox.delete(0, tk.END)
                 for w in words:
                     self.listbox.insert(tk.END, w)
+
+                self.listbox.bind("<<ListboxSelect>>", lambda e: self.selection('mouse'))
             else:
                 if self.listboxUp:
                     self.listbox.destroy()
                     self.listboxUp = False
 
-    def selection(self, event):
-        if self.listboxUp:
-            self.var.set(self.setFunction(self.var.get(), self.listbox.get(tk.ACTIVE)))
-            self.listbox.destroy()
-            self.listboxUp = False
-            self.icursor(tk.END)
+    def selection(self, method):
+        if not self.listboxUp:
+            return
+        if method == 'mouse':
+            selected = self.listbox.curselection()
+            selected = self.listbox.get(selected[0])
+        elif method == 'key':
+            selected = self.listbox.get(tk.ACTIVE)
+        else:
+            raise RuntimeError('Invalid selection method')
+        self.var.set(self.setFunction(self.var.get(), selected))
+        self.listbox.destroy()
+        self.listboxUp = False
+        self.icursor(tk.END)
 
     def move_up(self, event):
         if self.listboxUp:

@@ -1,6 +1,6 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 from ..src.datasetplus import DatasetPlus
-from ..src import rank_terms
+from ..src import rank_terms, analyze_expression
 from .autocomplete import AutocompleteEntry
 import os
 import re
@@ -24,12 +24,16 @@ def load_roi(roi_filename):
     Global().root.event_generate('<<Done_roi>>')  # trigger event
 
 
+def show_error(exception):
+    Global().update_status('Error: ' + str(exception), is_error=True)
+    raise exception
+
+
 class AnalysisPage(tk.Frame):
     def __init__(self, parent, **kwargs):
         super(AnalysisPage, self).__init__(parent, **kwargs)
         self.parent = parent
         self.nb_label = 'Analysis'
-        self.outdir = ''
         row_i = -1
 
         # page contents
@@ -63,7 +67,19 @@ class AnalysisPage(tk.Frame):
             return
         expression = self.ac_entry.get()
 
-        # TODO
+        if not Global().update_status('Analyzing "%s"...' % expression, user_op=True):
+            return
+
+        def _analyze():
+            try:
+                analyze_expression(Global().dataset, expression, outdir=Global().outdir)
+                Global().root.event_generate('<<Done_analysis>>')  # trigger event
+            except Exception as e:
+                show_error(e)
+
+        Thread(target=_analyze).start()
+        Global().root.bind('<<Done_analysis>>',
+                           lambda e: Global().update_status('Done. Files are saved to ' + Global().outdir))
 
     @staticmethod
     def matches_term(field_value, ac_list_entry):
@@ -222,9 +238,12 @@ class RankingPage(tk.Frame):
             return
 
         def _rank():
-            rank_terms(Global().dataset, rank_by=selected_meta, rank_first=selected_proc,
-                       csv_name=csv_name)  # ranking
-            Global().root.event_generate('<<Done_ranking>>')  # trigger event
+            try:
+                rank_terms(Global().dataset, rank_by=selected_meta, rank_first=selected_proc,
+                           csv_name=csv_name)  # ranking
+                Global().root.event_generate('<<Done_ranking>>')  # trigger event
+            except Exception as e:
+                show_error(e)
 
         Thread(target=_rank).start()
         Global().root.bind('<<Done_ranking>>',
@@ -377,9 +396,8 @@ def main_gui():
         gui_started = True
         root.mainloop()
     except Exception as e:
-        print(e)
         if gui_started:
-            Global().update_status(str(e), is_error=True)
+            show_error(e)
         else:
             messagebox.showerror('Error', str(e))
 
