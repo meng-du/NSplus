@@ -45,7 +45,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     def __init__(self, info, *args, **kwargs):
         """
         :param info: a list of string tuples containing information regarding the
-                     meta src, e.g. [('expr', 'social'), ('num_studies', 1000)]
+                     meta src, e.g. [('expression', 'social'), ('num_studies', 1000)]
         """
         super(MetaAnalysisPlus, self).__init__(*args, **kwargs)
         self.info = MetaAnalysisPlus.Info(info)
@@ -55,7 +55,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     class Info(NsInfo):
         def __init__(self, *args, **kwargs):
             """
-            Initialize with 'expr', and 'contrary_expr' if comparing to another expression
+            Initialize with 'expression', and 'contrary_expr' if comparing to another expression
             """
             super(NsInfo, self).__init__(*args, **kwargs)
             self.name = self.get_shorthand()
@@ -65,8 +65,8 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             Return a short description of the meta src (to be used for file names)
             """
             name = ''
-            if 'expr' in self:
-                name = NsInfo.get_shorthand_expr(self['expr'])
+            if 'expression' in self:
+                name = NsInfo.get_shorthand_expr(self['expression'])
             if 'contrary_expr' in self:
                 name += '_vs_' + NsInfo.get_shorthand_expr(self['contrary_expr'])
             return name
@@ -87,9 +87,8 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         if image_names is not None:
             images = list(set(image_names) & images)  # find intersection
         info_list = [list(self.info.values()) + [img_name] for img_name in images]
-        info_df = pd.DataFrame(info_list, index=list(self.info.keys()) + ['image'])
-        image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images])
-        image_df.transpose()
+        info_df = pd.DataFrame(info_list, columns=list(self.info.keys()) + ['image']).T
+        image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images]).T
         return pd.concat([info_df, image_df])
 
     def write_images_to_csv(self, filename, delimiter=',', image_names=None):

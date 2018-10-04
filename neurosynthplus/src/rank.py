@@ -10,7 +10,7 @@ def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascend
     """
     :return: a pandas dataframe of ordered terms and corresponding voxel values
     """
-    matrix_as_list = [[metas[i].info['expr'], metas[i].info['num_studies']] +
+    matrix_as_list = [[metas[i].info['expression'], metas[i].info['num_studies']] +
                       [mean for mean in means[i]]
                       for i in range(len(metas))]
     df = pd.DataFrame(matrix_as_list, columns=['term', '# studies'] + img_names)
