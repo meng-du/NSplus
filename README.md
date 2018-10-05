@@ -1,2 +1,2 @@
 # NeuroSynthPlus
-Work in progress...
+A NeuroSynth-based tool with more functions and GUI
