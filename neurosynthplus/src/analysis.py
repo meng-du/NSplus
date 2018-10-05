@@ -4,7 +4,7 @@ import os
 
 
 def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01,
-                       image_names=None, save_csv=True, save_images=True, outdir='.'):
+                       image_names=None, csv_postfix='output', save_images=True, outdir='.'):
     """
     Analyze a single expression; output a set of .nii.gz image files and/or
     a csv file containing voxel values in images.
@@ -18,7 +18,7 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     :param fdr: (float) the FDR threshold to use when correcting for multiple comparisons
     :param image_names: (list of strings) names of images to be included in the output files.
                         If None, all images will be included.
-    :param save_csv: (boolean) whether results are saved as a csv file
+    :param csv_postfix: (string) postfix for output file name, or None if not saving a file
     :param save_images: (boolean) whether results are saved as a csv file
     :param outdir: (string) directory to save images/csv
     :return: an MetaAnalysisPlus object
@@ -40,8 +40,8 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     meta = MetaAnalysisPlus(info, dataset=dataset, ids=study_set, prior=prior, q=fdr)
 
     # output
-    if save_csv:
-        meta.write_images_to_csv(os.path.join(outdir, meta.info.name + '_output.csv'),
+    if csv_postfix is not None:
+        meta.write_images_to_csv(os.path.join(outdir, '%s_%s.csv' % (meta.info.name, csv_postfix)),
                                  image_names=image_names)
     if save_images:
         meta.save_images(image_names=image_names, outdir=outdir)
@@ -70,5 +70,5 @@ def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
     for i, expr in enumerate(all_exprs):
         print('Analyzing "%s" (%d/%d)' % (expr, i + 1, len(all_exprs)))
         metas.append(analyze_expression(dataset, expr, prior=prior, fdr=fdr,
-                                        save_csv=False, save_images=False))
+                                        csv_postfix=None, save_images=False))
     return metas

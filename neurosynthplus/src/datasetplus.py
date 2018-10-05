@@ -9,7 +9,11 @@ class DatasetPlus(ns.Dataset):
     def __init__(self, *args, **kwargs):
         super(DatasetPlus, self).__init__(*args, **kwargs)
 
-    def mask(self, mask_file):
+    def mask(self, mask_file=None):
+        if mask_file is None:  # use neurosynth default mask
+            mask_file = os.path.join(os.path.dirname(os.path.abspath(ns.__file__)),
+                                     'resources',
+                                     'MNI152_T1_2mm_brain.nii.gz')
         self.masker = ns.mask.Masker(mask_file)
         self.create_image_table()
 
