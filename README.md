@@ -1,2 +1,2 @@
 # NeuroSynthPlus
-A NeuroSynth-based tool with more functions and GUI
+A NeuroSynth-based tool with additional functions and GUI
