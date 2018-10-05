@@ -1,7 +1,8 @@
 from __future__ import absolute_import, print_function
 from ..src.datasetplus import DatasetPlus
 import os
-from threading import Lock
+from datetime import datetime
+from threading import Lock, Thread
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
@@ -33,6 +34,7 @@ class Global(Singleton):
     """
     def __init__(self, root=None, app=None, **kwargs):
         self.root = root
+        self.app = app
         self.status = 'Ready'
         self.is_ready = False
         self.has_error = False
@@ -40,6 +42,10 @@ class Global(Singleton):
         self.dataset = None
         self.status_mutex = Lock()
         self.roi_filename = None
+        self.default_roi = 'MNI152_T1_2mm_brain.nii.gz'
+
+        # default roi label
+        app.label_roi_file.config(text='(default) ' + self.default_roi)
 
         # output directory
         self.outdir = os.path.join(os.path.expanduser('~'), 'NeuroSynthPlus')
@@ -47,7 +53,7 @@ class Global(Singleton):
             os.mkdir(self.outdir)
         app.label_outdir.config(text=self.outdir)
 
-        # GUI
+        # status bar
         self.statusbar = tk.Frame(root, **kwargs)
         self.text_width = 80
         self.statusbar_label = tk.Label(root, text=self.status.ljust(self.text_width),
@@ -131,3 +137,36 @@ class Global(Singleton):
             messagebox.showerror('Error: failed to load database', str(e))
             self.update_status(status='Error: failed to load database. ' + str(e),
                                is_ready=True, is_error=True)
+
+    def load_roi(self):
+        Thread(target=self._load_roi, args=[self.roi_filename]).start()
+
+        def after_loading_roi():
+            roi = self.roi_filename or self.default_roi
+            self.update_status(status='Done. ROI %s loaded.' % roi, is_ready=True)
+            self.root.unbind('<<Done_loading_roi>>')
+
+        self.root.bind('<<Done_loading_roi>>', after_loading_roi)
+
+    def get_roi_name(self):
+        if self.roi_filename is None:
+            return self.default_roi.rsplit('.nii', 1)[0]
+        filename = os.path.split(self.roi_filename)[1]
+        return filename.rsplit('.nii', 1)[0]  # get rid of extension
+
+    def _load_roi(self, roi_filename):
+        if not self.update_status(status='Loading ROI...', is_ready=False, user_op=True):
+            return
+        self.update_status('Loading ROI...', is_ready=False)
+        self.dataset.mask(roi_filename)
+        self.update_status(is_ready=True)
+        self.root.event_generate('<<Done_loading_roi>>')  # trigger event
+
+    def use_default_roi(self):
+        if self.roi_filename is not None:
+            self.roi_filename = None
+            self.app.label_roi_file.config(text='(default) ' + self.default_roi)
+            self.load_roi()
+
+    def get_current_datetime(self):
+        return str(datetime.now()).split('.')[0]

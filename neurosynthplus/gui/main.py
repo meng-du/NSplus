@@ -44,7 +44,6 @@ class MainApp(tk.Frame):
         self.notebook.grid(row=row_i)
 
         # roi mask
-        self.defult_roi = '(default) MNI152_T1_2mm_brain.nii.gz'
         #   instruction label
         row_i += 1
         tk.Label(self, text='Load an ROI mask:') \
@@ -56,15 +55,15 @@ class MainApp(tk.Frame):
                   highlightthickness=0) \
             .grid(row=row_i, column=0, padx=(160, 0), pady=(8, 0), sticky='w')
         tk.Button(self,
-                  command=self.use_default_roi,
+                  command=lambda: Global().use_default_roi(),
                   text=' Use default (whole brain) ',
                   highlightthickness=0) \
             .grid(row=row_i, column=0, padx=(250, 0), pady=(8, 0), sticky='w')
         #   file name label
         row_i += 1
-        self.label_filename = tk.Label(self, text=self.defult_roi, font=('Menlo', 12),
+        self.label_roi_file = tk.Label(self, text='', font=('Menlo', 12),
                                        fg='#424242', width=80, anchor='w')
-        self.label_filename.grid(row=row_i, column=0, padx=15)
+        self.label_roi_file.grid(row=row_i, column=0, padx=15)
 
         # output directory
         #   instruction label
@@ -98,34 +97,11 @@ class MainApp(tk.Frame):
                                                   ('all files', '*.*')))
         if len(roi_filename) > 0:
             Global().roi_filename = roi_filename
-            self.label_filename.config(text=os.path.split(Global().roi_filename)[1])
+            self.label_roi_file.config(text=os.path.split(Global().roi_filename)[1])
         else:
             return
 
-        self.load_roi()
-
-    def load_roi(self):
-        Thread(target=self._load_roi, args=[Global().roi_filename]).start()
-
-        def after_loading_roi():
-            roi = Global().roi_filename or self.defult_roi.split()[1]
-            Global().update_status(status='Done. ROI %s loaded.' % roi, is_ready=True)
-            Global().root.unbind('<<Done_loading_roi>>')
-
-        Global().root.bind('<<Done_loading_roi>>', after_loading_roi)
-
-    def _load_roi(self, roi_filename):
-        if not Global().update_status(status='Loading ROI...', is_ready=False, user_op=True):
-            return
-        Global().update_status('Loading ROI...', is_ready=False)
-        Global().dataset.mask(roi_filename)
-        Global().update_status(is_ready=True)
-        Global().root.event_generate('<<Done_loading_roi>>')  # trigger event
-
-    def use_default_roi(self):
-        Global().roi_filename = None
-        self.label_filename.config(text=self.defult_roi)
-        self.load_roi()
+        Global().load_roi()
 
 
 def main_gui():
@@ -145,6 +121,7 @@ def main_gui():
             Global().show_error(e)
         else:
             messagebox.showerror('Error', str(e))
+            raise
 
 
 if __name__ == '__main__':

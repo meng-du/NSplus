@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 from ..src.analysis import analyze_expression
+from ..src.metaplus import NsInfo
 from .autocomplete import AutocompleteEntry
 from .globals import Global
 import re
@@ -56,14 +57,27 @@ class AnalysisPage(tk.Frame):
 
         def _analyze():
             try:
+                # output directory
+                folder_name = NsInfo.get_shorthand_expr(expression)
+                if Global().roi_filename is not None:
+                    folder_name += '_' + Global().get_roi_name()
+                outdir = os.path.join(Global().outdir, folder_name)
+                if os.path.isdir(outdir):
+                    outdir = os.path.join(Global().outdir,
+                                          folder_name + ' ' + Global().get_current_datetime())
+                os.mkdir(outdir)
+                # output csv filename
                 if Global().roi_filename is None:
                     postfix = 'output'
                 else:
                     roi_name = os.path.split(Global().roi_filename)[1]
                     postfix = 'masked_by_%s' % roi_name.split('.')[0]
+                # run
                 analyze_expression(Global().dataset, expression,
+                                   extra_info=[('ROI mask',
+                                                Global().roi_filename or Global().default_roi)],
                                    csv_postfix=postfix,
-                                   outdir=Global().outdir)
+                                   outdir=outdir)
                 Global().root.event_generate('<<Done_analysis>>')  # trigger event
             except Exception as e:
                 Global().show_error(e)

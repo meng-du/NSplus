@@ -3,7 +3,7 @@ import os
 # import concurrent.futures  # requires futures for python 2.x
 
 
-def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01,
+def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prior=0.5, fdr=0.01,
                        image_names=None, csv_postfix='output', save_images=True, outdir='.'):
     """
     Analyze a single expression; output a set of .nii.gz image files and/or
@@ -14,6 +14,8 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     :param dataset: a neurosynth Dataset instance to get studies from
     :param expression: a string expression to be analyzed
     :param study_ids: a list of study ids to be analyzed
+    :param extra_info: (list of (key, value) pairs) extra information to be included in the
+                       csv output file
     :param prior: (float) prior to be used when calculating conditional probabilities
     :param fdr: (float) the FDR threshold to use when correcting for multiple comparisons
     :param image_names: (list of strings) names of images to be included in the output files.
@@ -24,7 +26,9 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     :return: an MetaAnalysisPlus object
     """
     if len(expression) == 0 and len(study_ids) == 0:
-        raise ValueError('No expression specified for src')
+        raise ValueError('Nothing specified for analysis')
+    if not os.path.isdir(outdir):
+        raise NotADirectoryError('Invalid output directory')
 
     # get studies
     try:
@@ -36,7 +40,7 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
         raise ValueError('No study found for the given expression')
 
     # analyze
-    info = [('expression', expression), ('num_studies', len(study_set))]
+    info = [('expression', expression), ('num_studies', len(study_set))] + extra_info
     meta = MetaAnalysisPlus(info, dataset=dataset, ids=study_set, prior=prior, q=fdr)
 
     # output

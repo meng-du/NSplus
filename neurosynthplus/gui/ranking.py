@@ -2,7 +2,6 @@ from __future__ import absolute_import, print_function
 from ..src.ranking import rank_terms
 from .globals import Global
 import os
-from datetime import datetime
 from threading import Thread
 from sys import version_info
 if version_info.major == 2:
@@ -88,12 +87,11 @@ class RankingPage(tk.Frame):
             outfile_name = 'whole_brain_ranked_by_%s' % meta_img
             outfile = os.path.join(Global().outdir, outfile_name + '.csv')
         else:
-            roi_name = os.path.split(Global().roi_filename)[1]
-            outfile_name = 'masked_by_%s_ranked_by_%s' % (roi_name.split('.')[0], meta_img)
+            outfile_name = 'masked_by_%s_ranked_by_%s' % (Global().get_roi_name(), meta_img)
             outfile = os.path.join(Global().outdir, outfile_name + '.csv')
 
         if os.path.isfile(outfile):
-            outfile_name += '_' + str(datetime.now()).split('.')[0] \
+            outfile_name += '_' + Global().get_current_datetime() \
                 .replace('-', '').replace(':', '').replace(' ', '_')
             outfile = os.path.join(Global().outdir, outfile_name + '.csv')
 

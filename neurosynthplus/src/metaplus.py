@@ -13,7 +13,6 @@ class NsInfo(OrderedDict):
     prior_img_names = ['pAgF_given_pF=', 'pFgA_given_pF=']
     fdr_img_names = ['uniformity-test_z_FDR_', 'association-test_z_FDR_']
 
-    # TODO convert to log file (with output file names etc)
     def __init__(self, *args, **kwargs):
         super(NsInfo, self).__init__(*args, **kwargs)
 
@@ -86,8 +85,8 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         images = self.images.keys()
         if image_names is not None:
             images = list(set(image_names) & images)  # find intersection
-        info_list = [list(self.info.values()) + [img_name] for img_name in images]
-        info_df = pd.DataFrame(info_list, columns=list(self.info.keys()) + ['image']).T
+        info_df = pd.DataFrame(list(self.info.values()), index=list(self.info.keys()))
+        info_df = info_df.append(pd.DataFrame([images], index=['image']))
         image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images]).T
         return pd.concat([info_df, image_df])
 
