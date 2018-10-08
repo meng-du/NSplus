@@ -43,15 +43,12 @@ class Global(Singleton):
         self.status_mutex = Lock()
         self.roi_filename = None
         self.default_roi = 'MNI152_T1_2mm_brain.nii.gz'
-
-        # default roi label
-        app.label_roi_file.config(text='(default) ' + self.default_roi)
+        self.roi_text = '(default) ' + self.default_roi  # for the roi label in settings
 
         # output directory
         self.outdir = os.path.join(os.path.expanduser('~'), 'NeuroSynthPlus')
         if not os.path.isdir(self.outdir):
             os.mkdir(self.outdir)
-        app.label_outdir.config(text=self.outdir)
 
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
@@ -162,10 +159,11 @@ class Global(Singleton):
         self.update_status(is_ready=True)
         self.root.event_generate('<<Done_loading_roi>>')  # trigger event
 
-    def use_default_roi(self):
+    def use_default_roi(self, roi_label=None):
         if self.roi_filename is not None:
             self.roi_filename = None
-            self.app.label_roi_file.config(text='(default) ' + self.default_roi)
+            if roi_label is not None:
+                roi_label.config(text='(default) ' + self.default_roi)
             self.load_roi()
 
     def get_current_datetime(self):

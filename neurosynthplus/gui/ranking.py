@@ -59,6 +59,11 @@ class RankingPage(tk.Frame):
                            value=bool(i)) \
                 .grid(row=row_i, column=0, columnspan=2, padx=30, sticky='w')
 
+        # settings
+        row_i += 1
+        self.btn_settings = parent.master.create_settings_button(self)
+        self.btn_settings.grid(row=row_i, columnspan=2, padx=1, pady=20)
+
         # run button
         row_i += 1
         self.btn_start = tk.Button(self,
