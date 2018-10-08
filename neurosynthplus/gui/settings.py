@@ -16,7 +16,7 @@ class SettingsPage(tk.Frame):
     def __init__(self, parent, **kwargs):
         super(SettingsPage, self).__init__(parent, **kwargs)
         self.parent = parent
-        self.nb_label = 'Settings'
+        self.nb_label = '< Settings >'
         row_i = -1
 
         # roi mask
@@ -72,7 +72,7 @@ class SettingsPage(tk.Frame):
     def load_roi_from_button(self):
         # get filename
         roi_filename = askopenfilename(initialdir='./',
-                                       title='Select mask file',
+                                       title='Select ROI file',
                                        filetypes=(('NIFTI files', '*.nii'),
                                                   ('NIFTI files', '*.nii.gz'),
                                                   ('all files', '*.*')))

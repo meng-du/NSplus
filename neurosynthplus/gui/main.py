@@ -42,20 +42,14 @@ class MainApp(tk.Frame):
         # notebook layout
         row_i = 0
         self.notebook = ttk.Notebook(self)
-        self.nb_pages = [RankingPage(self.notebook),
+        self.settings_page = SettingsPage(self.notebook)
+        self.nb_pages = [self.settings_page,
+                         RankingPage(self.notebook),
                          AnalysisPage(self.notebook),
-                         ComparisonPage(self.notebook),
-                         SettingsPage(self.notebook)]
-        self.settings_page_index = len(self.nb_pages) - 1
+                         ComparisonPage(self.notebook)]
         for page in self.nb_pages:
             self.notebook.add(page, text=page.nb_label)
         self.notebook.grid(row=row_i)
-
-    def create_settings_button(self, btn_parent):
-        return tk.Button(btn_parent,
-                         command=lambda: self.notebook.select(self.settings_page_index),
-                         text=' Settings ',
-                         highlightthickness=0)
 
 
 def main_gui():
@@ -64,7 +58,10 @@ def main_gui():
         root = tk.Tk()
         main_app = MainApp(root)
         main_app.pack(side='top', fill='both')
-        Global(root, main_app)
+        Global(root=root,
+               app=main_app,
+               roi_label=main_app.settings_page.label_roi_file,
+               outdir_label=main_app.settings_page.label_outdir)
         # load NeuroSynth database in another thread
         Thread(target=Global.load_pkl_database, args=[Global()]).start()
         # start GUI

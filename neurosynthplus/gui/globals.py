@@ -32,7 +32,7 @@ class Global(Singleton):
     """
     A class that maintains the NeuroSynth dataset instance and the current app status
     """
-    def __init__(self, root=None, app=None, **kwargs):
+    def __init__(self, root=None, app=None, roi_label=None, outdir_label=None, **kwargs):
         self.root = root
         self.app = app
         self.status = 'Ready'
@@ -41,14 +41,19 @@ class Global(Singleton):
         self.history = []
         self.dataset = None
         self.status_mutex = Lock()
+
+        # roi file
         self.roi_filename = None
         self.default_roi = 'MNI152_T1_2mm_brain.nii.gz'
-        self.roi_text = '(default) ' + self.default_roi  # for the roi label in settings
+        if roi_label is not None:
+            roi_label.config(text='(default) ' + self.default_roi)
 
         # output directory
         self.outdir = os.path.join(os.path.expanduser('~'), 'NeuroSynthPlus')
         if not os.path.isdir(self.outdir):
             os.mkdir(self.outdir)
+        if outdir_label is not None:
+            outdir_label.config(text=self.outdir)
 
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
@@ -108,11 +113,11 @@ class Global(Singleton):
 
     def valid_options(self):
         if not os.path.isdir(self.outdir):
-            messagebox.showerror('Error', 'Please select a valid output directory')
+            messagebox.showerror('Error', 'Please select a valid output directory in Settings')
             return False
         if (self.roi_filename is not None) and (len(self.roi_filename) > 0) \
                 and (not os.path.isfile(self.roi_filename)):
-            messagebox.showerror('Error', 'Please select a valid roi file')
+            messagebox.showerror('Error', 'Please select a valid roi file in Settings')
             return False
         return True
 
@@ -135,12 +140,14 @@ class Global(Singleton):
             self.update_status(status='Error: failed to load database. ' + str(e),
                                is_ready=True, is_error=True)
 
-    def load_roi(self):
+    def load_roi(self, roi_label):
         Thread(target=self._load_roi, args=[self.roi_filename]).start()
 
         def after_loading_roi():
             roi = self.roi_filename or self.default_roi
             self.update_status(status='Done. ROI %s loaded.' % roi, is_ready=True)
+            if roi_label is not None:
+                roi_label.config(text='(default) ' + self.default_roi)
             self.root.unbind('<<Done_loading_roi>>')
 
         self.root.bind('<<Done_loading_roi>>', after_loading_roi)
@@ -164,7 +171,7 @@ class Global(Singleton):
             self.roi_filename = None
             if roi_label is not None:
                 roi_label.config(text='(default) ' + self.default_roi)
-            self.load_roi()
+            self.load_roi(roi_label)
 
     def get_current_datetime(self):
         return str(datetime.now()).split('.')[0]
