@@ -6,12 +6,10 @@ if version_info.major == 2:
     import Tkinter as tk
     import ttk
     from tkFileDialog import askopenfilename, askdirectory
-    import tkMessageBox as messagebox
 elif version_info.major == 3:
     import tkinter as tk
     from tkinter import ttk
     from tkinter.filedialog import askopenfilename, askdirectory
-    from tkinter import messagebox
 
 
 class SettingsPage(tk.Frame):

@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 from .analysis import AnalysisPage
 from .ranking import RankingPage
+from .comparison import ComparisonPage
 from .settings import SettingsPage
 from .globals import Global
 from threading import Thread
@@ -13,14 +14,6 @@ elif version_info.major == 3:
     import tkinter as tk
     from tkinter import ttk
     from tkinter import messagebox
-
-
-class ComparisonPage(tk.Frame):
-    def __init__(self, parent, **kwargs):
-        super(ComparisonPage, self).__init__(parent, **kwargs)
-        self.parent = parent
-        self.nb_label = 'Comparison'
-        row_i = -1
 
 
 class MainApp(tk.Frame):
