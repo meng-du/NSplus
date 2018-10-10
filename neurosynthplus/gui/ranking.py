@@ -29,10 +29,12 @@ class RankingPage(tk.Frame):
         self.image_labels = {
             'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
             'Forward inference z score (uniformity test)': 'uniformity-test_z',
-            'Forward inference with multiple comparisons correction (FDR=0.01)': 'uniformity-test_z_FDR_0.01',
+            'Forward inference z score with multiple comparison correction':
+                'uniformity-test_z_FDR_',
             'Reverse inference with a uniform prior=0.5': 'pFgA_given_pF=0.50',
             'Reverse inference z score (association test)': 'association-test_z',
-            'Reverse inference with multiple comparisons correction (FDR=0.01)': 'association-test_z_FDR_0.01'
+            'Reverse inference z score with multiple comparison correction':
+                'association-test_z_FDR_'
         }
         self.img_var = tk.StringVar(value='pFgA_given_pF=0.50')
         for text in self.image_labels.keys():
@@ -76,6 +78,9 @@ class RankingPage(tk.Frame):
 
         meta_img = self.img_var.get()
         procedure = self.proc_var.get()
+
+        if 'FDR' in meta_img:
+            meta_img += str(Global().fdr)
 
         # output file name
         if Global().roi_filename is None:

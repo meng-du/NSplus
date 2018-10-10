@@ -56,12 +56,9 @@ def main_gui():
     gui_started = False
     try:
         root = tk.Tk()
+        Global(root=root)
         main_app = MainApp(root)
         main_app.pack(side='top', fill='both')
-        Global(root=root,
-               app=main_app,
-               roi_label=main_app.settings_page.label_roi_file,
-               outdir_label=main_app.settings_page.label_outdir)
         # load NeuroSynth database in another thread
         Thread(target=Global.load_pkl_database, args=[Global()]).start()
         # start GUI
@@ -72,7 +69,7 @@ def main_gui():
             Global().show_error(e)
         else:
             messagebox.showerror('Error', str(e))
-            raise
+            raise e
 
 
 if __name__ == '__main__':

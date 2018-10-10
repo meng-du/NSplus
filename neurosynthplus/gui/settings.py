@@ -16,7 +16,7 @@ class SettingsPage(tk.Frame):
     def __init__(self, parent, **kwargs):
         super(SettingsPage, self).__init__(parent, **kwargs)
         self.parent = parent
-        self.nb_label = '< Settings >'
+        self.nb_label = '<Settings>'
         row_i = -1
 
         # roi mask
@@ -37,8 +37,10 @@ class SettingsPage(tk.Frame):
             .grid(row=row_i, column=0, padx=(250, 0), pady=(8, 0), sticky='w')
         #   file name label
         row_i += 1
-        self.label_roi_file = tk.Label(self, text='', font=('Menlo', 12),
-                                       fg='#424242', width=80, anchor='w')
+        self.label_roi_file = tk.Label(self,
+                                       text='(default) ' + Global().default_roi,
+                                       font=('Menlo', 12), fg='#424242',
+                                       width=80, anchor='w')
         self.label_roi_file.grid(row=row_i, column=0, padx=15)
 
         # separator
@@ -59,9 +61,25 @@ class SettingsPage(tk.Frame):
             .grid(row=row_i, column=0, padx=(140, 0), pady=(8, 0), sticky='w')
         #   directory label
         row_i += 1
-        self.label_outdir = tk.Label(self, text='', font=('Menlo', 12),
-                                     fg='#424242', width=80, anchor='w')
+        self.label_outdir = tk.Label(self, text=Global().outdir,
+                                     font=('Menlo', 12), fg='#424242',
+                                     width=80, anchor='w')
         self.label_outdir.grid(row=row_i, column=0, padx=15, pady=(0, 10))
+
+        # fdr
+        row_i += 1
+        tk.Label(self, text='False discovery rate when '
+                            'correcting for multiple comparison:') \
+            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+        row_i += 1
+        self.entry_fdr = tk.Entry(self, width=7, state=tk.DISABLED)
+        self.entry_fdr.config(disabledbackground='#e0e0e0')
+        self.entry_fdr.insert(0, str(Global().fdr))
+        self.entry_fdr.grid(row=row_i, column=0, padx=5)
+        self.btn_fdr = tk.Button(self, command=self.change_fdr, text=' Change ',
+                                 highlightthickness=0)
+        self.btn_fdr.grid(row=row_i, column=0, padx=(100, 10), pady=10, sticky='w')
+        # TODO messed up
 
     def get_outdir_from_button(self):
         outdir = askdirectory(initialdir=Global().outdir)
@@ -82,4 +100,14 @@ class SettingsPage(tk.Frame):
         else:
             return
 
-        Global().load_roi()
+        Global().load_roi(self.label_roi_file)
+
+    def change_fdr(self):
+        if 'Change' in self.btn_fdr['text']:  # changing fdr
+            self.entry_fdr.config(state=tk.NORMAL)
+            self.btn_fdr.config(text=' Apply ')
+        else:  # applying change
+            Global().fdr = self.entry_fdr.get()
+            self.entry_fdr.config(state=tk.DISABLED)
+            self.btn_fdr.config(text=' Change ')
+        # TODO test

@@ -32,9 +32,10 @@ class Global(Singleton):
     """
     A class that maintains the NeuroSynth dataset instance and the current app status
     """
-    def __init__(self, root=None, app=None, roi_label=None, outdir_label=None, **kwargs):
+    def __init__(self, root=None, **kwargs):
+        if root is None:
+            raise RuntimeError('Global initiated without root GUI')
         self.root = root
-        self.app = app
         self.status = 'Ready'
         self.is_ready = False
         self.has_error = False
@@ -42,18 +43,16 @@ class Global(Singleton):
         self.dataset = None
         self.status_mutex = Lock()
 
+        # default settings
         # roi file
-        self.roi_filename = None
         self.default_roi = 'MNI152_T1_2mm_brain.nii.gz'
-        if roi_label is not None:
-            roi_label.config(text='(default) ' + self.default_roi)
-
+        self.roi_filename = None
         # output directory
         self.outdir = os.path.join(os.path.expanduser('~'), 'NeuroSynthPlus')
         if not os.path.isdir(self.outdir):
             os.mkdir(self.outdir)
-        if outdir_label is not None:
-            outdir_label.config(text=self.outdir)
+        # fdr
+        self.fdr = 0.01
 
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
@@ -119,6 +118,7 @@ class Global(Singleton):
                 and (not os.path.isfile(self.roi_filename)):
             messagebox.showerror('Error', 'Please select a valid roi file in Settings')
             return False
+        # TODO fdr
         return True
 
     def show_error(self, exception):
@@ -139,6 +139,7 @@ class Global(Singleton):
             messagebox.showerror('Error: failed to load database', str(e))
             self.update_status(status='Error: failed to load database. ' + str(e),
                                is_ready=True, is_error=True)
+            raise e
 
     def load_roi(self, roi_label):
         Thread(target=self._load_roi, args=[self.roi_filename]).start()
