@@ -29,11 +29,11 @@ class RankingPage(tk.Frame):
         self.image_labels = {
             'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
             'Forward inference z score (uniformity test)': 'uniformity-test_z',
-            'Forward inference z score with multiple comparison correction':
+            'Forward inference z score (uniformity test) with multiple comparison correction':
                 'uniformity-test_z_FDR_',
             'Reverse inference with a uniform prior=0.5': 'pFgA_given_pF=0.50',
             'Reverse inference z score (association test)': 'association-test_z',
-            'Reverse inference z score with multiple comparison correction':
+            'Reverse inference z score (association test) with multiple comparison correction':
                 'association-test_z_FDR_'
         }
         self.img_var = tk.StringVar(value='pFgA_given_pF=0.50')

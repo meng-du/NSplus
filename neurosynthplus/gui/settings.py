@@ -6,10 +6,12 @@ if version_info.major == 2:
     import Tkinter as tk
     import ttk
     from tkFileDialog import askopenfilename, askdirectory
+    import tkMessageBox as messagebox
 elif version_info.major == 3:
     import tkinter as tk
     from tkinter import ttk
     from tkinter.filedialog import askopenfilename, askdirectory
+    from tkinter import messagebox
 
 
 class SettingsPage(tk.Frame):
@@ -46,40 +48,45 @@ class SettingsPage(tk.Frame):
         # separator
         row_i += 1
         self.separator = ttk.Separator(self, orient=tk.HORIZONTAL)
-        self.separator.grid(row=row_i, column=0)
+        self.separator.grid(row=row_i, column=0, sticky='we', padx=10, pady=15)
 
         # output directory
         #   instruction label
         row_i += 1
         tk.Label(self, text='Output directory:') \
-            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+            .grid(row=row_i, column=0, padx=10, pady=2, sticky='w')
         #   browse button
         tk.Button(self,
                   command=self.get_outdir_from_button,
                   text=' Browse ',
                   highlightthickness=0) \
-            .grid(row=row_i, column=0, padx=(140, 0), pady=(8, 0), sticky='w')
+            .grid(row=row_i, column=0, padx=(140, 0), sticky='w')
         #   directory label
         row_i += 1
         self.label_outdir = tk.Label(self, text=Global().outdir,
                                      font=('Menlo', 12), fg='#424242',
                                      width=80, anchor='w')
-        self.label_outdir.grid(row=row_i, column=0, padx=15, pady=(0, 10))
+        self.label_outdir.grid(row=row_i, column=0, padx=15)
+
+        # separator
+        row_i += 1
+        self.separator = ttk.Separator(self, orient=tk.HORIZONTAL)
+        self.separator.grid(row=row_i, column=0, sticky='we', padx=10, pady=15)
 
         # fdr
         row_i += 1
         tk.Label(self, text='False discovery rate when '
-                            'correcting for multiple comparison:') \
-            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
-        row_i += 1
-        self.entry_fdr = tk.Entry(self, width=7, state=tk.DISABLED)
-        self.entry_fdr.config(disabledbackground='#e0e0e0')
-        self.entry_fdr.insert(0, str(Global().fdr))
-        self.entry_fdr.grid(row=row_i, column=0, padx=5)
+                            'correcting for multiple comparisons:') \
+            .grid(row=row_i, column=0, padx=10, pady=2, sticky='w')
+        self.entry_fdr = tk.Entry(self, width=5)
+        self.entry_fdr.insert(tk.END, Global().fdr)
+        self.entry_fdr.config(state=tk.DISABLED)
+        self.entry_fdr.config(disabledbackground='#e0e0e0', disabledforeground='#6d6d6d')
+        self.entry_fdr.grid(row=row_i, column=0, padx=(0, 110), sticky='e')
+        self.entry_fdr.bind('<Return>', lambda e: self.change_fdr())
         self.btn_fdr = tk.Button(self, command=self.change_fdr, text=' Change ',
                                  highlightthickness=0)
-        self.btn_fdr.grid(row=row_i, column=0, padx=(100, 10), pady=10, sticky='w')
-        # TODO messed up
+        self.btn_fdr.grid(row=row_i, column=0, padx=(0, 30), sticky='e')
 
     def get_outdir_from_button(self):
         outdir = askdirectory(initialdir=Global().outdir)
@@ -107,7 +114,10 @@ class SettingsPage(tk.Frame):
             self.entry_fdr.config(state=tk.NORMAL)
             self.btn_fdr.config(text=' Apply ')
         else:  # applying change
-            Global().fdr = self.entry_fdr.get()
-            self.entry_fdr.config(state=tk.DISABLED)
-            self.btn_fdr.config(text=' Change ')
-        # TODO test
+            new_fdr = self.entry_fdr.get()
+            if Global().set_fdr(new_fdr):  # success
+                self.entry_fdr.config(state=tk.DISABLED)
+                self.btn_fdr.config(text=' Change ')
+            else:  # error
+                self.entry_fdr.delete(0, tk.END)
+                self.entry_fdr.insert(tk.END, Global().fdr)

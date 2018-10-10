@@ -28,7 +28,7 @@ class AnalysisPage(tk.Frame):
 
         # term/expression entry
         row_i += 1
-        self.ac_entry = AutocompleteEntry([], self, listboxLength=8, width=55,
+        self.ac_entry = AutocompleteEntry([], self, listboxLength=8, width=60,
                                           matchesFunction=AnalysisPage.matches_term,
                                           setFunction=AnalysisPage.set_selection)
         self.ac_entry.grid(row=row_i, padx=15, pady=(2, 10))
@@ -74,6 +74,7 @@ class AnalysisPage(tk.Frame):
                     postfix = 'masked_by_%s' % roi_name.split('.')[0]
                 # run
                 analyze_expression(Global().dataset, expression,
+                                   fdr=Global().fdr,
                                    extra_info=[('ROI mask',
                                                 Global().roi_filename or Global().default_roi)],
                                    csv_postfix=postfix,
@@ -104,6 +105,7 @@ class AnalysisPage(tk.Frame):
         if len(last_word_index) == 0:
             return field_value
         last_word_index = last_word_index[0]
-        while field_value[last_word_index].isspace():  # strip whitespace
+        while last_word_index < len(field_value) and \
+                field_value[last_word_index].isspace():  # strip whitespace
             last_word_index += 1
         return field_value[:last_word_index] + ac_list_entry

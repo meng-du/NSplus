@@ -112,13 +112,23 @@ class Global(Singleton):
 
     def valid_options(self):
         if not os.path.isdir(self.outdir):
-            messagebox.showerror('Error', 'Please select a valid output directory in Settings')
+            messagebox.showerror('Invalid Settings', 'Please select a valid output directory in Settings')
             return False
         if (self.roi_filename is not None) and (len(self.roi_filename) > 0) \
                 and (not os.path.isfile(self.roi_filename)):
-            messagebox.showerror('Error', 'Please select a valid roi file in Settings')
+            messagebox.showerror('Invalid Settings', 'Please select a valid roi file in Settings')
             return False
-        # TODO fdr
+        return True
+
+    def set_fdr(self, new_fdr):  # validate and set fdr
+        try:
+            new_fdr = float(new_fdr)
+            if new_fdr <= 0 or new_fdr >= 1:
+                raise ValueError()
+        except ValueError:
+            messagebox.showerror('Invalid Settings', 'Please enter a number between 0 and 1')
+            return False
+        self.fdr = new_fdr
         return True
 
     def show_error(self, exception):
