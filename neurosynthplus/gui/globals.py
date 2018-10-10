@@ -30,7 +30,8 @@ class Singleton(_Singleton('SingletonMeta', (object,), {})):
 
 class Global(Singleton):
     """
-    A class that maintains the NeuroSynth dataset instance and the current app status
+    A class that maintains the NeuroSynth dataset instance, global settings,
+    and the current app status (including UI for the status bar)
     """
     def __init__(self, root=None, **kwargs):
         if root is None:

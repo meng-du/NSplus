@@ -1,4 +1,4 @@
-from .src.metaplus import NsInfo, MetaAnalysisPlus
+from .src.metaplus import MetaAnalysisPlus
 from .src.datasetplus import DatasetPlus
 from .src.ranking import rank_terms
 from .src.analysis import analyze_expression, analyze_all_terms

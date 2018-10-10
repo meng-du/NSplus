@@ -40,7 +40,10 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
         raise ValueError('No study found for the given expression')
 
     # analyze
-    info = [('expression', expression), ('num_studies', len(study_set))] + extra_info
+    info = [('expression', expression),
+            ('number of studies', len(study_set)),
+            ('study IDs', '; '.join(study_ids))] \
+           + extra_info
     meta = MetaAnalysisPlus(info, dataset=dataset, ids=study_set, prior=prior, q=fdr)
 
     # output

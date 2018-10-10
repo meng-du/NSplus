@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
 from .analysis import analyze_all_terms
-from .metaplus import NsInfo
+from .metaplus import _NeurosynthInfo
 
 
 def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascending=False,
@@ -10,7 +10,7 @@ def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascend
     """
     :return: a pandas dataframe of ordered terms and corresponding voxel values
     """
-    matrix_as_list = [[metas[i].info['expression'], metas[i].info['num_studies']] +
+    matrix_as_list = [[metas[i].info['expression'], metas[i].info['number of studies']] +
                       [mean for mean in means[i]]
                       for i in range(len(metas))]
     df = pd.DataFrame(matrix_as_list, columns=['term', '# studies'] + img_names)
@@ -54,7 +54,7 @@ def rank_terms(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=No
                  when rank_first=True. The options are 'average', 'min', 'max', 'dense'
                  and 'ordinal'. See scipy.stats.rankdata for details
     """
-    img_info = NsInfo.get_num_from_img_name(rank_by)
+    img_info = _NeurosynthInfo.get_num_from_img_name(rank_by)
     metas = analyze_all_terms(dataset, extra_expr, **img_info)
     img_names = list(metas[0].images.keys())
     img_means = [np.mean([meta.images[img] for img in img_names], axis=1) for meta in metas]
