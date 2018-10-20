@@ -97,7 +97,7 @@ class SettingsPage(tk.Frame):
         roi_filename = askopenfilename(initialdir='./',
                                        title='Select ROI file',
                                        filetypes=(('NIFTI files', '*.nii'),
-                                                  ('NIFTI files', '*.nii.gz'),
+                                                  ('NIFTI files', '*.gz'),
                                                   ('all files', '*.*')))
         if len(roi_filename) > 0:
             Global().roi_filename = roi_filename

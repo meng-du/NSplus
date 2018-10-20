@@ -43,7 +43,7 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
     info = [('expression', expression),
             ('number of studies', len(study_set)),
             ('study IDs', '; '.join(study_ids))] \
-           + extra_info
+           + list(extra_info)
     meta = MetaAnalysisPlus(info, dataset=dataset, ids=study_set, prior=prior, q=fdr)
 
     # output
@@ -76,6 +76,6 @@ def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
     metas = []
     for i, expr in enumerate(all_exprs):
         print('Analyzing "%s" (%d/%d)' % (expr, i + 1, len(all_exprs)))
-        metas.append(analyze_expression(dataset, expr, prior=prior, fdr=fdr,
+        metas.append(analyze_expression(dataset, expression=expr, prior=prior, fdr=fdr,
                                         csv_postfix=None, save_images=False))
     return metas

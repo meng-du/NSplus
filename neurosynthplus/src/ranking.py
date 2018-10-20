@@ -34,6 +34,7 @@ def _rank_helper(imgs, voxel, ascending, ties):
 
 def rank_terms(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=None,
                ascending=False, rank_first=False, ties='average'):
+    # TODO put extra information at the beginning of csv
     """
     Rank all of the terms in NeuroSynth by the voxel values in specified image (rank_by).
     :param dataset: a NeuroSynth Dataset instance masked by an ROI

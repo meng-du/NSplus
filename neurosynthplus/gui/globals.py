@@ -155,7 +155,7 @@ class Global(Singleton):
     def load_roi(self, roi_label):
         Thread(target=self._load_roi, args=[self.roi_filename]).start()
 
-        def after_loading_roi():
+        def after_loading_roi(event):
             roi = self.roi_filename or self.default_roi
             self.update_status(status='Done. ROI %s loaded.' % roi, is_ready=True)
             if roi_label is not None:

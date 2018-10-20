@@ -1,7 +1,6 @@
 from __future__ import absolute_import, print_function
 from ..src.analysis import analyze_expression
 from ..src.metaplus import _NeurosynthInfo
-from .autocomplete import AutocompleteEntry
 from .autocomplete_page import AutocompletePage
 from .globals import Global
 import os
