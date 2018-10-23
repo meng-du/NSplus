@@ -37,6 +37,7 @@ def rank_terms(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=No
     # TODO put extra information at the beginning of csv
     """
     Rank all of the terms in NeuroSynth by the voxel values in specified image (rank_by).
+
     :param dataset: a NeuroSynth Dataset instance masked by an ROI
     :param rank_by: (string) an image name to get voxel values from. Available images are:
                     'pAgF', 'pFgA', 'pAgF_given_pF=0.50', 'pFgA_given_pF=0.50',

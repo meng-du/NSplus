@@ -3,3 +3,5 @@
 neurosynthplus/data/*.txt
 neurosynthplus/data/*.pkl
 neurosynthplus/data/data*
+*old*
+

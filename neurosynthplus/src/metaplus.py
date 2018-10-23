@@ -2,6 +2,7 @@ from collections import OrderedDict
 from string import punctuation
 import pandas as pd
 import neurosynth as ns
+import numpy as np
 import os
 
 
@@ -41,13 +42,23 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     An extension of the NeuroSynth MetaAnalysis class.
     """
 
-    def __init__(self, info, *args, **kwargs):
+    def __init__(self, info, images=None, *args, **kwargs):
         """
         :param info: a list of string tuples containing information regarding the
                      meta src, e.g. [('expression', 'social'), ('num_studies', 1000)]
+        :param images: optionally initialize this object with existing images.
+                       If specified, meta-analysis won't run, but an instance of this
+                       class will be constructed with the existing images and info
         """
-        super(MetaAnalysisPlus, self).__init__(*args, **kwargs)
-        self.info = MetaAnalysisPlus.Info(info)
+        if images is None:
+            super(MetaAnalysisPlus, self).__init__(*args, **kwargs)
+            self.info = MetaAnalysisPlus.Info(info)
+        else:
+            if isinstance(info, MetaAnalysisPlus.Info):
+                self.info = info
+            else:
+                self.info = MetaAnalysisPlus.Info(info)
+            self.images = images
 
     # Information #
 
@@ -66,7 +77,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             name = ''
             if 'expression' in self:
                 name = _NeurosynthInfo.get_shorthand_expr(self['expression'])
-            if 'contrary_expr' in self:
+            if 'contrary expression' in self:
                 name += '_vs_' + _NeurosynthInfo.get_shorthand_expr(self['contrary_expr'])
             return name
 
@@ -79,9 +90,6 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                             If None, all images will be returned.
         :return: a pandas data frame of images
         """
-        if self.images is None:  # TODO unnecessary?
-            raise RuntimeError('Images not initialized')
-
         images = self.images.keys()
         if image_names is not None:
             images = list(set(image_names) & images)  # find intersection
@@ -90,14 +98,16 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images]).T
         return pd.concat([info_df, image_df])
 
-    def write_images_to_csv(self, filename, delimiter=',', image_names=None):
+    def save_csv(self, filename, delimiter=',', image_names=None):
+        """
+        Save the info and images to a csv file.
+        :param filename: (string) full path and name of the output csv
+        :param image_names: images to be included in the csv
+        """
         df = self._get_images_with_info(image_names)
         df.to_csv(filename, sep=delimiter, header=False)
 
     def save_images(self, prefix=None, postfix='', image_names=None, outdir='.'):
-        if self.images is None:  # TODO unnecessary?
-            raise RuntimeError('Images not initialized')
-
         images = self.images.keys()
         if image_names is not None:
             images = list(set(image_names) & images)  # find intersection
@@ -114,4 +124,23 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                                    filename=os.path.join(outdir, filename),
                                    masker=self.dataset.masker)
 
-        # TODO: print/save self.info & corresponding file names
+    # Methods of operations done on MetaAnalysisPlus object lists #
+
+    @classmethod
+    def mean(cls, meta_list):
+        """
+        Calculate the mean of each image in the given list.
+        Each object in the list should have the same info and image names.
+        :param meta_list: a list of MetaAnalysisPlus objects
+        :return: one MetaAnalysisPlus object that has the mean images
+        """
+        if len(meta_list) <= 1:
+            return meta_list
+        else:
+            # calculate means for each comparison across all iterations
+            mean_imgs = {}
+            for img in meta_list[0].images:
+                mean_imgs[img] = np.mean([meta.images[img] for meta in meta_list], axis=0)
+            mean_meta_info = OrderedDict(meta_list[0].info)
+            mean_meta_info['info'] = 'mean across %d analyses' % len(meta_list)
+            return cls(info=mean_meta_info, images=mean_imgs)

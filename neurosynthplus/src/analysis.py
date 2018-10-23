@@ -11,7 +11,7 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
     Either expression or study_ids has to be specified. If both are specified,
     they will be combined and analyzed together.
 
-    :param dataset: a neurosynth Dataset instance to get studies from
+    :param dataset: a Neurosynth Dataset or DatasetPlus instance to get studies from
     :param expression: a string expression to be analyzed
     :param study_ids: a list of study ids to be analyzed
     :param extra_info: (list of (key, value) pairs) extra information to be included in the
@@ -22,22 +22,22 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
                         If None, all images will be included.
     :param csv_postfix: (string) postfix for output file name, or None if not saving a file
     :param save_images: (boolean) whether results are saved as a csv file
-    :param outdir: (string) directory to save images/csv
+    :param outdir: (string) directory to save the images/csv
     :return: an MetaAnalysisPlus object
     """
     if len(expression) == 0 and len(study_ids) == 0:
         raise ValueError('Nothing specified for analysis')
+    if prior is not None and (prior <= 0 or prior >= 1):
+        raise ValueError('prior has to be greater than 0 and less than 1')
     if not os.path.isdir(outdir):
         raise NotADirectoryError('Invalid output directory')
 
     # get studies
-    try:
-        study_set = dataset.get_studies(expression=expression)
-    except AttributeError:
-        study_set = dataset.get_studies(features=expression)  # just in case expression doesn't work
+    study_set = dataset.get_studies(expression=expression)
     study_set = list(set(study_set) | set(study_ids))
     if len(study_set) == 0:
-        raise ValueError('No study found for the given expression')
+        raise ValueError('No study in the database is associated with "'
+                         + expression + '"')
 
     # analyze
     info = [('expression', expression),
@@ -48,8 +48,8 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
 
     # output
     if csv_postfix is not None:
-        meta.write_images_to_csv(os.path.join(outdir, '%s_%s.csv' % (meta.info.name, csv_postfix)),
-                                 image_names=image_names)
+        meta.save_csv(os.path.join(outdir, '%s_%s.csv' % (meta.info.name, csv_postfix)),
+                      image_names=image_names)
     if save_images:
         meta.save_images(image_names=image_names, outdir=outdir)
     return meta
@@ -58,7 +58,7 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
 def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
     # TODO with extra lists of study IDs?
     """
-    Do a meta src for each term/expression in either the dataset or the extra
+    Do a meta-analysis for each term/expression in the dataset or the extra
     expression list
     :return: a list of MetaAnalysisPlus objects
     """
