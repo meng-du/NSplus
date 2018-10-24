@@ -30,7 +30,7 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
     if prior is not None and (prior <= 0 or prior >= 1):
         raise ValueError('prior has to be greater than 0 and less than 1')
     if not os.path.isdir(outdir):
-        raise NotADirectoryError('Invalid output directory')
+        raise IOError('Invalid output directory')
 
     # get studies
     study_set = dataset.get_studies(expression=expression)

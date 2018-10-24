@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
 from ..src.analysis import analyze_expression
-from ..src.metaplus import _NeurosynthInfo
+from ..src.metaplus import NeurosynthInfo
 from .autocomplete_page import AutocompletePage
 from .globals import Global
 import os
@@ -45,7 +45,7 @@ class AnalysisPage(AutocompletePage):
         def _analyze():
             try:
                 # output directory
-                folder_name = _NeurosynthInfo.get_shorthand_expr(expression)
+                folder_name = NeurosynthInfo.get_shorthand_expr(expression)
                 if Global().roi_filename is not None:
                     folder_name += '_' + Global().get_roi_name()
                 outdir = os.path.join(Global().outdir, folder_name)

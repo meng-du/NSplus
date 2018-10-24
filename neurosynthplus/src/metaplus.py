@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 
-class _NeurosynthInfo(OrderedDict):
+class NeurosynthInfo(OrderedDict):
     """
     Handle information strings (e.g. NeuroSynth expressions and image names)
     """
@@ -15,7 +15,7 @@ class _NeurosynthInfo(OrderedDict):
     fdr_img_names = ['uniformity-test_z_FDR_', 'association-test_z_FDR_']
 
     def __init__(self, *args, **kwargs):
-        super(_NeurosynthInfo, self).__init__(*args, **kwargs)
+        super(NeurosynthInfo, self).__init__(*args, **kwargs)
 
     @staticmethod
     def get_shorthand_expr(expr):
@@ -24,13 +24,13 @@ class _NeurosynthInfo(OrderedDict):
 
     @staticmethod
     def get_num_from_img_name(image_name):
-        if image_name in _NeurosynthInfo.img_names:
+        if image_name in NeurosynthInfo.img_names:
             return {}
-        for prior_name in _NeurosynthInfo.prior_img_names:
+        for prior_name in NeurosynthInfo.prior_img_names:
             if prior_name in image_name:
                 num = image_name[len(prior_name):]
                 return {'prior': float(num)}
-        for fdr_name in _NeurosynthInfo.fdr_img_names:
+        for fdr_name in NeurosynthInfo.fdr_img_names:
             if fdr_name in image_name:
                 num = image_name[len(fdr_name):]
                 return {'fdr': float(num)}
@@ -62,12 +62,12 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
 
     # Information #
 
-    class Info(_NeurosynthInfo):
+    class Info(NeurosynthInfo):
         def __init__(self, *args, **kwargs):
             """
             Initialize with 'expression', and 'contrary_expr' if comparing to another expression
             """
-            super(_NeurosynthInfo, self).__init__(*args, **kwargs)
+            super(NeurosynthInfo, self).__init__(*args, **kwargs)
             self.name = self.get_shorthand()
 
         def get_shorthand(self):
@@ -76,9 +76,9 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             """
             name = ''
             if 'expression' in self:
-                name = _NeurosynthInfo.get_shorthand_expr(self['expression'])
+                name = NeurosynthInfo.get_shorthand_expr(self['expression'])
             if 'contrary expression' in self:
-                name += '_vs_' + _NeurosynthInfo.get_shorthand_expr(self['contrary_expr'])
+                name += '_vs_' + NeurosynthInfo.get_shorthand_expr(self['contrary_expr'])
             return name
 
     # Methods for File Output #

@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
-from .autocomplete import AutocompleteEntry
 from .autocomplete_page import AutocompletePage
+from ..src.metaplus import NeurosynthInfo
 from threading import Thread
 from sys import version_info
 if version_info.major == 2:
@@ -37,4 +37,20 @@ class ComparisonPage(AutocompletePage):
         self.btn_start.grid(row=row_i, padx=10, pady=(100, 10))
 
     def start(self):
-        pass
+        if not Global().valid_options():
+            return
+
+        expr = self.ac_entry1.get()
+        contrary_expr = self.ac_entry1.get()
+
+        if not Global().update_status(
+                status='Comparing "%s" and "%s"...' % (expr, contrary_expr),
+                is_ready=False, user_op=True):
+            return
+
+        def _compare():
+            try:
+                # output directory
+                folder_name = NeurosynthInfo.get_shorthand_expr(expr)
+            except Exception as e:
+                Global().show_error(e)
