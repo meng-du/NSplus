@@ -185,5 +185,13 @@ class Global(Singleton):
                 roi_label.config(text='(default) ' + self.default_roi)
             self.load_roi(roi_label)
 
-    def get_current_datetime(self):
-        return str(datetime.now()).split('.')[0]
+    def make_result_dir(self, name):
+        if Global().roi_filename is not None:
+            name += '_' + Global().get_roi_name()
+        outdir = os.path.join(Global().outdir, name)
+        if os.path.isdir(outdir):
+            current_time = str(datetime.now()).split('.')[0]
+            outdir = os.path.join(Global().outdir,
+                                  name + ' ' + current_time)
+        os.mkdir(outdir)
+        return outdir

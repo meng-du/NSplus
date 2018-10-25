@@ -5,13 +5,11 @@ import os
 
 def even_study_set_size(study_sets):
     """
-    Reduce the sizes of all study sets to the smallest set in the list
-    by random sampling
-    :param study_sets: a list of study sets; each set is a list of
-                       string study IDs
-    :return: a new list of reduced study sets, and a list of size
-             information (strings, e.g. '123' if not reduced, or
-             '123/456' if reduced)
+    Reduce the sizes of all study sets to the smallest set in the list by random
+    sampling
+    :param study_sets: a list of study sets; each set is a list of string study IDs
+    :return: a new list of reduced study sets, and a list of size information (strings,
+             e.g. '123' if not reduced, or '123/456' if reduced)
     """
     min_size = min(map(len, study_sets))
     reduced_sets = []
@@ -25,8 +23,8 @@ def even_study_set_size(study_sets):
 
 def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
                         reduce_larger_set=True, num_iterations=500, two_way=True,
-                        prior=0.5, fdr=0.01, image_names=None, save_files=True,
-                        extra_info=(), outdir='.'):
+                        prior=0.5, fdr=0.01, extra_info=(), image_names=None,
+                        save_files=True, outdir='.'):
     """
     Compare two expressions and return a MetaAnalysisPlus object.
     The number of studies found through the two expressions are likely to be
@@ -53,11 +51,11 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
                     the set of (expr + contrast_expr) ; otherwise only analyze expr
     :param prior: (float) the prior probability of a term being used in a study
     :param fdr: the FDR threshold to use when correcting for multiple comparisons
+    :param extra_info: (list of (key, value) pairs) extra information to be included
+                   in the csv output
     :param image_names: the names of images to be included in the output files.
                         If None, all images will be included.
-    :param save_files: (boolean) save the results as .csv and .nii.gz files
-    :param extra_info: (list of (key, value) pairs) extra information to be included
-                       in the csv output
+    :param save_files: (boolean) whether to save the results as csv and nifti files
     :param outdir: (string) directory to save the images/csv
     :return: a list of MetaExtension objects
     """
@@ -139,8 +137,4 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
             mean_meta.save_csv(os.path.join(outdir, filename), image_names=image_names)
             mean_meta.save_images()
 
-    # return
-    if two_way:
-        return mean_metas
-    else:
-        return mean_metas[0]
+    return mean_metas if two_way else mean_metas[0]

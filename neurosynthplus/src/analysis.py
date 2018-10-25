@@ -3,12 +3,12 @@ import os
 # import concurrent.futures  # requires futures for python 2.x
 
 
-def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prior=0.5, fdr=0.01,
-                       image_names=None, csv_postfix='output', save_images=True, outdir='.'):
+def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01,
+                       extra_info=(), image_names=None, save_files=True, outdir='.'):
     """
-    Analyze a single expression; output a set of .nii.gz image files and/or
-    a csv file containing voxel values in images.
-    Either expression or study_ids has to be specified. If both are specified,
+    Analyze a single expression; optionally output the nifti images and a csv file
+    containing image info and voxel values.
+    At least one of expression or study_ids has to be specified. If both are specified,
     they will be combined and analyzed together.
 
     :param dataset: a Neurosynth Dataset or DatasetPlus instance to get studies from
@@ -20,8 +20,7 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
     :param fdr: (float) the FDR threshold to use when correcting for multiple comparisons
     :param image_names: (list of strings) names of images to be included in the output files.
                         If None, all images will be included.
-    :param csv_postfix: (string) postfix for output file name, or None if not saving a file
-    :param save_images: (boolean) whether results are saved as a csv file
+    :param save_files: (boolean) whether to save the results as csv and nifti files
     :param outdir: (string) directory to save the images/csv
     :return: an MetaAnalysisPlus object
     """
@@ -47,10 +46,9 @@ def analyze_expression(dataset, expression='', study_ids=(), extra_info=(), prio
     meta = MetaAnalysisPlus(info, dataset=dataset, ids=study_set, prior=prior, q=fdr)
 
     # output
-    if csv_postfix is not None:
-        meta.save_csv(os.path.join(outdir, '%s_%s.csv' % (meta.info.name, csv_postfix)),
+    if save_files:
+        meta.save_csv(os.path.join(outdir, '%s_analysis.csv' % meta.info.name),
                       image_names=image_names)
-    if save_images:
         meta.save_images(image_names=image_names, outdir=outdir)
     return meta
 
@@ -77,5 +75,5 @@ def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
     for i, expr in enumerate(all_exprs):
         print('Analyzing "%s" (%d/%d)' % (expr, i + 1, len(all_exprs)))
         metas.append(analyze_expression(dataset, expression=expr, prior=prior, fdr=fdr,
-                                        csv_postfix=None, save_images=False))
+                                        save_files=False))
     return metas
