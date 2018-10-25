@@ -72,7 +72,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
 
         def get_shorthand(self):
             """
-            Return a short description of the meta src (to be used for file names)
+            Return a short description of the meta analysis (to be used for file names)
             """
             name = ''
             if 'expression' in self:
@@ -80,6 +80,12 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             if 'contrary expression' in self:
                 name += '_vs_' + NeurosynthInfo.get_shorthand_expr(self['contrary_expr'])
             return name
+
+        def as_pandas_df(self):
+            """
+            Return the information as a pandas data frame
+            """
+            return pd.DataFrame(list(self.values()), index=list(self.keys()))
 
     # Methods for File Output #
 
@@ -93,7 +99,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         images = self.images.keys()
         if image_names is not None:
             images = list(set(image_names) & images)  # find intersection
-        info_df = pd.DataFrame(list(self.info.values()), index=list(self.info.keys()))
+        info_df = self.info.as_pandas_df()
         info_df = info_df.append(pd.DataFrame([images], index=['image']))
         image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images]).T
         return pd.concat([info_df, image_df])

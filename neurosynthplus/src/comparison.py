@@ -72,16 +72,15 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
 
     # get studies
     study_sets = []
+    if exclude_overlap:
+        expr = '(%s) &~ (%s)' % (expr, contrary_expr)
+        contrary_expr = '(%s) &~ (%s)' % (contrary_expr, expr)
     for expression in (expr, contrary_expr):
-        studies = set(dataset.get_studies(expression=expression))
+        studies = dataset.get_studies(expression=expression)
         if len(studies) == 0:
             raise ValueError('No study in the database is associated with "'
                              + expression + '"')
         study_sets.append(studies)
-    if exclude_overlap:
-        study_sets[0] -= study_sets[1]
-        study_sets[1] -= study_sets[0]
-    # study_sets = [list(study_set) for study_set in study_sets] # TODO necessary?
 
     # get study set sizes
     if reduce_larger_set:
@@ -122,13 +121,15 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
         [('expression', expr),
          ('number of studies', sizes[0]),
          ('contrary expression', contrary_expr),
-         ('number of studies', sizes[1])] + list(extra_info))
+         ('number of studies', sizes[1]),
+         ('number of iterations', num_iterations)] + list(extra_info))
     if two_way:
         mean_metas[1].info = MetaAnalysisPlus.Info(
             [('expression', expr),
              ('number of studies', sizes[1]),
              ('contrary expression', contrary_expr),
-             ('number of studies', sizes[0])] + list(extra_info))
+             ('number of studies', sizes[0]),
+             ('number of iterations', num_iterations)] + list(extra_info))
 
     # save results
     if save_files:

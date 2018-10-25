@@ -92,6 +92,14 @@ class ComparisonPage(AutocompletePage):
                                         ('mask', Global().roi_filename or Global().default_roi)],
                                     outdir=outdir)
 
+                Global().root.event_generate('<<Done_comparison>>')  # trigger event
+
             except Exception as e:
                 Global().show_error(e)
 
+        Thread(target=_compare).start()
+        Global().root.bind('<<Done_analysis>>',
+                           lambda e: Global().update_status(
+                               status='Done. Files are saved to ' + Global().outdir,
+                               is_ready=True
+                           ))
