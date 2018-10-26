@@ -76,7 +76,10 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
         expr = '(%s) &~ (%s)' % (expr, contrary_expr)
         contrary_expr = '(%s) &~ (%s)' % (contrary_expr, expr)
     for expression in (expr, contrary_expr):
-        studies = dataset.get_studies(expression=expression)
+        try:
+            studies = dataset.get_studies(expression=expression)
+        except AttributeError:  # in case expression somehow doesn't work
+            studies = dataset.get_studies(features=expression)
         if len(studies) == 0:
             raise ValueError('No study in the database is associated with "'
                              + expression + '"')

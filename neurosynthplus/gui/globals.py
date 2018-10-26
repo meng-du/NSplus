@@ -54,6 +54,8 @@ class Global(Singleton):
             os.mkdir(self.outdir)
         # fdr
         self.fdr = 0.01
+        # number of iterations (for comparison)
+        self.num_iterations = 500
 
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
@@ -132,6 +134,17 @@ class Global(Singleton):
         self.fdr = new_fdr
         return True
 
+    def set_num_iter(self, new_num_iter):  # validate and set num of iterations
+        try:
+            new_num_iter = int(new_num_iter)
+            if new_num_iter <= 0:
+                raise ValueError()
+        except ValueError:
+            messagebox.showerror('Invalid Settings', 'Please enter a number greater than 0')
+            return False
+        self.num_iterations = new_num_iter
+        return True
+
     def show_error(self, exception):
         self.update_status(status='Error: ' + str(exception), is_ready=True, is_error=True)
         self.is_ready = True
@@ -156,19 +169,20 @@ class Global(Singleton):
         Thread(target=self._load_roi, args=[self.roi_filename]).start()
 
         def after_loading_roi(event):
-            roi = self.roi_filename or self.default_roi
-            self.update_status(status='Done. ROI %s loaded.' % roi, is_ready=True)
+            self.update_status(status='Done. ROI %s loaded.' % self.get_roi_name(with_ext=True),
+                               is_ready=True)
             if roi_label is not None:
                 roi_label.config(text='(default) ' + self.default_roi)
             self.root.unbind('<<Done_loading_roi>>')
 
         self.root.bind('<<Done_loading_roi>>', after_loading_roi)
 
-    def get_roi_name(self):
+    def get_roi_name(self, with_ext=False):
         if self.roi_filename is None:
-            return self.default_roi.rsplit('.nii', 1)[0]
+            return self.default_roi if with_ext else \
+                self.default_roi.rsplit('.nii', 1)[0]
         filename = os.path.split(self.roi_filename)[1]
-        return filename.rsplit('.nii', 1)[0]  # get rid of extension
+        return filename if with_ext else filename.rsplit('.nii', 1)[0]
 
     def _load_roi(self, roi_filename):
         if not self.update_status(status='Loading ROI...', is_ready=False, user_op=True):

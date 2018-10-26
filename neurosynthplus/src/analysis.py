@@ -32,7 +32,10 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
         raise IOError('Invalid output directory')
 
     # get studies
-    study_set = dataset.get_studies(expression=expression)
+    try:
+        study_set = dataset.get_studies(expression=expression)
+    except AttributeError:  # in case expression somehow doesn't work
+        study_set = dataset.get_studies(features=expression)
     study_set = list(set(study_set) | set(study_ids))
     if len(study_set) == 0:
         raise ValueError('No study in the database is associated with "'

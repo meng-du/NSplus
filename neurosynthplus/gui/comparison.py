@@ -35,25 +35,40 @@ class ComparisonPage(AutocompletePage):
         tk.Checkbutton(self,
                        text='Exclude studies associated with both terms',
                        variable=self.overlap_var) \
-            .grid(row=row_i, padx=10, pady=(30, 0))
+            .grid(row=row_i, padx=10, pady=(30, 2), sticky=tk.W)
 
         #  checkbox: equal study set sizes
         row_i += 1
         self.equal_size_var = tk.IntVar(value=1)
         tk.Checkbutton(self,
-                       text='Random sample the larger study set to get '
+                       text='Randomly sample the larger study set to get '
                             'two equally sized sets',
                        variable=self.equal_size_var) \
-            .grid(row=row_i, padx=10)
-        # TODO # iterations
+            .grid(row=row_i, padx=10, pady=(2, 0), sticky=tk.W)
+        self.equal_size_var.trace('w', lambda name, i, mode, var: self.equal_size_onchange())
+        #  number of iterations
+        row_i += 1
+        tk.Label(self, text='Number of iterations:') \
+            .grid(row=row_i, padx=(50, 0), pady=(0, 2), sticky='w')
+        #   entry
+        self.entry_num_iter = tk.Entry(self, width=5)
+        self.entry_num_iter.insert(tk.END, Global().num_iterations)
+        self.entry_num_iter.config(disabledbackground='#e0e0e0', disabledforeground='#6d6d6d')
+        self.entry_num_iter.config(state=tk.DISABLED)
+        self.entry_num_iter.grid(row=row_i, padx=(200, 0), sticky=tk.W)
+        self.entry_num_iter.bind('<Return>', lambda e: self.change_num_iter())
+        #   button
+        self.btn_num_iter = tk.Button(self, command=self.change_num_iter, text=' Change ',
+                                      highlightthickness=0)
+        self.btn_num_iter.grid(row=row_i, padx=(270, 0), sticky=tk.W)
 
         #  checkbox: compare both ways
         row_i += 1
         self.two_way_var = tk.IntVar(value=1)
         tk.Checkbutton(self,
-                       text='Analyze both terms (term1 vs term2 and term2 vs term1)',
+                       text='Analyze both terms (term1 vs term2, and term2 vs term1)',
                        variable=self.two_way_var) \
-            .grid(row=row_i, padx=10)
+            .grid(row=row_i, padx=10, pady=2, sticky=tk.W)
 
         #  compare button
         row_i += 1
@@ -61,7 +76,36 @@ class ComparisonPage(AutocompletePage):
                                    command=self.start,
                                    text=' Compare ',
                                    highlightthickness=0)
-        self.btn_start.grid(row=row_i, padx=10, pady=(100, 10))
+        self.btn_start.grid(row=row_i, padx=10, pady=(20, 10))
+
+    def change_num_iter(self):
+        if self.equal_size_var.get() == 0:
+            return
+        if 'Change' in self.btn_num_iter['text']:  # changing
+            self.entry_num_iter.config(state=tk.NORMAL)
+            self.btn_num_iter.config(text=' Apply ')
+        else:  # applying change
+            new_fdr = self.entry_num_iter.get()
+            if Global().set_fdr(new_fdr):  # success
+                self.entry_num_iter.config(state=tk.DISABLED)
+                self.btn_num_iter.config(text=' Change ')
+            else:  # error
+                self.entry_num_iter.delete(0, tk.END)
+                self.entry_num_iter.insert(tk.END, Global().fdr)
+
+    def equal_size_onchange(self):
+        if self.equal_size_var.get() == 0:  # not checked
+            num_iter = '1'
+            button_state = tk.DISABLED
+        else:  # checked
+            num_iter = Global().num_iterations
+            button_state = tk.NORMAL
+
+        self.btn_num_iter.config(state=button_state)
+        self.entry_num_iter.config(state=tk.NORMAL)
+        self.entry_num_iter.delete(0, tk.END)
+        self.entry_num_iter.insert(tk.END, num_iter)
+        self.entry_num_iter.config(state=tk.DISABLED)
 
     def start(self):
         if not Global().valid_options():
@@ -72,6 +116,7 @@ class ComparisonPage(AutocompletePage):
         exclude_overlap = self.overlap_var.get() == 1
         reduce_larger_set = self.equal_size_var.get() == 1
         two_way = self.two_way_var.get() == 1
+        num_iterations = self.entry_num_iter.get()
 
         if not Global().update_status(
                 status='Comparing "%s" and "%s"...' % (expr, contrary_expr),

@@ -101,7 +101,7 @@ class SettingsPage(tk.Frame):
                                                   ('all files', '*.*')))
         if len(roi_filename) > 0:
             Global().roi_filename = roi_filename
-            self.label_roi_file.config(text=os.path.split(Global().roi_filename)[1])
+            self.label_roi_file.config(text=Global().get_roi_name(with_ext=True))
         else:
             return
 

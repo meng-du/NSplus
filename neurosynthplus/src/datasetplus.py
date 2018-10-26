@@ -27,16 +27,6 @@ class DatasetPlus(ns.Dataset):
         all_feature_names = super(DatasetPlus, self).get_feature_names(features)
         return [feature for feature in all_feature_names if not feature[0].isdigit()]
 
-    def get_studies(self, expression=None, *args, **kwargs):
-        """
-        A wrapper for the original Neurosynth get_studies function
-        """
-        try:
-            study_set = self.get_studies(expression=expression)
-        except AttributeError:  # in case expression somehow doesn't work
-            study_set = self.get_studies(features=expression)
-        return study_set
-
     @classmethod
     def load_default_database(cls):
         data_file = os.path.join(os.path.dirname(__file__), os.pardir, 'data',
