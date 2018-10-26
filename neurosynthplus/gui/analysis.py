@@ -19,17 +19,32 @@ class AnalysisPage(AutocompletePage):
         row_i = -1
 
         # page contents
-        # instruction label
+        #  entry
         row_i += 1
         self.ac_entry = self.create_labeled_ac_entry(row=row_i)[1]
 
-        # analyze button
+        #  instructions TODO make a help page
+        row_i += 2
+        help_text = 'Operations between terms:\n' \
+                    '    AND &     OR |     NOT ~     WILDCARD *\n\n' \
+                    'Examples:\n' \
+                    '    "emotion & emotional": studies associated with both terms\n' \
+                    '    "emotion | emotional": studies associated with either terms\n' \
+                    '    "emo*": studies associated with any term starting with "emo"\n' \
+                    '    "emotion &~ face": studies associated with emotion, but not face\n' \
+                    '    "(emotion | emotional | emotionally) &~ *face*": studies\n' \
+                    '    associated with at least one of emotion, emotional or emotionally,\n' \
+                    '    but not any term containing face'
+        tk.Label(self, text=help_text, justify=tk.LEFT) \
+            .grid(row=row_i, padx=15, pady=15)
+
+        #  analyze button
         row_i += 2
         self.btn_start = tk.Button(self,
                                    command=self.start,
                                    text=' Analyze ',
                                    highlightthickness=0)
-        self.btn_start.grid(row=row_i, padx=10, pady=(130, 10))
+        self.btn_start.grid(row=row_i, padx=10, pady=10)
 
     def start(self):
         if not Global().valid_options():

@@ -17,12 +17,7 @@ class AutocompletePage(tk.Frame):
         super(AutocompletePage, self).__init__(parent, **kwargs)
         self.parent = parent
         self.ac_entry_list = []
-
-        def update_ac_list(event):  # get list after database loaded
-            for entry in self.ac_entry_list:
-                entry.autocompleteList = Global().dataset.get_feature_names()
-
-        self.parent.master.parent.bind('<<Database_loaded>>', update_ac_list)
+        Global().ac_lists.append(self.ac_entry_list)
 
     def create_labeled_ac_entry(self, row=0, width=60,
                                 label_text='Enter term or expression:'):

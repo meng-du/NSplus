@@ -57,6 +57,17 @@ class Global(Singleton):
         # number of iterations (for comparison)
         self.num_iterations = 500
 
+        # autocomplete entry lists to be updated after loading database
+        self.ac_lists = []
+
+        def _update_ac_lists(event):
+            feature_names = Global().dataset.get_feature_names()
+            for ac_list in self.ac_lists:
+                for entry in ac_list:
+                    entry.autocompleteList = feature_names
+
+        root.bind('<<Database_loaded>>', _update_ac_lists)
+
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
         self.text_width = 80
