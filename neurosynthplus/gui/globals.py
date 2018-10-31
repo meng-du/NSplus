@@ -2,7 +2,6 @@ from __future__ import absolute_import, print_function
 from ..src.datasetplus import DatasetPlus
 import os
 import re
-from datetime import datetime
 from threading import Lock, Thread
 from sys import version_info
 if version_info.major == 2:
@@ -238,14 +237,3 @@ class Global(Singleton):
             if roi_label is not None:
                 roi_label.config(text='(default) ' + self.default_roi)
             self.load_roi(roi_label)
-
-    def make_result_dir(self, name):
-        if Global().roi_filename is not None:
-            name += '_' + Global().get_roi_name()
-        outdir = os.path.join(Global().outdir, name)
-        if os.path.isdir(outdir):
-            current_time = str(datetime.now()).split('.')[0]
-            outdir = os.path.join(Global().outdir,
-                                  name + ' ' + current_time)
-        os.mkdir(outdir)
-        return outdir

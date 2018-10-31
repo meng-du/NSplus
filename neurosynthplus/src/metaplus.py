@@ -4,6 +4,7 @@ import pandas as pd
 import neurosynth as ns
 import numpy as np
 import os
+from datetime import datetime
 
 
 class NeurosynthInfo(OrderedDict):
@@ -58,6 +59,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                 self.info = info
             else:
                 self.info = MetaAnalysisPlus.Info(info)
+            self.dataset = dataset
             self.images = images
 
     # Information #
@@ -101,9 +103,18 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         if image_names is not None:
             images = list(set(image_names) & images)  # find intersection
         info_df = self.info.as_pandas_df()
-        info_df = info_df.append(pd.DataFrame([images], index=['image']))
+        info_df = info_df.append(pd.DataFrame([images], index=['images']))
         image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images]).T
         return pd.concat([info_df, image_df])
+
+    @staticmethod
+    def make_result_dir(path, dirname):
+        outdir = os.path.join(path, dirname)
+        if os.path.isdir(outdir):
+            current_time = str(datetime.now()).split('.')[0]
+            outdir = os.path.join(path, dirname + ' ' + current_time)
+        os.mkdir(outdir)
+        return outdir
 
     def save_csv(self, filename, delimiter=',', image_names=None):
         """
@@ -143,13 +154,12 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         """
         if len(meta_list) == 0:
             raise ValueError('Empty list')
+
         if len(meta_list) == 1:
             return meta_list[0]
-        else:
-            # calculate means for each comparison across all iterations
-            mean_imgs = {}
-            for img in meta_list[0].images:
-                mean_imgs[img] = np.mean([meta.images[img] for meta in meta_list], axis=0)
-            mean_meta_info = OrderedDict(meta_list[0].info)
-            mean_meta_info['info'] = 'mean across %d analyses' % len(meta_list)
-            return cls(info=mean_meta_info, dataset=meta_list[0].dataset, images=mean_imgs)
+
+        # calculate means
+        mean_imgs = {}
+        for img in meta_list[0].images:
+            mean_imgs[img] = np.mean([meta.images[img] for meta in meta_list], axis=0)
+        return cls(info=meta_list[0].info, dataset=meta_list[0].dataset, images=mean_imgs)

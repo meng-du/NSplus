@@ -1,10 +1,8 @@
 from __future__ import absolute_import, print_function
 from ..src.analysis import analyze_expression
-from ..src.metaplus import NeurosynthInfo
 from .autocomplete_page import AutocompletePage
 from .globals import Global
 from threading import Thread
-import os
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
@@ -63,21 +61,16 @@ class AnalysisPage(AutocompletePage):
             return
 
         def _analyze():
-            outdir = None
             try:
-                # output directory
-                outdir = Global().make_result_dir(NeurosynthInfo.get_shorthand_expr(expression))
                 # run
                 analyze_expression(Global().dataset, expression,
                                    fdr=Global().fdr,
                                    extra_info=[('mask',
                                                 Global().roi_filename or Global().default_roi)],
-                                   outdir=outdir)
+                                   outpath=Global().outdir)
                 Global().root.event_generate('<<Done_analysis>>')  # trigger event
             except Exception as e:
                 Global().show_error(e)
-                if outdir is not None:
-                    os.rmdir(outdir)
 
         Thread(target=_analyze).start()
         Global().root.bind('<<Done_analysis>>',

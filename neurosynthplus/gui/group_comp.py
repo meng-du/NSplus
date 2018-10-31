@@ -86,9 +86,6 @@ class GroupCompPage(ComparisonPage):
 
         def _compare():
             try:
-                # output directory
-                dirname = 'todo'  # TODO
-                outdir = Global().make_result_dir(dirname)
                 # run TODO
 
                 Global().root.event_generate('<<Done_group_comp>>')  # trigger event

@@ -1,10 +1,8 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
 from .comparison import ComparisonPage
-from ..src.metaplus import NeurosynthInfo
 from ..src.comparison import compare_expressions
 from threading import Thread
-import os
 
 
 class PairCompPage(ComparisonPage):
@@ -46,26 +44,19 @@ class PairCompPage(ComparisonPage):
             return
 
         def _compare():
-            outdir = None
             try:
-                # output directory
-                dirname = NeurosynthInfo.get_shorthand_expr(expr) + '_vs_' + \
-                          NeurosynthInfo.get_shorthand_expr(contrary_expr)
-                outdir = Global().make_result_dir(dirname)
                 # run
                 compare_expressions(Global().dataset, expr, contrary_expr, exclude_overlap,
                                     reduce_larger_set, num_iterations, two_way,
                                     fdr=Global().fdr,
                                     extra_info=[
                                         ('mask', Global().roi_filename or Global().default_roi)],
-                                    outdir=outdir)
+                                    outpath=Global().outdir)
 
                 Global().root.event_generate('<<Done_pair_comp>>')  # trigger event
 
             except Exception as e:
                 Global().show_error(e)
-                if outdir is not None:
-                    os.rmdir(outdir)
 
         Thread(target=_compare).start()
         Global().root.bind('<<Done_pair_comp>>',

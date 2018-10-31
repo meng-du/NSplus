@@ -4,7 +4,7 @@ import os
 
 
 def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01,
-                       extra_info=(), image_names=None, save_files=True, outdir='.'):
+                       extra_info=(), image_names=None, save_files=True, outpath='.'):
     """
     Analyze a single expression; optionally output the nifti images and a csv file
     containing image info and voxel values.
@@ -21,14 +21,14 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     :param image_names: (list of strings) names of images to be included in the output files.
                         If None, all images will be included.
     :param save_files: (boolean) whether to save the results as csv and nifti files
-    :param outdir: (string) directory to save the images/csv
+    :param outpath: (string) directory to save the images/csv
     :return: an MetaAnalysisPlus object
     """
     if len(expression) == 0 and len(study_ids) == 0:
         raise ValueError('Nothing specified for analysis')
     if prior is not None and (prior <= 0 or prior >= 1):
         raise ValueError('prior has to be greater than 0 and less than 1')
-    if not os.path.isdir(outdir):
+    if not os.path.isdir(outpath):
         raise IOError('Invalid output directory')
 
     # get studies
@@ -44,15 +44,16 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
     # analyze
     info = [('expression', expression),
             ('number of studies', len(study_set)),
-            ('study IDs', '; '.join(study_ids))] \
+            ('study IDs', '; '.join(str(s) for s in study_set))] \
            + list(extra_info)
     meta = MetaAnalysisPlus(info, dataset=dataset, ids=study_set, prior=prior, q=fdr)
 
     # output
     if save_files:
-        meta.save_csv(os.path.join(outdir, '%s_analysis.csv' % meta.info.name),
+        outpath = MetaAnalysisPlus.make_result_dir(outpath, meta.info.name)
+        meta.save_csv(os.path.join(outpath, '%s_analysis.csv' % meta.info.name),
                       image_names=image_names)
-        meta.save_images(image_names=image_names, outdir=outdir)
+        meta.save_images(image_names=image_names, outdir=outpath)
     return meta
 
 
