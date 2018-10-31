@@ -22,14 +22,14 @@ class AutocompletePage(tk.Frame):
     def create_labeled_ac_entry(self, row=0, width=60,
                                 label_text='Enter term or expression:'):
         ac_label = tk.Label(self, text=label_text) \
-            .grid(row=row, padx=10, pady=(10, 2), sticky='w')
+            .grid(row=row, padx=10, pady=(10, 2), sticky=tk.W)
 
         # term/expression entry
         row += 1
         ac_entry = AutocompleteEntry([], self, listboxLength=8, width=width,
                                      matchesFunction=self.matches_term,
                                      setFunction=self.set_selection)
-        ac_entry.grid(row=row, padx=15, pady=(2, 10))
+        ac_entry.grid(row=row, padx=15, pady=(2, 10), sticky=tk.W)
         self.ac_entry_list.append(ac_entry)
         return ac_label, ac_entry
 

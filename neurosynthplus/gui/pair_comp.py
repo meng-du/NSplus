@@ -11,11 +11,11 @@ elif version_info.major == 3:
     import tkinter as tk
 
 
-class ComparisonPage(AutocompletePage):
+class PairCompPage(AutocompletePage):
     def __init__(self, parent, **kwargs):
-        super(ComparisonPage, self).__init__(parent, **kwargs)
+        super(PairCompPage, self).__init__(parent, **kwargs)
         self.parent = parent
-        self.nb_label = 'Comparison'
+        self.nb_label = 'Pairwise Comparison'
         row_i = -1
 
         # page contents
@@ -45,7 +45,7 @@ class ComparisonPage(AutocompletePage):
                             'two equally sized sets',
                        variable=self.equal_size_var) \
             .grid(row=row_i, padx=10, pady=(2, 0), sticky=tk.W)
-        self.equal_size_var.trace('w', lambda name, i, mode, var: self.equal_size_onchange())
+        self.equal_size_var.trace('w', lambda name, i, mode: self.equal_size_onchange())
         #  number of iterations
         row_i += 1
         tk.Label(self, text='Number of iterations:') \
@@ -78,23 +78,38 @@ class ComparisonPage(AutocompletePage):
                                    highlightthickness=0)
         self.btn_start.grid(row=row_i, padx=10, pady=(20, 10))
 
-    def change_num_iter(self):
+    def change_num_iter(self, discard_change=False):
+        """
+        Toggle the Change/Apply button, unless discard_change is True
+        :param discard_change: if True, just disable the entry and make sure
+                               the button shows "Change"
+        """
+        # discard change
+        if discard_change and 'Apply' in self.btn_num_iter['text']:
+            self.entry_num_iter.config(state=tk.DISABLED)
+            self.btn_num_iter.config(text=' Change ')
+            return
+
+        # otherwise, toggle
         if self.equal_size_var.get() == 0:
             return
-        if 'Change' in self.btn_num_iter['text']:  # changing
+        if 'Change' in self.btn_num_iter['text']:
+            # changing, "Change" -> "Apply"
             self.entry_num_iter.config(state=tk.NORMAL)
             self.btn_num_iter.config(text=' Apply ')
-        else:  # applying change
-            new_fdr = self.entry_num_iter.get()
-            if Global().set_fdr(new_fdr):  # success
+        else:
+            # applying change, "Apply" -> "Change"
+            new_num_iter = self.entry_num_iter.get()
+            if Global().set_num_iter(new_num_iter):  # success
                 self.entry_num_iter.config(state=tk.DISABLED)
                 self.btn_num_iter.config(text=' Change ')
             else:  # error
                 self.entry_num_iter.delete(0, tk.END)
-                self.entry_num_iter.insert(tk.END, Global().fdr)
+                self.entry_num_iter.insert(tk.END, Global().num_iterations)
 
     def equal_size_onchange(self):
-        if self.equal_size_var.get() == 0:  # not checked
+        if self.equal_size_var.get() == 0:  # unchecked
+            self.change_num_iter(discard_change=True)
             num_iter = '1'
             button_state = tk.DISABLED
         else:  # checked
@@ -112,11 +127,18 @@ class ComparisonPage(AutocompletePage):
             return
 
         expr = self.ac_entry1.get()
-        contrary_expr = self.ac_entry1.get()
+        contrary_expr = self.ac_entry2.get()
         exclude_overlap = self.overlap_var.get() == 1
         reduce_larger_set = self.equal_size_var.get() == 1
         two_way = self.two_way_var.get() == 1
-        num_iterations = self.entry_num_iter.get()
+        num_iterations = Global().num_iterations if reduce_larger_set else 1
+
+        try:
+            Global().validate_expression(expr)
+            Global().validate_expression(contrary_expr)
+        except ValueError as e:
+            Global().show_error(e)
+            return
 
         if not Global().update_status(
                 status='Comparing "%s" and "%s"...' % (expr, contrary_expr),

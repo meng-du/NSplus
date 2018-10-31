@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 from ..src.datasetplus import DatasetPlus
 import os
+import re
 from datetime import datetime
 from threading import Lock, Thread
 from sys import version_info
@@ -134,6 +135,33 @@ class Global(Singleton):
             return False
         return True
 
+    def validate_expression(self, expression):  # some simple validations
+        expression = expression.strip()
+        if len(expression) == 0:
+            raise ValueError('No expression entered')
+        if re.search('[^a-zA-Z0-9*&~|() ]', expression) is not None:
+            raise ValueError('Illegal characters in expression')
+        if re.search('[|&] *[|&]', expression) is not None:
+            raise ValueError('Illegal usage of operators in expression')
+        if re.search('^[|&)]', expression) is not None:  # wrong leading operators
+            raise ValueError('Illegal usage of operators in expression')
+        if re.search('[|&(~]$', expression) is not None:  # wrong trailing operators
+            raise ValueError('Illegal usage of operators in expression')
+
+        # make sure any word without * is a neurosynth term
+        entered_terms = re.findall('[a-zA-Z0-9 *]+', expression)
+        ns_terms = set(self.dataset.get_feature_names())
+        for entry in entered_terms:
+            entry = entry.strip()
+            if len(entry) == 0:
+                continue
+            if len(entry.strip('* ')) == 0:
+                raise ValueError('Illegal usage of operators in expression')
+            if '*' in entry:
+                continue
+            if entry not in ns_terms:
+                raise ValueError('"%s" is not found in Neurosynth' % entry)
+
     def set_fdr(self, new_fdr):  # validate and set fdr
         try:
             new_fdr = float(new_fdr)
@@ -147,13 +175,13 @@ class Global(Singleton):
 
     def set_num_iter(self, new_num_iter):  # validate and set num of iterations
         try:
-            new_num_iter = int(new_num_iter)
-            if new_num_iter <= 0:
+            new_int_iter = int(new_num_iter)
+            if (not new_num_iter.isdigit()) or new_int_iter <= 0:
                 raise ValueError()
         except ValueError:
-            messagebox.showerror('Invalid Settings', 'Please enter a number greater than 0')
+            messagebox.showerror('Invalid Settings', 'Please enter an integer greater than 0')
             return False
-        self.num_iterations = new_num_iter
+        self.num_iterations = new_int_iter
         return True
 
     def show_error(self, exception):

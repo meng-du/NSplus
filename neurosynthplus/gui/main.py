@@ -1,7 +1,8 @@
 from __future__ import absolute_import, print_function
 from .analysis import AnalysisPage
 from .ranking import RankingPage
-from .comparison import ComparisonPage
+from .pair_comp import PairCompPage
+from .group_comp import GroupCompPage
 from .settings import SettingsPage
 from .globals import Global
 from threading import Thread
@@ -39,7 +40,8 @@ class MainApp(tk.Frame):
         self.nb_pages = [self.settings_page,
                          RankingPage(self.notebook),
                          AnalysisPage(self.notebook),
-                         ComparisonPage(self.notebook)]
+                         PairCompPage(self.notebook),
+                         GroupCompPage(self.notebook)]
         for page in self.nb_pages:
             self.notebook.add(page, text=page.nb_label)
         self.notebook.grid(row=row_i)
