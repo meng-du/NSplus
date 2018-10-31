@@ -65,16 +65,16 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
     if prior is not None and (prior <= 0 or prior >= 1):
         raise ValueError('prior has to be greater than 0 and less than 1')
     if reduce_larger_set and num_iterations < 5:
-        raise Warning('The larger study set is reduced, but the number of '
-                      'iteration is too small')
+        raise ValueError('The larger study set is reduced, but the number of '
+                         'iteration is too small')
     if not reduce_larger_set:
         num_iterations = 1
 
     # get studies
     study_sets = []
     if exclude_overlap:
-        expr = '(%s) &~ (%s)' % (expr, contrary_expr)
-        contrary_expr = '(%s) &~ (%s)' % (contrary_expr, expr)
+        expr, contrary_expr = '(%s) &~ (%s)' % (expr, contrary_expr), \
+                              '(%s) &~ (%s)' % (contrary_expr, expr)
     for expression in (expr, contrary_expr):
         try:
             studies = dataset.get_studies(expression=expression)
@@ -105,8 +105,10 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
             new_study_sets = study_sets
 
         # meta analysis
-        expr_meta = MetaAnalysisPlus(info=[], dataset=dataset, ids=new_study_sets[0],
-                                     ids2=new_study_sets[1], prior=prior, q=fdr)
+        expr_meta = MetaAnalysisPlus(info=[], dataset=dataset,
+                                     ids=new_study_sets[0],
+                                     ids2=new_study_sets[1],
+                                     prior=prior, q=fdr)
         meta_lists[0].append(expr_meta)
 
         if two_way:
@@ -124,14 +126,14 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
         [('expression', expr),
          ('number of studies', sizes[0]),
          ('contrary expression', contrary_expr),
-         ('number of studies', sizes[1]),
+         ('number of contrary studies', sizes[1]),
          ('number of iterations', num_iterations)] + list(extra_info))
     if two_way:
         mean_metas[1].info = MetaAnalysisPlus.Info(
-            [('expression', expr),
+            [('expression', contrary_expr),
              ('number of studies', sizes[1]),
-             ('contrary expression', contrary_expr),
-             ('number of studies', sizes[0]),
+             ('contrary expression', expr),
+             ('number of contrary studies', sizes[0]),
              ('number of iterations', num_iterations)] + list(extra_info))
 
     # save results
@@ -139,6 +141,6 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
         for mean_meta in mean_metas:
             filename = mean_meta.info.name + '.csv'
             mean_meta.save_csv(os.path.join(outdir, filename), image_names=image_names)
-            mean_meta.save_images()
+            mean_meta.save_images(outdir=outdir)
 
     return mean_metas if two_way else mean_metas[0]

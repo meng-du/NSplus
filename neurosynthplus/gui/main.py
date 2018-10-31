@@ -21,12 +21,12 @@ class MainApp(tk.Frame):
     def __init__(self, root, **kwargs):
         super(MainApp, self).__init__(root, **kwargs)
         self.parent = root
-        self.app_name = 'NeuroSynth+'
+        self.app_name = 'Neurosynth+'
 
         root.title(self.app_name)
         # parent.geometry('350x200')
 
-        # menu bar
+        # menu bar TODO
         menubar = tk.Menu(root, title=self.app_name)
         about_menu = tk.Menu(menubar, name='test')
         about_menu.add_command(label='self.app_name', command=lambda: print('1'))

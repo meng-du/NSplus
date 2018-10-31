@@ -4,6 +4,7 @@ from ..src.metaplus import NeurosynthInfo
 from .autocomplete_page import AutocompletePage
 from .globals import Global
 from threading import Thread
+import os
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
@@ -47,7 +48,7 @@ class AnalysisPage(AutocompletePage):
         self.btn_start.grid(row=row_i, padx=10, pady=10)
 
     def start(self):
-        if not Global().valid_options():
+        if not Global().validate_options():
             return
 
         expression = self.ac_entry.get()
@@ -62,6 +63,7 @@ class AnalysisPage(AutocompletePage):
             return
 
         def _analyze():
+            outdir = None
             try:
                 # output directory
                 outdir = Global().make_result_dir(NeurosynthInfo.get_shorthand_expr(expression))
@@ -74,6 +76,8 @@ class AnalysisPage(AutocompletePage):
                 Global().root.event_generate('<<Done_analysis>>')  # trigger event
             except Exception as e:
                 Global().show_error(e)
+                if outdir is not None:
+                    os.rmdir(outdir)
 
         Thread(target=_analyze).start()
         Global().root.bind('<<Done_analysis>>',

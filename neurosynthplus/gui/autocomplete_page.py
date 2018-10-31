@@ -29,7 +29,7 @@ class AutocompletePage(tk.Frame):
         ac_entry = AutocompleteEntry([], self, listboxLength=8, width=width,
                                      matchesFunction=self.matches_term,
                                      setFunction=self.set_selection)
-        ac_entry.grid(row=row, padx=15, pady=(2, 10), sticky=tk.W)
+        ac_entry.grid(row=row, padx=15, pady=(2, 30), sticky=tk.W)
         self.ac_entry_list.append(ac_entry)
         return ac_label, ac_entry
 

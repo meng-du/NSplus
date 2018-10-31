@@ -31,7 +31,7 @@ class Singleton(_Singleton('SingletonMeta', (object,), {})):
 
 class Global(Singleton):
     """
-    A class that maintains the NeuroSynth dataset instance, global settings,
+    A class that maintains the Neurosynth dataset instance, global settings,
     and the current app status (including UI for the status bar)
     """
     def __init__(self, root=None, **kwargs):
@@ -50,7 +50,7 @@ class Global(Singleton):
         self.default_roi = 'MNI152_T1_2mm_brain.nii.gz'
         self.roi_filename = None
         # output directory
-        self.outdir = os.path.join(os.path.expanduser('~'), 'NeuroSynthPlus')
+        self.outdir = os.path.join(os.path.expanduser('~'), 'NeurosynthPlus')
         if not os.path.isdir(self.outdir):
             os.mkdir(self.outdir)
         # fdr
@@ -125,7 +125,7 @@ class Global(Singleton):
 
         return not bool(prev)
 
-    def valid_options(self):
+    def validate_options(self):
         if not os.path.isdir(self.outdir):
             messagebox.showerror('Invalid Settings', 'Please select a valid output directory in Settings')
             return False
@@ -136,6 +136,7 @@ class Global(Singleton):
         return True
 
     def validate_expression(self, expression):  # some simple validations
+        # FIXME show message instead
         expression = expression.strip()
         if len(expression) == 0:
             raise ValueError('No expression entered')

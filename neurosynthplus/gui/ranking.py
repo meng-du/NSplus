@@ -73,7 +73,7 @@ class RankingPage(tk.Frame):
         """
         Load ROI and then call the rank method
         """
-        if not Global().valid_options():
+        if not Global().validate_options():
             return
 
         meta_img = self.img_var.get()

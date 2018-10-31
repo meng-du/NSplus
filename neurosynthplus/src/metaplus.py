@@ -42,7 +42,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     An extension of the NeuroSynth MetaAnalysis class.
     """
 
-    def __init__(self, info, images=None, *args, **kwargs):
+    def __init__(self, info, dataset, images=None, *args, **kwargs):
         """
         :param info: a list of string tuples containing information regarding the
                      meta src, e.g. [('expression', 'social'), ('num_studies', 1000)]
@@ -51,7 +51,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                        class will be constructed with the existing images and info
         """
         if images is None:
-            super(MetaAnalysisPlus, self).__init__(*args, **kwargs)
+            super(MetaAnalysisPlus, self).__init__(dataset, *args, **kwargs)
             self.info = MetaAnalysisPlus.Info(info)
         else:
             if isinstance(info, MetaAnalysisPlus.Info):
@@ -65,7 +65,8 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     class Info(NeurosynthInfo):
         def __init__(self, *args, **kwargs):
             """
-            Initialize with 'expression', and 'contrary_expr' if comparing to another expression
+            Initialize with 'expression', and 'contrary expression' if comparing to
+            another expression
             """
             super(NeurosynthInfo, self).__init__(*args, **kwargs)
             self.name = self.get_shorthand()
@@ -78,7 +79,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             if 'expression' in self:
                 name = NeurosynthInfo.get_shorthand_expr(self['expression'])
             if 'contrary expression' in self:
-                name += '_vs_' + NeurosynthInfo.get_shorthand_expr(self['contrary_expr'])
+                name += '_vs_' + NeurosynthInfo.get_shorthand_expr(self['contrary expression'])
             return name
 
         def as_pandas_df(self):
@@ -140,8 +141,10 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         :param meta_list: a list of MetaAnalysisPlus objects
         :return: one MetaAnalysisPlus object that has the mean images
         """
-        if len(meta_list) <= 1:
-            return meta_list
+        if len(meta_list) == 0:
+            raise ValueError('Empty list')
+        if len(meta_list) == 1:
+            return meta_list[0]
         else:
             # calculate means for each comparison across all iterations
             mean_imgs = {}
@@ -149,4 +152,4 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                 mean_imgs[img] = np.mean([meta.images[img] for meta in meta_list], axis=0)
             mean_meta_info = OrderedDict(meta_list[0].info)
             mean_meta_info['info'] = 'mean across %d analyses' % len(meta_list)
-            return cls(info=mean_meta_info, images=mean_imgs)
+            return cls(info=mean_meta_info, dataset=meta_list[0].dataset, images=mean_imgs)
