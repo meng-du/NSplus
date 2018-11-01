@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
-import os
+from .page_builder import PageBuilder
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
@@ -12,7 +12,7 @@ elif version_info.major == 3:
     from tkinter.filedialog import askopenfilename, askdirectory
 
 
-class SettingsPage(tk.Frame):
+class SettingsPage(tk.Frame, PageBuilder):
     def __init__(self, parent, **kwargs):
         super(SettingsPage, self).__init__(parent, **kwargs)
         self.parent = parent
@@ -23,18 +23,18 @@ class SettingsPage(tk.Frame):
         #   instruction label
         row_i += 1
         tk.Label(self, text='Load an ROI mask:') \
-            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky=tk.W)
         #   browse button
         tk.Button(self,
                   command=self.load_roi_from_button,
                   text=' Browse ',
                   highlightthickness=0) \
-            .grid(row=row_i, column=0, padx=(160, 0), pady=(8, 0), sticky='w')
+            .grid(row=row_i, column=0, padx=(160, 0), pady=(8, 0), sticky=tk.W)
         tk.Button(self,
                   command=lambda: Global().use_default_roi(),
                   text=' Use default (whole brain) ',
                   highlightthickness=0) \
-            .grid(row=row_i, column=0, padx=(250, 0), pady=(8, 0), sticky='w')
+            .grid(row=row_i, column=0, padx=(250, 0), pady=(8, 0), sticky=tk.W)
         #   file name label
         row_i += 1
         self.label_roi_file = tk.Label(self,
@@ -46,19 +46,19 @@ class SettingsPage(tk.Frame):
         # separator
         row_i += 1
         self.separator = ttk.Separator(self, orient=tk.HORIZONTAL)
-        self.separator.grid(row=row_i, column=0, sticky='we', padx=10, pady=15)
+        self.separator.grid(row=row_i, column=0, sticky='we', padx=10, pady=25)
 
         # output directory
         #   instruction label
         row_i += 1
         tk.Label(self, text='Output directory:') \
-            .grid(row=row_i, column=0, padx=10, pady=2, sticky='w')
+            .grid(row=row_i, column=0, padx=10, pady=2, sticky=tk.W)
         #   browse button
         tk.Button(self,
                   command=self.get_outdir_from_button,
                   text=' Browse ',
                   highlightthickness=0) \
-            .grid(row=row_i, column=0, padx=(140, 0), sticky='w')
+            .grid(row=row_i, column=0, padx=(140, 0), sticky=tk.W)
         #   directory label
         row_i += 1
         self.label_outdir = tk.Label(self, text=Global().outdir,
@@ -69,22 +69,17 @@ class SettingsPage(tk.Frame):
         # separator
         row_i += 1
         self.separator = ttk.Separator(self, orient=tk.HORIZONTAL)
-        self.separator.grid(row=row_i, column=0, sticky='we', padx=10, pady=15)
+        self.separator.grid(row=row_i, column=0, sticky='we', padx=10, pady=25)
 
         # fdr
         row_i += 1
         tk.Label(self, text='False discovery rate when '
                             'correcting for multiple comparisons:') \
             .grid(row=row_i, column=0, padx=10, pady=2, sticky='w')
-        self.entry_fdr = tk.Entry(self, width=5)
-        self.entry_fdr.insert(tk.END, Global().fdr)
-        self.entry_fdr.config(state=tk.DISABLED)
-        self.entry_fdr.config(disabledbackground='#e0e0e0', disabledforeground='#6d6d6d')
-        self.entry_fdr.grid(row=row_i, column=0, padx=(0, 110), sticky='e')
-        self.entry_fdr.bind('<Return>', lambda e: self.change_fdr())
-        self.btn_fdr = tk.Button(self, command=self.change_fdr, text=' Change ',
-                                 highlightthickness=0)
-        self.btn_fdr.grid(row=row_i, column=0, padx=(0, 30), sticky='e')
+        self.entry_fdr, self.btn_fdr = self.add_controlled_entry(
+            row_i, width=5, padx=(0, 40), sticky=tk.E,
+            default_val=Global().fdr,
+            btn_func=self.change_fdr)
 
     def get_outdir_from_button(self):
         outdir = askdirectory(initialdir=Global().outdir)

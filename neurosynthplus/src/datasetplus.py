@@ -32,7 +32,6 @@ class DatasetPlus(ns.Dataset):
         data_file = os.path.join(os.path.dirname(__file__), os.pardir, 'data',
                                  'database_v0.7_with_features.pkl.gz')
         dataset = cls.load(data_file, compressed=True)
-        dataset.__class__ = DatasetPlus  # TODO any better way to downcast class?
         return dataset
 
     @classmethod

@@ -1,6 +1,5 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
-from .autocomplete_page import AutocompletePage
 from abc import ABCMeta, abstractmethod
 from sys import version_info
 if version_info.major == 2:
@@ -9,21 +8,48 @@ elif version_info.major == 3:
     import tkinter as tk
 
 
-class ComparisonPage(AutocompletePage):
+class PageBuilder(object):
+    """
+    Abstract base class containing methods to add shared page components
+    """
     __metaclass__ = ABCMeta
 
-    def __init__(self, parent, **kwargs):
-        super(ComparisonPage, self).__init__(parent, **kwargs)
-        self.parent = parent
+    def __init__(self, *args, **kwargs):
+        super(PageBuilder, self).__init__(*args, **kwargs)
 
-    def add_settings(self, row, overlap=True, size=True, two_ways=True, comp_btn=True):
+    def add_img_selection(self, row):
+        self.image_labels = {
+            'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
+            'Forward inference z score (uniformity test)': 'uniformity-test_z',
+            'Forward inference z score (uniformity test) with multiple comparison correction':
+                'uniformity-test_z_FDR_',
+            'Reverse inference with a uniform prior=0.5': 'pFgA_given_pF=0.50',
+            'Reverse inference z score (association test)': 'association-test_z',
+            'Reverse inference z score (association test) with multiple comparison correction':
+                'association-test_z_FDR_'
+        }
+        self.img_var = tk.StringVar(value='pFgA_given_pF=0.50')
+        for text in self.image_labels.keys():
+            tk.Radiobutton(self,
+                           text=text,
+                           variable=self.img_var,
+                           value=self.image_labels[text]) \
+                .grid(row=row, column=0, columnspan=2, padx=30, sticky='w')
+            row += 1
+
+        return row - 1
+
+    def add_comparison_settings(self, row, overlap=True, size=True, two_ways=True,
+                                comp_btn=True):
+        row -= 1
         #  checkbox: excluding overlap
         if overlap:
+            row += 1
             self.overlap_var = tk.IntVar(value=1)
             tk.Checkbutton(self,
                            text='Exclude studies associated with both terms',
                            variable=self.overlap_var) \
-                .grid(row=row, padx=10, pady=(10, 2), sticky=tk.W)
+                .grid(row=row, padx=15, pady=2, sticky=tk.W)
 
         #  checkbox: equal study set sizes
         if size:
@@ -33,23 +59,17 @@ class ComparisonPage(AutocompletePage):
                            text='Randomly sample the larger study set to get '
                                 'two equally sized sets',
                            variable=self.equal_size_var) \
-                .grid(row=row, padx=10, pady=(2, 0), sticky=tk.W)
+                .grid(row=row, padx=15, pady=(2, 0), sticky=tk.W)
             self.equal_size_var.trace('w', lambda name, i, mode: self.equal_size_onchange())
             #  number of iterations
             row += 1
             tk.Label(self, text='Number of iterations:') \
                 .grid(row=row, padx=(50, 0), pady=(0, 2), sticky='w')
             #   entry
-            self.entry_num_iter = tk.Entry(self, width=5)
-            self.entry_num_iter.insert(tk.END, Global().num_iterations)
-            self.entry_num_iter.config(disabledbackground='#e0e0e0', disabledforeground='#6d6d6d')
-            self.entry_num_iter.config(state=tk.DISABLED)
-            self.entry_num_iter.grid(row=row, padx=(200, 0), sticky=tk.W)
-            self.entry_num_iter.bind('<Return>', lambda e: self.change_num_iter())
-            #   button
-            self.btn_num_iter = tk.Button(self, command=self.change_num_iter, text=' Change ',
-                                          highlightthickness=0)
-            self.btn_num_iter.grid(row=row, padx=(270, 0), sticky=tk.W)
+            self.entry_num_iter, self.btn_num_iter = self.add_controlled_entry(
+                row, width=5, padx=(200, 0),
+                default_val=Global().num_iterations,
+                btn_func=self.change_num_iter)
 
         #  checkbox: compare both ways
         if two_ways:
@@ -58,7 +78,7 @@ class ComparisonPage(AutocompletePage):
             tk.Checkbutton(self,
                            text='Analyze both terms (term1 vs term2, and term2 vs term1)',
                            variable=self.two_way_var) \
-                .grid(row=row, padx=10, pady=2, sticky=tk.W)
+                .grid(row=row, padx=15, pady=2, sticky=tk.W)
 
         #  compare button
         if comp_btn:
@@ -67,9 +87,37 @@ class ComparisonPage(AutocompletePage):
                                        command=self.start,
                                        text=' Compare ',
                                        highlightthickness=0)
-            self.btn_start.grid(row=row, padx=10, pady=(30, 10))
+            self.btn_start.grid(row=row, padx=10, pady=(20, 10))
+
+        return row
+
+    def add_controlled_entry(self, row, default_val, btn_func, width=5, padx=(0, 0),
+                             pady=(0, 0), sticky=tk.W):
+        if sticky == tk.W:
+            entry_padx = (padx[0], 0)
+            btn_padx = (padx[0] + 10 * (width + 2), padx[1])
+        elif sticky == tk.E:
+            entry_padx = (padx[0], padx[1] + 10 * (width + 2))
+            btn_padx = (0, padx[1])
+        else:
+            raise ValueError('Sticky type not supported')
+
+        entry = tk.Entry(self, width=width)
+        entry.insert(tk.END, default_val)
+        entry.config(disabledbackground='#e0e0e0',
+                     disabledforeground='#6d6d6d')
+        entry.config(state=tk.DISABLED)
+        entry.grid(row=row, padx=entry_padx, pady=pady, sticky=sticky)
+        entry.bind('<Return>', lambda e: btn_func())
+
+        button = tk.Button(self, command=btn_func, text=' Change ',
+                           highlightthickness=0)
+        button.grid(row=row, padx=btn_padx, pady=pady, sticky=sticky)
+
+        return entry, button
 
     def change_num_iter(self, discard_change=False):
+        # TODO a general function
         """
         Toggle the Change/Apply button, unless discard_change is True
         :param discard_change: if True, just disable the entry and make sure
@@ -112,7 +160,3 @@ class ComparisonPage(AutocompletePage):
         self.entry_num_iter.delete(0, tk.END)
         self.entry_num_iter.insert(tk.END, num_iter)
         self.entry_num_iter.config(state=tk.DISABLED)
-
-    @abstractmethod
-    def start(self):
-        pass

@@ -15,7 +15,6 @@ class AutocompletePage(tk.Frame):
     """
     def __init__(self, parent, **kwargs):
         super(AutocompletePage, self).__init__(parent, **kwargs)
-        self.parent = parent
         self.ac_entry_list = []
         Global().ac_lists.append(self.ac_entry_list)
 

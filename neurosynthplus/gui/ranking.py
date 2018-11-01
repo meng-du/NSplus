@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 from ..src.ranking import rank_terms
+from .page_builder import PageBuilder
 from .globals import Global
 import os
 from threading import Thread
@@ -12,7 +13,7 @@ elif version_info.major == 3:
     from tkinter import messagebox
 
 
-class RankingPage(tk.Frame):
+class RankingPage(tk.Frame, PageBuilder):
     def __init__(self, parent, **kwargs):
         super(RankingPage, self).__init__(parent, **kwargs)
         self.parent = parent
@@ -20,54 +21,36 @@ class RankingPage(tk.Frame):
         row_i = -1
 
         # page contents
-        # image selection
-        #   instruction label
+        #  image selection
         row_i += 1
         tk.Label(self, text='Sort terms by:') \
-            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
-        #   radio buttons
-        self.image_labels = {
-            'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
-            'Forward inference z score (uniformity test)': 'uniformity-test_z',
-            'Forward inference z score (uniformity test) with multiple comparison correction':
-                'uniformity-test_z_FDR_',
-            'Reverse inference with a uniform prior=0.5': 'pFgA_given_pF=0.50',
-            'Reverse inference z score (association test)': 'association-test_z',
-            'Reverse inference z score (association test) with multiple comparison correction':
-                'association-test_z_FDR_'
-        }
-        self.img_var = tk.StringVar(value='pFgA_given_pF=0.50')
-        for text in self.image_labels.keys():
-            row_i += 1
-            tk.Radiobutton(self,
-                           text=text,
-                           variable=self.img_var,
-                           value=self.image_labels[text]) \
-                .grid(row=row_i, column=0, columnspan=2, padx=30, sticky='w')
+            .grid(row=row_i, padx=10, pady=(10, 2), sticky='w')
+        row_i = self.add_img_selection(row_i + 1)
 
-        # procedure selection
-        #   instruction label
+        #  procedure selection
+        #   label
         row_i += 1
         tk.Label(self, text='Procedure:') \
-            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky='w')
+            .grid(row=row_i, padx=10, pady=(10, 2), sticky='w')
         #   radio buttons
         self.proc_var = tk.BooleanVar(value=False)  # whether to rank first
-        for i, text in enumerate(['Average the values across ROI first, then rank terms',
-                                  'Rank terms at each voxel first, then average ranks across ROI']):
+        for i, text in enumerate(
+                ['Average the values across ROI first, then rank terms',
+                 'Rank terms at each voxel first, then average ranks across ROI']):
             row_i += 1
             tk.Radiobutton(self,
                            text=text,
                            variable=self.proc_var,
                            value=bool(i)) \
-                .grid(row=row_i, column=0, columnspan=2, padx=30, sticky='w')
+                .grid(row=row_i, padx=30, sticky='w')
 
-        # run button
+        #  run button
         row_i += 1
         self.btn_start = tk.Button(self,
                                    command=self.start,
                                    text=' Start Ranking ',
                                    highlightthickness=0)
-        self.btn_start.grid(row=row_i, columnspan=2, padx=1, pady=20)
+        self.btn_start.grid(row=row_i, padx=1, pady=20)
 
     def start(self):
         """

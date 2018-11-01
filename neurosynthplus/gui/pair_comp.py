@@ -1,11 +1,12 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
-from .comparison import ComparisonPage
+from .page_builder import PageBuilder
+from .autocomplete_page import AutocompletePage
 from ..src.comparison import compare_expressions
 from threading import Thread
 
 
-class PairCompPage(ComparisonPage):
+class PairCompPage(AutocompletePage, PageBuilder):
     def __init__(self, parent, **kwargs):
         super(PairCompPage, self).__init__(parent, **kwargs)
         self.parent = parent
@@ -23,7 +24,7 @@ class PairCompPage(ComparisonPage):
             row=row_i,
             label_text='Enter term or expression in contrast:')[1]
 
-        self.add_settings(row=row_i + 2)
+        self.add_comparison_settings(row=row_i + 2)
 
     def start(self):
         if not Global().validate_options():
