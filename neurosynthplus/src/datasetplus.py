@@ -31,8 +31,7 @@ class DatasetPlus(ns.Dataset):
     def load_default_database(cls):
         data_file = os.path.join(os.path.dirname(__file__), os.pardir, 'data',
                                  'database_v0.7_with_features.pkl.gz')
-        dataset = cls.load(data_file, compressed=True)
-        return dataset
+        return cls.load(data_file, compressed=True)
 
     @classmethod
     def load(cls, filename, compressed=False):

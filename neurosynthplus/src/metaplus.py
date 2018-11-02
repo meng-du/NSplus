@@ -73,6 +73,12 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             super(NeurosynthInfo, self).__init__(*args, **kwargs)
             self.name = self.get_shorthand()
 
+        def __str__(self):
+            return '\n' + self.name + '\n' + str(self.as_pandas_df()) + '\n'
+
+        def __repr__(self):
+            return str(self)
+
         def get_shorthand(self):
             """
             Return a short description of the meta analysis (to be used for file names)
@@ -81,7 +87,8 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             if 'expression' in self:
                 name = NeurosynthInfo.get_shorthand_expr(self['expression'])
             if 'contrary expression' in self:
-                name += '_vs_' + NeurosynthInfo.get_shorthand_expr(self['contrary expression'])
+                name += '_vs_' + \
+                        NeurosynthInfo.get_shorthand_expr(self['contrary expression'])
             return name
 
         def as_pandas_df(self):
@@ -89,6 +96,12 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             Return the information as a pandas data frame
             """
             return pd.DataFrame(list(self.values()), index=list(self.keys()))
+
+    def __str__(self):
+        return '\n' + str(self._get_images_with_info()) + '\n'
+
+    def __repr__(self):
+        return str(self)
 
     # Methods for File Output #
 
@@ -142,7 +155,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                                    filename=os.path.join(outdir, filename),
                                    masker=self.dataset.masker)
 
-    # Methods of operations done on MetaAnalysisPlus object lists #
+    # Methods of operations done on list of MetaAnalysisPlus objects #
 
     @classmethod
     def mean(cls, meta_list):
@@ -162,4 +175,50 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         mean_imgs = {}
         for img in meta_list[0].images:
             mean_imgs[img] = np.mean([meta.images[img] for meta in meta_list], axis=0)
-        return cls(info=meta_list[0].info, dataset=meta_list[0].dataset, images=mean_imgs)
+        return cls(info=meta_list[0].info, dataset=meta_list[0].dataset,
+                   images=mean_imgs)
+
+    @classmethod
+    def conjunction(cls, meta_list, image_name, lower_threshold=None,
+                    upper_threshold=None):
+        """
+        Given a list of meta-analysis results, compute a new image based on image_name,
+        where the value at each voxel is the number of images in meta_list in which this
+        voxel value passes the given threshold criterion.
+
+        At least one of lower_threshold and upper_threshold must be specified.
+        When lower_threshold is the only specified threshold:
+
+        When both lower_threshold and upper_threshold are specified:
+        if lower_threshold > upper_threshold, the voxels that are EITHER greater than the
+        lower_threshold OR less the upper_threshold will be counted;
+        If lower_threshold < upper_threshold, the voxels that are greater than the
+        lower_threshold AND less the upper_threshold will be counted.
+
+        :return: the conjunction image (numpy array), and a description of
+                 the conjunction criterion (string)
+        """
+        if lower_threshold is None and upper_threshold is None:
+            raise ValueError('Must specify at least one threshold')
+
+        src_imgs = np.array([meta.images[image_name] for meta in meta_list])
+
+        if upper_threshold is None:
+            conjunction = np.sum(src_imgs > lower_threshold, axis=0)
+            comparison_name = '>' + str(lower_threshold)
+        elif lower_threshold is None:
+            conjunction = np.sum(src_imgs < upper_threshold, axis=0)
+            comparison_name = '<' + str(upper_threshold)
+        else:
+            if lower_threshold < upper_threshold:
+                conjunction = np.sum((src_imgs > lower_threshold) &
+                                     (src_imgs < upper_threshold), axis=0)
+                comparison_name = str(lower_threshold) + '-' + str(upper_threshold)
+            elif lower_threshold > upper_threshold:
+                conjunction = np.sum((lower_threshold < src_imgs) |
+                                     (src_imgs < upper_threshold), axis=0)
+                comparison_name = '>' + str(lower_threshold) + 'or' + '<' + str(upper_threshold)
+            else:
+                raise ValueError('Lower and upper thresholds must be different')
+
+        return conjunction, comparison_name  # TODO return metaplus
