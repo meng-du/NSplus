@@ -18,6 +18,12 @@ class PageBuilder(object):
         super(PageBuilder, self).__init__(*args, **kwargs)
 
     def add_img_selection(self, row):
+        """
+        Add 6 radio buttons that asks user to select one of the images
+        :return: the last row number
+        :param row: (integer) the first row number for these widgets
+        :return: (integer) the last row number
+        """
         self.image_labels = {
             'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
             'Forward inference z score (uniformity test)': 'uniformity-test_z',
@@ -40,7 +46,13 @@ class PageBuilder(object):
         return row - 1
 
     def add_comparison_settings(self, row, overlap=True, size=True, two_ways=True,
-                                comp_btn=True):
+                                comp_btn=True, start_func=None):
+        """
+        Add 3 check box widgets related to term comparison
+        :param start_func: a function that runs when comp_btn is clicked; must be
+                           defined if comp_btn=True
+        :return: (integer) the last row number
+        """
         row -= 1
         #  checkbox: excluding overlap
         if overlap:
@@ -60,16 +72,24 @@ class PageBuilder(object):
                                 'two equally sized sets',
                            variable=self.equal_size_var) \
                 .grid(row=row, padx=15, pady=(2, 0), sticky=tk.W)
-            self.equal_size_var.trace('w', lambda name, i, mode: self.equal_size_onchange())
-            #  number of iterations
+            #  number of iterations text label
             row += 1
             tk.Label(self, text='Number of iterations:') \
                 .grid(row=row, padx=(50, 0), pady=(0, 2), sticky='w')
-            #   entry
-            self.entry_num_iter, self.btn_num_iter = self.add_controlled_entry(
-                row, width=5, padx=(200, 0),
-                default_val=Global().num_iterations,
-                btn_func=self.change_num_iter)
+
+            #   controlled entry
+            def change_func():
+                if self.equal_size_var.get() == 1:
+                    self.entry_controller(self.entry_num_iter, self.btn_num_iter,
+                                          Global().num_iterations, Global().set_num_iter)
+            self.entry_num_iter, self.btn_num_iter = \
+                self.add_controlled_entry_with_controller(
+                    row=row,
+                    entry_val=lambda: Global().num_iterations,
+                    disabled_entry_val='1',
+                    btn_func=change_func,
+                    checkbox_var=self.equal_size_var,
+                    padx=(200, 0))
 
         #  checkbox: compare both ways
         if two_ways:
@@ -83,16 +103,32 @@ class PageBuilder(object):
         #  compare button
         if comp_btn:
             row += 1
+            if start_func is None:
+                raise RuntimeError('No method specified for the compare button')
             self.btn_start = tk.Button(self,
-                                       command=self.start,
+                                       command=start_func,
                                        text=' Compare ',
                                        highlightthickness=0)
             self.btn_start.grid(row=row, padx=10, pady=(20, 10))
 
         return row
 
-    def add_controlled_entry(self, row, default_val, btn_func, width=5, padx=(0, 0),
-                             pady=(0, 0), sticky=tk.W):
+    # Methods below are related to a button-controlled entry, which can be together
+    # controlled with a checkbox
+
+    def add_controlled_entry(self, row, entry_val, btn_func,
+                             width=5, padx=(0, 0), pady=(0, 0), sticky=tk.W):
+        """
+        Add an entry controlled by a button next to it. The button toggles the entry
+        status between disabled (button showing "Apply") and normal (button showing
+        "Change")
+
+        :param entry_val: the initial value for the entry (could be None)
+        :param btn_func: (function) a function that runs when the button is clicked,
+                         see entry_controller below
+        :param width: (integer) width of the entry
+        :return: (tkinter widgets) the entry and the button
+        """
         if sticky == tk.W:
             entry_padx = (padx[0], 0)
             btn_padx = (padx[0] + 10 * (width + 2), padx[1])
@@ -103,7 +139,8 @@ class PageBuilder(object):
             raise ValueError('Sticky type not supported')
 
         entry = tk.Entry(self, width=width)
-        entry.insert(tk.END, default_val)
+        if entry_val is not None:
+            entry.insert(tk.END, entry_val)
         entry.config(disabledbackground='#e0e0e0',
                      disabledforeground='#6d6d6d')
         entry.config(state=tk.DISABLED)
@@ -116,47 +153,104 @@ class PageBuilder(object):
 
         return entry, button
 
-    def change_num_iter(self, discard_change=False):
-        # TODO a general function
+    def entry_controller(self, entry, button, entry_val=None, set_func=None,
+                         discard_change=False):
         """
-        Toggle the Change/Apply button, unless discard_change is True
-        :param discard_change: if True, just disable the entry and make sure
-                               the button shows "Change"
+        Toggles the Change/Apply button that controls an entry (see
+        add_controlled_entry above), unless discard_change is True.
+        Define another callback function with no parameters to pass to
+        add_controlled_entry as btn_func, and call this function in it.
+
+        :param entry_val: a value to fill the entry when set_func returns false
+                          (i.e. when user enters an invalid value)
+        :param set_func: a function called when clicking "Apply"; should take 1
+                         parameter, i.e. the user input in the entry, and returns
+                         either True (successful) or False (invalid entry input)
+                         Must be specified when discard_change=False
+        :param discard_change: if True, just disable the entry, discard changes if
+                               there is any, and make sure the button shows "Change"
         """
         # discard change
-        if discard_change and 'Apply' in self.btn_num_iter['text']:
-            self.entry_num_iter.config(state=tk.DISABLED)
-            self.btn_num_iter.config(text=' Change ')
+        if discard_change:
+            if 'Apply' in button['text']:
+                entry.config(state=tk.DISABLED)
+                button.config(text=' Change ')
             return
 
         # otherwise, toggle
-        if self.equal_size_var.get() == 0:
-            return
-        if 'Change' in self.btn_num_iter['text']:
+        if 'Change' in button['text']:
             # changing, "Change" -> "Apply"
-            self.entry_num_iter.config(state=tk.NORMAL)
-            self.btn_num_iter.config(text=' Apply ')
+            entry.config(state=tk.NORMAL)
+            button.config(text=' Apply ')
         else:
             # applying change, "Apply" -> "Change"
-            new_num_iter = self.entry_num_iter.get()
-            if Global().set_num_iter(new_num_iter):  # success
-                self.entry_num_iter.config(state=tk.DISABLED)
-                self.btn_num_iter.config(text=' Change ')
+            if set_func is None:
+                raise RuntimeError('No method specified to set the value')
+            new_val = entry.get()
+            if set_func(new_val):  # success
+                entry.config(state=tk.DISABLED)
+                button.config(text=' Change ')
             else:  # error
-                self.entry_num_iter.delete(0, tk.END)
-                self.entry_num_iter.insert(tk.END, Global().num_iterations)
+                entry.delete(0, tk.END)
+                if entry_val is not None:
+                    entry.insert(tk.END, entry_val)
 
-    def equal_size_onchange(self):
-        if self.equal_size_var.get() == 0:  # unchecked
-            self.change_num_iter(discard_change=True)
-            num_iter = '1'
+    def add_controlled_entry_with_controller(self, row, entry_val, disabled_entry_val,
+                                             btn_func, checkbox_var, **kwargs):
+        """
+        Same as add_controlled_entry, but both entry and button are controlled by
+        another checkbox, whose variable is checkbox_var
+
+        :param entry_val: initial and fallback value for the entry, or a function
+                          that returns this value
+                          Note: use lambda to pass by reference if it's a variable,
+                          e.g. entry_val=lambda: some_entry_val
+        :param kwargs: anything else passed to add_controlled_entry
+        :return: (tkinter widgets) entry and button
+        """
+        val = entry_val() if callable(entry_val) else entry_val
+        entry, button = self.add_controlled_entry(row, val, btn_func, **kwargs)
+
+        #  checkbox callback
+        def checkbox_onchange(name=None, index=None, mode=None):
+            self.controlled_entry_controller_onchange(checkbox_var, entry, button,
+                                                      disabled_entry_val, entry_val)
+
+        checkbox_onchange()  # set initial state
+        checkbox_var.trace('w', checkbox_onchange)
+
+        return entry, button
+
+    def controlled_entry_controller_onchange(self, checkbox_var, entry, button,
+                                             disabled_entry_val, enabled_entry_val):
+        """
+        When a button-controlled entry is also controlled by another checkbox
+        (i.e. the checkbox controls both: when it's not checked, button
+        and entry are both disabled), this callback function defines the button
+        and entry behaviors whenever the checkbox value changes
+        Use this function like:
+        checkbox_var.trace('w',
+            lambda name, index, mode: controlled_entry_controller_onchange())
+
+        :param checkbox_var: the tkinter variable for the checkbox
+        :param disabled_entry_val: the value for the entry when the checkbox is not
+                                   checked, or a function that returns this value
+        :param enabled_entry_val: the value for the entry when the checkbox is
+                                  checked, or a function that returns this value
+        """
+        if checkbox_var.get() == 0:  # unchecked
+            self.entry_controller(entry, button, discard_change=True)
+            entry_val = disabled_entry_val() if callable(disabled_entry_val) \
+                else disabled_entry_val
             button_state = tk.DISABLED
         else:  # checked
-            num_iter = Global().num_iterations
+            entry_val = enabled_entry_val() if callable(enabled_entry_val) \
+                else enabled_entry_val
             button_state = tk.NORMAL
 
-        self.btn_num_iter.config(state=button_state)
-        self.entry_num_iter.config(state=tk.NORMAL)
-        self.entry_num_iter.delete(0, tk.END)
-        self.entry_num_iter.insert(tk.END, num_iter)
-        self.entry_num_iter.config(state=tk.DISABLED)
+        button.config(state=button_state)
+        entry.config(state=tk.NORMAL)
+        entry.delete(0, tk.END)
+        if entry_val is not None:
+            entry.insert(tk.END, entry_val)
+        entry.config(state=tk.DISABLED)

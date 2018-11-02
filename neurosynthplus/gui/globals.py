@@ -56,6 +56,9 @@ class Global(Singleton):
         self.fdr = 0.01
         # number of iterations (for comparison)
         self.num_iterations = 500
+        # lower and upper thresholds (for comparison)
+        self.lower_thr = 0.6
+        self.upper_thr = 0.5
 
         # autocomplete entry lists to be updated after loading database
         self.ac_lists = []
@@ -183,6 +186,26 @@ class Global(Singleton):
             return False
         self.num_iterations = new_int_iter
         return True
+
+    def set_threshold(self, new_thr, which_thr):
+        try:
+            new_thr = float(new_thr)
+        except ValueError:
+            messagebox.showerror('Invalid Settings', 'Please enter a number')
+            return False
+        if which_thr == 'upper':
+            self.upper_thr = new_thr
+        elif which_thr == 'lower':
+            self.lower_thr = new_thr
+        else:
+            raise RuntimeError('Invalid threshold type')
+        return True
+
+    def set_lower_thr(self, new_thr):
+        return self.set_threshold(new_thr, 'lower')
+
+    def set_upper_thr(self, new_thr):
+        return self.set_threshold(new_thr, 'upper')
 
     def show_error(self, exception):
         self.update_status(status='Error: ' + str(exception), is_ready=True, is_error=True)

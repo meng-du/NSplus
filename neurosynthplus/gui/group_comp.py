@@ -48,25 +48,50 @@ class GroupCompPage(AutocompletePage, PageBuilder):
             .grid(row=row_i, padx=10, pady=(10, 2), sticky=tk.W)
         row_i = self.add_img_selection(row_i + 1)
 
+        #  thresholds
+        def change_func(which_thr):
+            if which_thr == 'lower':
+                if self.lower_thr_var.get() == 1:
+                    self.entry_controller(self.entry_lower_thr, self.btn_lower_thr,
+                                          Global().lower_thr, Global().set_lower_thr)
+            else:
+                if self.upper_thr_var.get() == 1:
+                    self.entry_controller(self.entry_upper_thr, self.btn_upper_thr,
+                                          Global().upper_thr, Global().set_upper_thr)
         #  lower threshold
         row_i += 1
         self.lower_thr_var = tk.IntVar(value=1)
         tk.Checkbutton(self, text='Lower threshold:',
                        variable=self.lower_thr_var) \
             .grid(row=row_i, padx=10, pady=(10, 0), sticky=tk.W)
+        self.entry_lower_thr, self.btn_lower_thr = \
+            self.add_controlled_entry_with_controller(row=row_i,
+                                                      entry_val=lambda: Global().lower_thr,
+                                                      disabled_entry_val=None,
+                                                      btn_func=lambda: change_func('lower'),
+                                                      checkbox_var=self.lower_thr_var,
+                                                      padx=(150, 0), pady=(10, 0))
         #  upper threshold
         row_i += 1
-        self.upper_thr_var = tk.IntVar(value=1)
+        self.upper_thr_var = tk.IntVar(value=0)
         tk.Checkbutton(self, text='Upper threshold:',
                        variable=self.upper_thr_var) \
-            .grid(row=row_i, padx=10, pady=(0, 5), sticky=tk.W)
+            .grid(row=row_i, padx=10, pady=(2, 5), sticky=tk.W)
+        self.entry_upper_thr, self.btn_upper_thr = \
+            self.add_controlled_entry_with_controller(row=row_i,
+                                                      entry_val=lambda: Global().upper_thr,
+                                                      disabled_entry_val=None,
+                                                      btn_func=lambda: change_func('upper'),
+                                                      checkbox_var=self.upper_thr_var,
+                                                      padx=(150, 0), pady=(2, 5))
 
         #  label
         row_i += 1
         tk.Label(self, text='When comparing each pair:') \
             .grid(row=row_i, padx=10, pady=(10, 0), sticky=tk.W)
 
-        self.add_comparison_settings(row=row_i + 1, two_ways=False)
+        self.add_comparison_settings(row=row_i + 1, two_ways=False,
+                                     start_func=self.start)
 
     def on_selection_change(self, event):
         if len(self.listbox.curselection()) > 0:  # selected

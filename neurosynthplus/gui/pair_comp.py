@@ -24,7 +24,7 @@ class PairCompPage(AutocompletePage, PageBuilder):
             row=row_i,
             label_text='Enter term or expression in contrast:')[1]
 
-        self.add_comparison_settings(row=row_i + 2)
+        self.add_comparison_settings(row=row_i + 2, start_func=self.start)
 
     def start(self):
         if not Global().validate_options():

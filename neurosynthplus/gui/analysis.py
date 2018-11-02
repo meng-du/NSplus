@@ -24,16 +24,16 @@ class AnalysisPage(AutocompletePage):
 
         #  instructions TODO make a help page
         row_i += 2
-        help_text = 'Operations between terms:\n' \
+        help_text = 'Operators between terms:\n\n' \
                     '    AND &     OR |     NOT ~     WILDCARD *\n\n' \
-                    'Examples:\n' \
-                    '    "emotion & emotional": studies associated with both terms\n' \
-                    '    "emotion | emotional": studies associated with either terms\n' \
-                    '    "emo*": studies associated with any term starting with "emo"\n' \
-                    '    "emotion &~ face": studies associated with emotion, but not face\n' \
+                    'Examples:\n\n' \
+                    '    "emotion & emotional": studies associated with both terms\n\n' \
+                    '    "emotion | emotional": studies associated with either terms\n\n' \
+                    '    "emo*": studies associated with any term starting with "emo"\n\n' \
+                    '    "emotion &~ face": studies associated with emotion, but not face\n\n' \
                     '    "(emotion | emotional | emotionally) &~ *face*": studies\n' \
                     '    associated with at least one of emotion, emotional or emotionally,\n' \
-                    '    but not any term containing face'
+                    '    but not with any term containing face'
         tk.Label(self, text=help_text, justify=tk.LEFT) \
             .grid(row=row_i, padx=15, pady=15)
 

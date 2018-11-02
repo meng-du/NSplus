@@ -78,8 +78,9 @@ class SettingsPage(tk.Frame, PageBuilder):
             .grid(row=row_i, column=0, padx=10, pady=2, sticky='w')
         self.entry_fdr, self.btn_fdr = self.add_controlled_entry(
             row_i, width=5, padx=(0, 40), sticky=tk.E,
-            default_val=Global().fdr,
-            btn_func=self.change_fdr)
+            entry_val=Global().fdr,
+            btn_func=lambda: self.entry_controller(
+                self.entry_fdr, self.btn_fdr, Global().fdr, Global().set_fdr))
 
     def get_outdir_from_button(self):
         outdir = askdirectory(initialdir=Global().outdir)
@@ -101,16 +102,3 @@ class SettingsPage(tk.Frame, PageBuilder):
             return
 
         Global().load_roi(self.label_roi_file)
-
-    def change_fdr(self):
-        if 'Change' in self.btn_fdr['text']:  # changing fdr
-            self.entry_fdr.config(state=tk.NORMAL)
-            self.btn_fdr.config(text=' Apply ')
-        else:  # applying change
-            new_fdr = self.entry_fdr.get()
-            if Global().set_fdr(new_fdr):  # success
-                self.entry_fdr.config(state=tk.DISABLED)
-                self.btn_fdr.config(text=' Change ')
-            else:  # error
-                self.entry_fdr.delete(0, tk.END)
-                self.entry_fdr.insert(tk.END, Global().fdr)
