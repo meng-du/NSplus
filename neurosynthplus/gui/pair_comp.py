@@ -27,9 +27,13 @@ class PairCompPage(AutocompletePage, PageBuilder):
         self.add_comparison_settings(row=row_i + 2, start_func=self.start)
 
     def start(self):
-        if not Global().validate_options():
+        if not Global().validate_settings():
             return
 
+        # discard any changes
+        self.entry_control(self.entry_num_iter, self.btn_num_iter)
+
+        # get variables
         expr = self.ac_entry1.get()
         Global().validate_expression(expr)
         contrary_expr = self.ac_entry2.get()
@@ -52,7 +56,7 @@ class PairCompPage(AutocompletePage, PageBuilder):
                                     fdr=Global().fdr,
                                     extra_info=[
                                         ('mask', Global().roi_filename or Global().default_roi)],
-                                    outpath=Global().outdir)
+                                    outpath=Global().outpath)
 
                 Global().root.event_generate('<<Done_pair_comp>>')  # trigger event
 
@@ -62,6 +66,5 @@ class PairCompPage(AutocompletePage, PageBuilder):
         Thread(target=_compare).start()
         Global().root.bind('<<Done_pair_comp>>',
                            lambda e: Global().update_status(
-                               status='Done. Files are saved to ' + Global().outdir,
-                               is_ready=True
-                           ))
+                               status='Done. Files are saved to ' + Global().outpath,
+                               is_ready=True))

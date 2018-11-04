@@ -9,7 +9,7 @@ from datetime import datetime
 
 class NsInfo(OrderedDict):
     """
-    Handle information strings (e.g. NeuroSynth expressions and image names)
+    Handle information strings (e.g. NeuroSynth expressions and image names).
     """
     img_names = ['pA', 'pAgF', 'pFgA', 'uniformity-test_z', 'association-test_z']
     prior_img_names = ['pAgF_given_pF=', 'pFgA_given_pF=']
@@ -19,7 +19,7 @@ class NsInfo(OrderedDict):
         super(NsInfo, self).__init__(*args, **kwargs)
 
     @staticmethod
-    def get_shorthand_expr(expr):
+    def shorten_expr(expr):
         abbr = expr.split(' ', maxsplit=1)[0]
         return abbr.strip(punctuation)
 
@@ -70,14 +70,20 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
 
     # Information #
 
+    def __str__(self):
+        return '\n' + str(self._get_images_with_info()) + '\n'
+
+    def __repr__(self):
+        return str(self)
+
     class Info(NsInfo):
-        def __init__(self, name=None, *args, **kwargs):
+        def __init__(self, *args, **kwargs):
             """
             Initialize with 'expression', and 'contrary expression' if comparing to
             another expression
             """
             super(NsInfo, self).__init__(*args, **kwargs)
-            self.name = name or self.get_shorthand()
+            self.name = self.get_shorthand()
 
         def __str__(self):
             return '\n' + self.name + '\n' + str(self.as_pandas_df()) + '\n'
@@ -85,23 +91,20 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         def __repr__(self):
             return str(self)
 
+        def set_name(self, name):
+            self.name = name
+
         def get_shorthand(self):
             """
             Return a short description of the meta analysis (to be used for file names)
             """
             name = ''
             if 'expression' in self:
-                name = NsInfo.get_shorthand_expr(self['expression'])
+                name = NsInfo.shorten_expr(self['expression'])
                 if 'contrary expression' in self:
                     name += '_vs_' + \
-                            NsInfo.get_shorthand_expr(self['contrary expression'])
+                            NsInfo.shorten_expr(self['contrary expression'])
             return name
-
-    def __str__(self):
-        return '\n' + str(self._get_images_with_info()) + '\n'
-
-    def __repr__(self):
-        return str(self)
 
     # Methods for File Output #
 
@@ -116,7 +119,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         if image_names is not None:
             images = list(set(image_names) & images)  # find intersection
         info_df = self.info.as_pandas_df()
-        info_df = info_df.append(pd.DataFrame([images], index=['images']))
+        info_df = info_df.append(pd.DataFrame([images], index=['voxel']))
         image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images]).T
         return pd.concat([info_df, image_df])
 
@@ -225,5 +228,6 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         info = [('based on', image_name), ('criterion', comp_name)]
         info += extra_info
         if expression:
-            info = cls.Info(info, name=expression + '_' + image_name + comp_name)
+            info = cls.Info(info)
+            info.set_name(NsInfo.shorten_expr(expression) + '_' + image_name + comp_name)
         return cls(info, meta_list[0].dataset, images={'conjunction': conjunction})

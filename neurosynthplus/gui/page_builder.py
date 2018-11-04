@@ -80,8 +80,8 @@ class PageBuilder(object):
             #   controlled entry
             def change_func():
                 if self.equal_size_var.get() == 1:
-                    self.entry_controller(self.entry_num_iter, self.btn_num_iter,
-                                          Global().num_iterations, Global().set_num_iter)
+                    self.entry_control(self.entry_num_iter, self.btn_num_iter,
+                                       Global().num_iterations, Global().set_num_iter)
             self.entry_num_iter, self.btn_num_iter = \
                 self.add_controlled_entry_with_controller(
                     row=row,
@@ -153,16 +153,16 @@ class PageBuilder(object):
 
         return entry, button
 
-    def entry_controller(self, entry, button, entry_val=None, set_func=None,
-                         discard_change=False):
+    def entry_control(self, entry, button, entry_val=None, set_func=None,
+                      discard_change=False):
         """
         Toggles the Change/Apply button that controls an entry (see
         add_controlled_entry above), unless discard_change is True.
         Define another callback function with no parameters to pass to
         add_controlled_entry as btn_func, and call this function in it.
 
-        :param entry_val: a value to fill the entry when set_func returns false
-                          (i.e. when user enters an invalid value)
+        :param entry_val: a value to fill the entry its current value needs to
+                          be discarded
         :param set_func: a function called when clicking "Apply"; should take 1
                          parameter, i.e. the user input in the entry, and returns
                          either True (successful) or False (invalid entry input)
@@ -173,6 +173,9 @@ class PageBuilder(object):
         # discard change
         if discard_change:
             if 'Apply' in button['text']:
+                entry.delete(0, tk.END)
+                if entry_val is not None:
+                    entry.insert(tk.END, entry_val)
                 entry.config(state=tk.DISABLED)
                 button.config(text=' Change ')
             return
@@ -239,18 +242,17 @@ class PageBuilder(object):
                                   checked, or a function that returns this value
         """
         if checkbox_var.get() == 0:  # unchecked
-            self.entry_controller(entry, button, discard_change=True)
+            button.config(state=tk.DISABLED)
             entry_val = disabled_entry_val() if callable(disabled_entry_val) \
                 else disabled_entry_val
-            button_state = tk.DISABLED
+            self.entry_control(entry, button, entry_val=entry_val,
+                               discard_change=True)
         else:  # checked
+            button.config(state=tk.NORMAL)
             entry_val = enabled_entry_val() if callable(enabled_entry_val) \
                 else enabled_entry_val
-            button_state = tk.NORMAL
-
-        button.config(state=button_state)
-        entry.config(state=tk.NORMAL)
-        entry.delete(0, tk.END)
-        if entry_val is not None:
-            entry.insert(tk.END, entry_val)
-        entry.config(state=tk.DISABLED)
+            entry.config(state=tk.NORMAL)
+            entry.delete(0, tk.END)
+            if entry_val is not None:
+                entry.insert(tk.END, entry_val)
+            entry.config(state=tk.DISABLED)

@@ -56,7 +56,7 @@ class RankingPage(tk.Frame, PageBuilder):
         """
         Load ROI and then call the rank method
         """
-        if not Global().validate_options():
+        if not Global().validate_settings():
             return
 
         meta_img = self.img_var.get()
@@ -65,23 +65,21 @@ class RankingPage(tk.Frame, PageBuilder):
         if 'FDR' in meta_img:
             meta_img += str(Global().fdr)
 
-        # output file name
+        # roi check
         if Global().roi_filename is None:
             continuing = messagebox.askyesno('Warning',
                                              'You didn\'t specify an ROI file. '
                                              'Are you sure you want to continue?')
             if not continuing:
                 return
-            outfile_name = 'whole_brain_ranked_by_%s' % meta_img
-            outfile = os.path.join(Global().outdir, outfile_name + '.csv')
-        else:
-            outfile_name = 'masked_by_%s_ranked_by_%s' % (Global().get_roi_name(), meta_img)
-            outfile = os.path.join(Global().outdir, outfile_name + '.csv')
+        # output file name
+        outfile_name = '%s_rank_in_%s' % (meta_img, Global().get_roi_name())
+        outfile = os.path.join(Global().outpath, outfile_name + '.csv')
 
         if os.path.isfile(outfile):
             outfile_name += '_' + Global().get_current_datetime() \
                 .replace('-', '').replace(':', '').replace(' ', '_')
-            outfile = os.path.join(Global().outdir, outfile_name + '.csv')
+            outfile = os.path.join(Global().outpath, outfile_name + '.csv')
 
         # start ranking
         if not Global().update_status('Analyzing terms...', user_op=True):
@@ -91,7 +89,7 @@ class RankingPage(tk.Frame, PageBuilder):
             try:
                 rank_terms(Global().dataset, rank_by=meta_img, rank_first=procedure,
                            csv_name=outfile,
-                           extra_info=('ROI', Global().roi_filename or Global().default_roi))
+                           extra_info=[('ROI', Global().roi_filename or Global().default_roi)])
                 Global().root.event_generate('<<Done_ranking>>')  # trigger event
             except Exception as e:
                 Global().show_error(e)

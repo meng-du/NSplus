@@ -56,7 +56,7 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
     :param image_names: the names of images to be included in the output files.
                         If None, all images will be included.
     :param save_files: (boolean) whether to save the results as csv and nifti files
-    :param outpath: (string) directory to save the images/csv
+    :param outdir: (string) directory to save the images/csv
     :return: a list of MetaExtension objects
     """
     # 0) error checking
@@ -138,12 +138,12 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
 
     # save results
     if save_files:
-        outpath = MetaAnalysisPlus.make_result_dir(outpath, mean_metas[0].info.name)
+        outdir = MetaAnalysisPlus.make_result_dir(outpath, mean_metas[0].info.name)
         for mean_meta in mean_metas:
             filename = mean_meta.info.name + '.csv'
-            mean_meta.save_csv(os.path.join(outpath, filename),
+            mean_meta.save_csv(os.path.join(outdir, filename),
                                image_names=image_names)
-            mean_meta.save_images(outpath=outpath)
+            mean_meta.save_images(outpath=outdir)
 
     return mean_metas if two_way else mean_metas[0]
 
@@ -161,7 +161,7 @@ def compare_group(dataset, expr_list, image_name, lower_thr=None, upper_thr=None
     :return: a dictionary {expression: MetaAnalysisPlus conjunction map}
     """
     # result name & path
-    name = '_'.join([NsInfo.get_shorthand_expr(expr) for expr in expr_list])
+    name = '_'.join([NsInfo.shorten_expr(expr) for expr in expr_list])
     outpath = MetaAnalysisPlus.make_result_dir(outpath, name)
     pair_outpath = os.path.join(outpath, 'pairwise_comparisons')
     os.mkdir(pair_outpath)
@@ -187,14 +187,15 @@ def compare_group(dataset, expr_list, image_name, lower_thr=None, upper_thr=None
         info = [('expression', expr)]
         info += [('contrary expression %d' % (i + 1),
                   pair_metas[expr][i].info['contrary expression'])
-                 for i in range(len(pair_metas))]
+                 for i in range(len(expr_list) - 1)]
+        info += extra_info
         # conjunction
         meta = MetaAnalysisPlus.conjunction(pair_metas[expr], image_name, lower_thr,
                                             upper_thr, expression=expr, extra_info=info)
         conj_metas[expr] = meta
 
     if save_files:
-        for conj_meta in conj_metas:
+        for conj_meta in conj_metas.values():
             filename = conj_meta.info.name + '.csv'
             conj_meta.save_csv(os.path.join(outpath, filename))
             conj_meta.save_images(outpath=outpath)

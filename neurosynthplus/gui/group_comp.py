@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 from .globals import Global
 from .page_builder import PageBuilder
 from .autocomplete_page import AutocompletePage
+from ..src.comparison import compare_group
 from threading import Thread
 from sys import version_info
 if version_info.major == 2:
@@ -52,12 +53,12 @@ class GroupCompPage(AutocompletePage, PageBuilder):
         def change_func(which_thr):
             if which_thr == 'lower':
                 if self.lower_thr_var.get() == 1:
-                    self.entry_controller(self.entry_lower_thr, self.btn_lower_thr,
-                                          Global().lower_thr, Global().set_lower_thr)
+                    self.entry_control(self.entry_lower_thr, self.btn_lower_thr,
+                                       Global().lower_thr, Global().set_lower_thr)
             else:
                 if self.upper_thr_var.get() == 1:
-                    self.entry_controller(self.entry_upper_thr, self.btn_upper_thr,
-                                          Global().upper_thr, Global().set_upper_thr)
+                    self.entry_control(self.entry_upper_thr, self.btn_upper_thr,
+                                       Global().upper_thr, Global().set_upper_thr)
         #  lower threshold
         row_i += 1
         self.lower_thr_var = tk.IntVar(value=1)
@@ -120,24 +121,35 @@ class GroupCompPage(AutocompletePage, PageBuilder):
         self.btn_remove.config(state=tk.DISABLED)
 
     def start(self):
-        if not Global().validate_options():
+        if not Global().validate_settings():
             return
-        expressions = self.listbox.get(0, tk.END)
 
-        exclude_overlap = self.overlap_var.get() == 1
-        reduce_larger_set = self.equal_size_var.get() == 1
-        two_way = self.two_way_var.get() == 1
-        num_iterations = Global().num_iterations if reduce_larger_set else 1
+        expressions = self.listbox.get(0, tk.END)
+        if len(expressions) < 3:
+            Global().show_error('Please specify more than 2 terms')
+            return
+
+        image = self.img_var.get()
+        lower_thr = Global().lower_thr if self.lower_thr_var.get() == 1 else None
+        upper_thr = Global().upper_thr if self.upper_thr_var.get() == 1 else None
+        no_overlap = self.overlap_var.get() == 1
+        reduce = self.equal_size_var.get() == 1
+        num_iter = Global().num_iterations if reduce else 1
+
+        mask = ('mask', Global().roi_filename or Global().default_roi)
 
         if not Global().update_status(
-                status='Comparing terms...',
+                status='Comparing term group...',
                 is_ready=False, user_op=True):
             return
 
         def _compare():
             try:
-                # run TODO
-
+                # run
+                compare_group(Global().dataset, expressions, image, lower_thr,
+                              upper_thr, extra_info=[mask], outpath=Global().outpath,
+                              exclude_overlap=no_overlap, reduce_larger_set=reduce,
+                              num_iterations=num_iter)
                 Global().root.event_generate('<<Done_group_comp>>')  # trigger event
 
             except Exception as e:
@@ -146,6 +158,5 @@ class GroupCompPage(AutocompletePage, PageBuilder):
         Thread(target=_compare).start()
         Global().root.bind('<<Done_group_comp>>',
                            lambda e: Global().update_status(
-                               status='Done. Files are saved to ' + Global().outdir,
-                               is_ready=True
-                           ))
+                               status='Done. Files are saved to ' + Global().outpath,
+                               is_ready=True))

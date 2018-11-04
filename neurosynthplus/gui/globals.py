@@ -49,9 +49,9 @@ class Global(Singleton):
         self.default_roi = 'MNI152_T1_2mm_brain.nii.gz'
         self.roi_filename = None
         # output directory
-        self.outdir = os.path.join(os.path.expanduser('~'), 'NeurosynthPlus')
-        if not os.path.isdir(self.outdir):
-            os.mkdir(self.outdir)
+        self.outpath = os.path.join(os.path.expanduser('~'), 'NeurosynthPlus')
+        if not os.path.isdir(self.outpath):
+            os.mkdir(self.outpath)
         # fdr
         self.fdr = 0.01
         # number of iterations (for comparison)
@@ -127,8 +127,8 @@ class Global(Singleton):
 
         return not bool(prev)
 
-    def validate_options(self):
-        if not os.path.isdir(self.outdir):
+    def validate_settings(self):
+        if not os.path.isdir(self.outpath):
             messagebox.showerror('Invalid Settings', 'Please select a valid output directory in Settings')
             return False
         if (self.roi_filename is not None) and (len(self.roi_filename) > 0) \

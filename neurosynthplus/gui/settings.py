@@ -23,18 +23,18 @@ class SettingsPage(tk.Frame, PageBuilder):
         #   instruction label
         row_i += 1
         tk.Label(self, text='Load an ROI mask:') \
-            .grid(row=row_i, column=0, padx=10, pady=(10, 2), sticky=tk.W)
+            .grid(row=row_i, column=0, padx=10, pady=(25, 2), sticky=tk.W)
         #   browse button
         tk.Button(self,
                   command=self.load_roi_from_button,
                   text=' Browse ',
                   highlightthickness=0) \
-            .grid(row=row_i, column=0, padx=(160, 0), pady=(8, 0), sticky=tk.W)
+            .grid(row=row_i, column=0, padx=(160, 0), pady=(23, 0), sticky=tk.W)
         tk.Button(self,
                   command=lambda: Global().use_default_roi(),
                   text=' Use default (whole brain) ',
                   highlightthickness=0) \
-            .grid(row=row_i, column=0, padx=(250, 0), pady=(8, 0), sticky=tk.W)
+            .grid(row=row_i, column=0, padx=(250, 0), pady=(23, 0), sticky=tk.W)
         #   file name label
         row_i += 1
         self.label_roi_file = tk.Label(self,
@@ -61,7 +61,7 @@ class SettingsPage(tk.Frame, PageBuilder):
             .grid(row=row_i, column=0, padx=(140, 0), sticky=tk.W)
         #   directory label
         row_i += 1
-        self.label_outdir = tk.Label(self, text=Global().outdir,
+        self.label_outdir = tk.Label(self, text=Global().outpath,
                                      font=('Menlo', 12), fg='#424242',
                                      width=80, anchor='w')
         self.label_outdir.grid(row=row_i, column=0, padx=15)
@@ -79,13 +79,13 @@ class SettingsPage(tk.Frame, PageBuilder):
         self.entry_fdr, self.btn_fdr = self.add_controlled_entry(
             row_i, width=5, padx=(0, 40), sticky=tk.E,
             entry_val=Global().fdr,
-            btn_func=lambda: self.entry_controller(
+            btn_func=lambda: self.entry_control(
                 self.entry_fdr, self.btn_fdr, Global().fdr, Global().set_fdr))
 
     def get_outdir_from_button(self):
-        outdir = askdirectory(initialdir=Global().outdir)
+        outdir = askdirectory(initialdir=Global().outpath)
         if len(outdir) > 0:
-            Global().outdir = outdir
+            Global().outpath = outdir
             self.label_outdir.config(text=outdir)
 
     def load_roi_from_button(self):

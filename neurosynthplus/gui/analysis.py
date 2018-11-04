@@ -46,7 +46,7 @@ class AnalysisPage(AutocompletePage):
         self.btn_start.grid(row=row_i, padx=10, pady=10)
 
     def start(self):
-        if not Global().validate_options():
+        if not Global().validate_settings():
             return
 
         expression = self.ac_entry.get()
@@ -67,7 +67,7 @@ class AnalysisPage(AutocompletePage):
                                    fdr=Global().fdr,
                                    extra_info=[('mask',
                                                 Global().roi_filename or Global().default_roi)],
-                                   outpath=Global().outdir)
+                                   outpath=Global().outpath)
                 Global().root.event_generate('<<Done_analysis>>')  # trigger event
             except Exception as e:
                 Global().show_error(e)
@@ -75,6 +75,6 @@ class AnalysisPage(AutocompletePage):
         Thread(target=_analyze).start()
         Global().root.bind('<<Done_analysis>>',
                            lambda e: Global().update_status(
-                               status='Done. Files are saved to ' + Global().outdir,
+                               status='Done. Files are saved to ' + Global().outpath,
                                is_ready=True
                            ))
