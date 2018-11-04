@@ -53,7 +53,7 @@ def analyze_expression(dataset, expression='', study_ids=(), prior=0.5, fdr=0.01
         outpath = MetaAnalysisPlus.make_result_dir(outpath, meta.info.name)
         meta.save_csv(os.path.join(outpath, '%s_analysis.csv' % meta.info.name),
                       image_names=image_names)
-        meta.save_images(image_names=image_names, outdir=outpath)
+        meta.save_images(image_names=image_names, outpath=outpath)
     return meta
 
 

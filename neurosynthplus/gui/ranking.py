@@ -90,7 +90,8 @@ class RankingPage(tk.Frame, PageBuilder):
         def _rank():
             try:
                 rank_terms(Global().dataset, rank_by=meta_img, rank_first=procedure,
-                           csv_name=outfile)  # ranking
+                           csv_name=outfile,
+                           extra_info=('ROI', Global().roi_filename or Global().default_roi))
                 Global().root.event_generate('<<Done_ranking>>')  # trigger event
             except Exception as e:
                 Global().show_error(e)

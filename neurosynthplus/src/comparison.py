@@ -1,7 +1,6 @@
-from .metaplus import MetaAnalysisPlus
+from .metaplus import NsInfo, MetaAnalysisPlus
 import random
 import os
-import numpy as np
 
 
 def even_study_set_size(study_sets):
@@ -144,7 +143,7 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
             filename = mean_meta.info.name + '.csv'
             mean_meta.save_csv(os.path.join(outpath, filename),
                                image_names=image_names)
-            mean_meta.save_images(outdir=outpath)
+            mean_meta.save_images(outpath=outpath)
 
     return mean_metas if two_way else mean_metas[0]
 
@@ -153,17 +152,51 @@ def compare_group(dataset, expr_list, image_name, lower_thr=None, upper_thr=None
                   extra_info=(), save_files=True, outpath='.', **kwargs):
     """
     Do all possible pairwise comparison within the given term group, and then create a
-    conjunction map. See MetaAnalysisPlus.conjunction for more info.
+    conjunction map.
+    See compare_expressions and MetaAnalysisPlus.conjunction for more info.
+    If there's any conflict between the prior and fdr in image_name and kwargs, info
+    in image_name will be used.
+
+    :param kwargs: anything else passed to the pairwise compare_expressions function
+    :return: a dictionary {expression: MetaAnalysisPlus conjunction map}
     """
-    pair_meta_list = []
+    # result name & path
+    name = '_'.join([NsInfo.get_shorthand_expr(expr) for expr in expr_list])
+    outpath = MetaAnalysisPlus.make_result_dir(outpath, name)
+    pair_outpath = os.path.join(outpath, 'pairwise_comparisons')
+    os.mkdir(pair_outpath)
+
+    # pairwise comparisons
+    img_info = NsInfo.get_num_from_img_name(image_name)
+    kwargs.update(img_info)
+    pair_metas = {}
     for expr in expr_list:
+        pair_metas[expr] = []
         for contra_expr in expr_list:
             if expr == contra_expr:
                 continue
             meta = compare_expressions(dataset, expr, contra_expr, two_way=False,
                                        extra_info=extra_info, save_files=save_files,
-                                       outpath=os.path.join(outpath, '???'),  # todo
-                                       **kwargs)
-            pair_meta_list.append(meta)
+                                       outpath=pair_outpath, **kwargs)
+            pair_metas[expr].append(meta)
 
-    #todo
+    # conjunction
+    conj_metas = {}
+    for expr in pair_metas:
+        # info
+        info = [('expression', expr)]
+        info += [('contrary expression %d' % (i + 1),
+                  pair_metas[expr][i].info['contrary expression'])
+                 for i in range(len(pair_metas))]
+        # conjunction
+        meta = MetaAnalysisPlus.conjunction(pair_metas[expr], image_name, lower_thr,
+                                            upper_thr, expression=expr, extra_info=info)
+        conj_metas[expr] = meta
+
+    if save_files:
+        for conj_meta in conj_metas:
+            filename = conj_meta.info.name + '.csv'
+            conj_meta.save_csv(os.path.join(outpath, filename))
+            conj_meta.save_images(outpath=outpath)
+
+    return conj_metas

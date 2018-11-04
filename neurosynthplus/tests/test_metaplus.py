@@ -26,22 +26,22 @@ def test_init():
 def test_conjunction():
     meta_list = get_dummy_meta(5)
     result = MetaAnalysisPlus.conjunction(
-        meta_list, image_name='img4', lower_threshold=1)
+        meta_list, image_name='img4', lower_thr=1)
     assert result[0].dtype == np.int
     assert_array_almost_equal(result[0], [2, 2, 3, 2, 0])
     assert result[1] == '>1'
 
     result = MetaAnalysisPlus.conjunction(
-        meta_list, image_name='img1', upper_threshold=-0.3)
+        meta_list, image_name='img1', upper_thr=-0.3)
     assert_array_almost_equal(result[0], [3, 2, 2, 1, 0])
     assert result[1] == '<-0.3'
 
     result = MetaAnalysisPlus.conjunction(
-        meta_list, image_name='img2', lower_threshold=-10, upper_threshold=0.5)
+        meta_list, image_name='img2', lower_thr=-10, upper_thr=0.5)
     assert_array_almost_equal(result[0], [1, 3, 1, 3, 5])
     assert result[1] == '-10-0.5'
 
     result = MetaAnalysisPlus.conjunction(
-        meta_list, image_name='img3', lower_threshold=-1.2, upper_threshold=-30)
+        meta_list, image_name='img3', lower_thr=-1.2, upper_thr=-30)
     assert_array_almost_equal(result[0], [4, 3, 3, 4, 5])
     assert result[1] == '>-1.2or<-30'
