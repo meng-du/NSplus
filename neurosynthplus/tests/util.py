@@ -23,10 +23,12 @@ def get_dummy_meta(how_many=1, dataset=None, num_info=1):
     for i in range(how_many):
         info = [('expression', features[i % 5])]
         if num_info > 1:
-            info.append(('contrary expression', features[(i + 1) % 5]))
+            info.append(('number of studies', (i + 1) * 10))
         if num_info > 2:
-            for j in range(num_info - 2):
-                info.append(('info ' + str(j + 2), features[(i + j + 2) % 5]))
+            info.append(('contrary expression', features[(i + 1) % 5]))
+        if num_info > 3:
+            for j in range(num_info - 3):
+                info.append(('info ' + str(j + 3), features[(i + j + 3) % 5]))
         x = i + 1
         images = {'img%d' % img: np.array([4, 0.3, -2, -0.1, 0]) * ((-1) ** x) * x * img
                   for img in range(5)}

@@ -5,8 +5,8 @@ from .analysis import analyze_all_terms
 from .metaplus import NsInfo
 
 
-def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascending=False,
-                   csv_name=None, extra_info_df=None):
+def sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascending=False,
+                  csv_name=None, extra_info_df=None):
     """
     :return: a pandas dataframe of ordered terms and corresponding voxel values
     """
@@ -14,10 +14,13 @@ def _sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascend
                       [mean for mean in means[i]]
                       for i in range(len(metas))]
     df = pd.DataFrame(matrix_as_list, columns=['term', '# studies'] + img_names)
-    df = df.drop(columns='pA').sort_values(rank_by, ascending=ascending)
-    df.index = range(1, df.shape[0] + 1)
+    if 'pA' in df.columns:
+        df = df.drop(columns='pA')
+    df = df.sort_values(rank_by, ascending=ascending)
+    df.insert(loc=0, column='rank', value=range(1, df.shape[0] + 1))
     if csv_name:
-        pd.concat([extra_info_df, df]).to_csv(csv_name)
+        csv_df = pd.DataFrame(np.vstack([df.columns, df]))
+        pd.concat([extra_info_df, csv_df]).to_csv(csv_name, header=False, index=False)
     return df
 
 
@@ -71,11 +74,12 @@ def rank_terms(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=No
     ascending = True if rank_first else ascending
 
     info = extra_info + [('ranked by', rank_by),
-                         ('data type', 'average rank' if rank_first else 'average value'),
-                         ('extra terms', ', '.join(extra_expr))]
+                         ('data type', 'average rank' if rank_first else 'average value')]
+    if len(extra_expr) > 0:
+        info.append(('extra terms', ', '.join(extra_expr)))
     if rank_first:
         info.append(('tie resolution', ties))
     info = NsInfo(info).as_pandas_df()
-    rank = _sort_and_save(metas, img_means, img_names, rank_by, ascending, csv_name, info)
+    rank = sort_and_save(metas, img_means, img_names, rank_by, ascending, csv_name, info)
 
     return info, rank
