@@ -1,6 +1,5 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
-from abc import ABCMeta, abstractmethod
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
@@ -10,12 +9,10 @@ elif version_info.major == 3:
 
 class PageBuilder(object):
     """
-    Abstract base class containing methods to add shared page components
+    A factory of page components
     """
-    __metaclass__ = ABCMeta
-
     def __init__(self, *args, **kwargs):
-        super(PageBuilder, self).__init__(*args, **kwargs)
+        super(PageBuilder, self).__init__(*args, **kwargs)  # mixin class calls super
 
     def add_img_selection(self, row):
         """
@@ -77,11 +74,17 @@ class PageBuilder(object):
             tk.Label(self, text='Number of iterations:') \
                 .grid(row=row, padx=(50, 0), pady=(0, 2), sticky='w')
 
-            #   controlled entry
+            #   controlled entry of # iterations
             def change_func():
                 if self.equal_size_var.get() == 1:
-                    self.entry_control(self.entry_num_iter, self.btn_num_iter,
-                                       Global().num_iterations, Global().set_num_iter)
+                    result = self.entry_control(self.entry_num_iter, self.btn_num_iter,
+                                                Global().num_iterations,
+                                                Global().set_num_iter)
+                    if result:
+                        for entry, check_var in Global().num_iter_list:
+                            if check_var.get() == 1:
+                                self.change_entry_value(entry, result)
+
             self.entry_num_iter, self.btn_num_iter = \
                 self.add_controlled_entry_with_controller(
                     row=row,
@@ -90,6 +93,7 @@ class PageBuilder(object):
                     btn_func=change_func,
                     checkbox_var=self.equal_size_var,
                     padx=(200, 0))
+            Global().num_iter_list.append((self.entry_num_iter, self.equal_size_var))
 
         #  checkbox: compare both ways
         if two_ways:
@@ -169,34 +173,35 @@ class PageBuilder(object):
                          Must be specified when discard_change=False
         :param discard_change: if True, just disable the entry, discard changes if
                                there is any, and make sure the button shows "Change"
+        :return: False if entry value is unchanged, or the value otherwise
         """
         # discard change
         if discard_change:
+            self.change_entry_value(entry, entry_val)
             if 'Apply' in button['text']:
-                entry.delete(0, tk.END)
-                if entry_val is not None:
-                    entry.insert(tk.END, entry_val)
-                entry.config(state=tk.DISABLED)
                 button.config(text=' Change ')
-            return
+            return False
 
         # otherwise, toggle
         if 'Change' in button['text']:
             # changing, "Change" -> "Apply"
             entry.config(state=tk.NORMAL)
             button.config(text=' Apply ')
+            return False
         else:
             # applying change, "Apply" -> "Change"
             if set_func is None:
                 raise RuntimeError('No method specified to set the value')
-            new_val = entry.get()
-            if set_func(new_val):  # success
+            result = set_func(entry.get())
+            if result:  # success
                 entry.config(state=tk.DISABLED)
                 button.config(text=' Change ')
+                return result
             else:  # error
                 entry.delete(0, tk.END)
                 if entry_val is not None:
                     entry.insert(tk.END, entry_val)
+                return False
 
     def add_controlled_entry_with_controller(self, row, entry_val, disabled_entry_val,
                                              btn_func, checkbox_var, **kwargs):
@@ -251,8 +256,16 @@ class PageBuilder(object):
             button.config(state=tk.NORMAL)
             entry_val = enabled_entry_val() if callable(enabled_entry_val) \
                 else enabled_entry_val
-            entry.config(state=tk.NORMAL)
-            entry.delete(0, tk.END)
-            if entry_val is not None:
-                entry.insert(tk.END, entry_val)
-            entry.config(state=tk.DISABLED)
+            self.change_entry_value(entry, entry_val)
+
+    @staticmethod
+    def change_entry_value(entry, new_value=None):
+        """
+        Change the value of an entry, or just remove the old value if new_value is
+        None.
+        """
+        entry.config(state=tk.NORMAL)
+        entry.delete(0, tk.END)
+        if new_value is not None:
+            entry.insert(tk.END, new_value)
+        entry.config(state=tk.DISABLED)

@@ -6,9 +6,9 @@ from ..src.comparison import compare_expressions
 from threading import Thread
 
 
-class PairCompPage(AutocompletePage, PageBuilder):
+class PairCompPage(PageBuilder, AutocompletePage):
     def __init__(self, parent, **kwargs):
-        super(PairCompPage, self).__init__(parent, **kwargs)
+        super(PairCompPage, self).__init__(parent=parent, **kwargs)
         self.parent = parent
         self.nb_label = 'Pairwise Comparison'
         row_i = -1
@@ -31,7 +31,8 @@ class PairCompPage(AutocompletePage, PageBuilder):
             return
 
         # discard any changes
-        self.entry_control(self.entry_num_iter, self.btn_num_iter)
+        self.entry_control(self.entry_num_iter, self.btn_num_iter,
+                           discard_change=True)
 
         # get variables
         expr = self.ac_entry1.get()

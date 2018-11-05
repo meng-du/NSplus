@@ -14,7 +14,7 @@ class AutocompletePage(tk.Frame):
     Base class for any frame that has an AutocompleteEntry in it
     """
     def __init__(self, parent, **kwargs):
-        super(AutocompletePage, self).__init__(parent, **kwargs)
+        super(AutocompletePage, self).__init__(master=parent, **kwargs)
         self.ac_entry_list = []
         Global().ac_lists.append(self.ac_entry_list)
 

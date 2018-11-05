@@ -11,9 +11,9 @@ elif version_info.major == 3:
     import tkinter as tk
 
 
-class GroupCompPage(AutocompletePage, PageBuilder):
+class GroupCompPage(PageBuilder, AutocompletePage):
     def __init__(self, parent, **kwargs):
-        super(GroupCompPage, self).__init__(parent, **kwargs)
+        super(GroupCompPage, self).__init__(parent=parent, **kwargs)
         self.parent = parent
         self.nb_label = 'Group Comparison'
         row_i = -1
@@ -123,6 +123,10 @@ class GroupCompPage(AutocompletePage, PageBuilder):
     def start(self):
         if not Global().validate_settings():
             return
+
+        # discard any changes
+        self.entry_control(self.entry_num_iter, self.btn_num_iter,
+                           discard_change=True)
 
         expressions = self.listbox.get(0, tk.END)
         if len(expressions) < 3:

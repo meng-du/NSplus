@@ -1,4 +1,4 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 from ..src.datasetplus import DatasetPlus
 import os
 import re
@@ -14,7 +14,7 @@ elif version_info.major == 3:
 
 class _Singleton(type):
     """
-    Metaclass for singletons. See https://stackoverflow.com/a/6798042/3290263
+    Metaclass for singletons. https://stackoverflow.com/a/6798042/3290263
     """
     _instances = {}
 
@@ -32,6 +32,7 @@ class Global(Singleton):
     """
     A class that maintains the Neurosynth dataset instance, global settings,
     and the current app status (including UI for the status bar)
+    # TODO refactor everything, use MVC
     """
     def __init__(self, root=None, **kwargs):
         if root is None:
@@ -40,7 +41,7 @@ class Global(Singleton):
         self.status = 'Ready'
         self.is_ready = False
         self.has_error = False
-        self.history = []
+        # self.history = []
         self.dataset = None
         self.status_mutex = Lock()
 
@@ -60,7 +61,9 @@ class Global(Singleton):
         self.lower_thr = 0.6
         self.upper_thr = 0.5
 
-        # autocomplete entry lists to be updated after loading database
+        # num_iterations entry list (so they all change together)
+        self.num_iter_list = []
+        # autocomplete entry lists (to be updated after loading database)
         self.ac_lists = []
 
         def _update_ac_lists(event):
@@ -82,7 +85,7 @@ class Global(Singleton):
     def _update_status(self, status, is_ready, is_error=False):  # not thread safe
         self.status = status
         self.has_error = is_error
-        self.history.append(status)
+        # self.history.append(status)
         if len(status) > self.text_width:
             statusbar_text = status[:(self.text_width - 3)] + '...'
         else:
@@ -95,8 +98,9 @@ class Global(Singleton):
             text_color = '#e3e3e3'
         self.statusbar_label.config(text=statusbar_text, fg=text_color)
 
-    def update_status(self, status='Ready', is_ready=False, is_error=False, user_op=False):  # thread safe
+    def update_status(self, status='Ready', is_ready=False, is_error=False, user_op=False):
         """
+        Thread safe.
         :param status: string
         :param is_ready: (boolean) whether ready to run another task during the updated status
         :param is_error: (boolean) the text will show as red if True
@@ -174,7 +178,7 @@ class Global(Singleton):
             messagebox.showerror('Invalid Settings', 'Please enter a number between 0 and 1')
             return False
         self.fdr = new_fdr
-        return True
+        return new_fdr
 
     def set_num_iter(self, new_num_iter):  # validate and set num of iterations
         try:
@@ -185,7 +189,7 @@ class Global(Singleton):
             messagebox.showerror('Invalid Settings', 'Please enter an integer greater than 0')
             return False
         self.num_iterations = new_int_iter
-        return True
+        return new_int_iter
 
     def set_threshold(self, new_thr, which_thr):
         try:
@@ -199,7 +203,7 @@ class Global(Singleton):
             self.lower_thr = new_thr
         else:
             raise RuntimeError('Invalid threshold type')
-        return True
+        return new_thr
 
     def set_lower_thr(self, new_thr):
         return self.set_threshold(new_thr, 'lower')
