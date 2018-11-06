@@ -214,7 +214,8 @@ class Global(Singleton):
     def show_error(self, exception):
         self.update_status(status='Error: ' + str(exception), is_ready=True, is_error=True)
         self.is_ready = True
-        raise exception
+        if isinstance(exception, BaseException):
+            raise exception
 
     def load_pkl_database(self):
         """

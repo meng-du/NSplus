@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 from .globals import Global
 from .page_builder import PageBuilder
 from sys import version_info
+import re
 if version_info.major == 2:
     import Tkinter as tk
     import ttk
@@ -89,23 +90,39 @@ class SettingsPage(tk.Frame, PageBuilder):
 
         # customize terms
         row_i += 1
-        tk.Label(self, text='Add a customized term:') \
+        tk.Label(self, text='Add a custom term:') \
             .grid(row=row_i, padx=10, pady=2, sticky=tk.W)
         row_i += 1
         tk.Label(self, text='Enter your term:') \
             .grid(row=row_i, padx=20, pady=2, sticky=tk.W)
         row_i += 1
-        tk.Entry(self, width=60) \
+        self.entry_term = tk.Entry(self, width=60) \
             .grid(row=row_i, padx=20, pady=(2, 10), sticky=tk.W)
         row_i += 1
         tk.Label(self, text='Enter study IDs, separated by comma:') \
             .grid(row=row_i, padx=20, pady=2, sticky=tk.W)
         row_i += 1
-        tk.Entry(self, width=60) \
+        self.entry_ids = tk.Entry(self, width=60) \
             .grid(row=row_i, padx=20, pady=(2, 10), sticky=tk.W)
         row_i += 1
-        tk.Button(self, text=' Add term ') \
+        tk.Button(self, text=' Add term ', command=self.add_custom_term) \
             .grid(row=row_i, padx=20, sticky=tk.W)
+        tk.Button(self, text=' Show all custom terms ') \
+            .grid(row=row_i, padx=20, sticky=tk.W)
+
+    def add_custom_term(self):
+        # error checking
+        term = self.entry_term.get()
+        if len(re.findall('[^a-zA-Z0-9 ]', term)) > 0:
+            Global().show_error('Invalid character in term.')
+        ids = self.entry_ids.get()
+        if len(re.findall('[^0-9, ]', ids)) > 0:
+            Global().show_error('Invalid character in study IDs.')
+        # add
+        try:
+            Global().dataset.add_custom_term(term, ids)
+        except ValueError as e:
+            Global().show_error(e)
 
     def get_outdir_from_button(self):
         outdir = askdirectory(initialdir=Global().outpath)
