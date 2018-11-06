@@ -5,6 +5,7 @@ from .pair_comp import PairCompPage
 from .group_comp import GroupCompPage
 from .settings import SettingsPage
 from .globals import Global
+from ..version import __version__
 from threading import Thread
 from sys import version_info
 if version_info.major == 2:
@@ -21,16 +22,14 @@ class MainApp(tk.Frame):
     def __init__(self, root, **kwargs):
         super(MainApp, self).__init__(root, **kwargs)
         self.parent = root
-        self.app_name = 'Neurosynth+'
+        root.title('Neurosynth+')
 
-        root.title(self.app_name)
-        # parent.geometry('350x200')
-
-        # menu bar TODO
-        menubar = tk.Menu(root, title=self.app_name)
-        about_menu = tk.Menu(menubar, name='test')
-        about_menu.add_command(label='self.app_name', command=lambda: print('1'))
-        menubar.add_cascade(label='About', menu=about_menu)
+        # menu bar
+        menubar = tk.Menu(root)
+        appmenu = tk.Menu(menubar, name='apple')
+        menubar.add_cascade(menu=appmenu)
+        appmenu.add_command(label='About Neurosynth+',
+                            command=lambda: AboutPage(tk.Toplevel(root)))
         root.config(menu=menubar)
 
         # notebook layout
@@ -45,6 +44,20 @@ class MainApp(tk.Frame):
         for page in self.nb_pages:
             self.notebook.add(page, text=page.nb_label)
         self.notebook.grid(row=row_i)
+
+
+class AboutPage(tk.Frame):
+    def __init__(self, parent, **kwargs):
+        super(AboutPage, self).__init__(parent, **kwargs)
+        parent.title('About Neurosynth+')
+        bg_color = '#f1f1f1'
+        parent.config(bg=bg_color)
+        tk.Label(parent, text='Neurosynth+', bg=bg_color, font='Verdana 18 bold') \
+            .grid(row=0, padx=30, pady=10)
+        tk.Label(parent, text='Version ' + __version__, bg=bg_color, font='Verdana 11') \
+            .grid(row=1, padx=20)
+        tk.Label(parent, text=u'© 2018 Meng Du', bg=bg_color, font='Verdana 12') \
+            .grid(row=2, padx=20, pady=(25, 10))
 
 
 def main_gui():
