@@ -11,11 +11,11 @@ elif version_info.major == 3:
     import tkinter as tk
 
 
-class GroupCompPage(PageBuilder, AutocompletePage):
+class MultiCompPage(PageBuilder, AutocompletePage):
     def __init__(self, parent, **kwargs):
-        super(GroupCompPage, self).__init__(parent=parent, **kwargs)
+        super(MultiCompPage, self).__init__(parent=parent, **kwargs)
         self.parent = parent
-        self.nb_label = 'Group Comparison'
+        self.nb_label = 'Multi-Term Comparison'
         row_i = -1
 
         # page contents

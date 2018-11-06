@@ -11,6 +11,7 @@ class DatasetPlus(ns.Dataset):
     """
     def __init__(self, *args, **kwargs):
         super(DatasetPlus, self).__init__(*args, **kwargs)
+        self.custom_terms = {}  # term - study IDs
 
     def mask(self, mask_file=None):
         if mask_file is None:  # use neurosynth default mask
@@ -26,6 +27,24 @@ class DatasetPlus(ns.Dataset):
         """
         all_feature_names = super(DatasetPlus, self).get_feature_names(features)
         return [feature for feature in all_feature_names if not feature[0].isdigit()]
+
+    def get_studies(self, features=None, expression=None, *args, **kwargs):
+        results = []
+        if isinstance(features, str):
+            results += self.get_custom_studies(features)
+        elif isinstance(features, list):
+            for feature in features:
+                results += self.get_custom_studies(feature)
+        results += self.get_custom_studies(expression)
+
+        if len(results) == 0:
+            return self.get_studies(features=features, expression=expression)
+
+    def get_custom_studies(self, custom_term):
+        if custom_term in self.custom_terms:
+            return self.custom_terms[custom_term]
+        else:
+            return []
 
     @classmethod
     def load_default_database(cls):

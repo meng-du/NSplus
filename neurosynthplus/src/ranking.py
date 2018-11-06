@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
-from .analysis import analyze_all_terms
+from .single_term import analyze_all_terms
 from .metaplus import NsInfo
 
 

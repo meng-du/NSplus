@@ -1,5 +1,5 @@
 from __future__ import absolute_import, print_function
-from ..src.analysis import analyze_expression
+from ..src.single_term import analyze_expression
 from .autocomplete_page import AutocompletePage
 from .globals import Global
 from threading import Thread
@@ -14,7 +14,7 @@ class AnalysisPage(AutocompletePage):
     def __init__(self, parent, **kwargs):
         super(AnalysisPage, self).__init__(parent, **kwargs)
         self.parent = parent
-        self.nb_label = 'Analysis'
+        self.nb_label = 'Single Term'
         row_i = -1
 
         # page contents
