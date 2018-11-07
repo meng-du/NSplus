@@ -9,7 +9,10 @@ class DatasetPlus(ns.Dataset):
     """
     An extension of the NeuroSynth Dataset class.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, dataset=None, *args, **kwargs):
+        """
+        :param dataset: initialize from a Neurosynth Dataset instance
+        """
         super(DatasetPlus, self).__init__(*args, **kwargs)
         self.custom_terms = {}  # term - study IDs
 
@@ -49,7 +52,9 @@ class DatasetPlus(ns.Dataset):
         results += self.get_custom_studies(expression)
 
         if len(results) == 0:
-            return self.get_studies(features=features, expression=expression)
+            return super(DatasetPlus, self).get_studies(features=features,
+                                                        expression=expression,
+                                                        *args, **kwargs)
 
     def get_custom_studies(self, custom_term):
         if custom_term in self.custom_terms:
@@ -82,6 +87,7 @@ class DatasetPlus(ns.Dataset):
             dataset = super(DatasetPlus, cls).load(filename)
 
         dataset.__class__ = DatasetPlus  # TODO any better way to downcast class?
+        dataset.custom_terms = {}
         return dataset
 
     def save(self, filename, compress=False):

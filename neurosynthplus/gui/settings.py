@@ -108,7 +108,7 @@ class SettingsPage(tk.Frame, PageBuilder):
         tk.Button(self, text=' Add term ', command=self.add_custom_term) \
             .grid(row=row_i, padx=20, sticky=tk.W)
         tk.Button(self, text=' Show all custom terms ') \
-            .grid(row=row_i, padx=20, sticky=tk.W)
+            .grid(row=row_i, padx=20, sticky=tk.W, command=self.show_custom_terms)
 
     def add_custom_term(self):
         # error checking
@@ -118,11 +118,29 @@ class SettingsPage(tk.Frame, PageBuilder):
         ids = self.entry_ids.get()
         if len(re.findall('[^0-9, ]', ids)) > 0:
             Global().show_error('Invalid character in study IDs.')
-        # add
+        # add to dataset
         try:
+            ids = [int(i) for i in ids.split(',')]
             Global().dataset.add_custom_term(term, ids)
         except ValueError as e:
             Global().show_error(e)
+        # add to autocomplete lists
+        for ac_list in Global().ac_lists:
+            ac_list.append(term)
+
+    def show_custom_terms(self):
+        win = tk.Toplevel(Global().root)
+        win.title('Custom Terms')
+        row = 0
+        for term in Global().dataset.custom_terms:
+            tk.Label(win, text=term) \
+                .grid(row, padx=10, pady=(10, 2), sticky=tk.W)
+            row += 1
+            entry = tk.Entry(win, width=30) \
+                .grid(row, padx=20)
+            ids = ', '.join(Global().dataset.custom_terms[term])
+            entry.insert(tk.END, ids)
+            entry.config(state=tk.DISABLED)
 
     def get_outdir_from_button(self):
         outdir = askdirectory(initialdir=Global().outpath)
