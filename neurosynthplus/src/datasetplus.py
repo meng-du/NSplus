@@ -36,11 +36,12 @@ class DatasetPlus(ns.Dataset):
         """
         Add a custom term to the dataset
         :param term: (string) name of your term
-        :param study_ids: (list) a list of study IDs
+        :param study_ids: (list of integers) a list of study IDs
         """
         if term in self.get_feature_names():
             raise ValueError('Term "%s" already exists.' % term)
-        self.custom_terms[term] = study_ids
+        # TODO check if study ID is in database
+        self.custom_terms[term] = set(study_ids)
 
     def get_studies(self, features=None, expression=None, *args, **kwargs):
         results = []

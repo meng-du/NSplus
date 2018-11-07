@@ -96,28 +96,34 @@ class SettingsPage(tk.Frame, PageBuilder):
         tk.Label(self, text='Enter your term:') \
             .grid(row=row_i, padx=20, pady=2, sticky=tk.W)
         row_i += 1
-        self.entry_term = tk.Entry(self, width=60) \
-            .grid(row=row_i, padx=20, pady=(2, 10), sticky=tk.W)
+        self.entry_term = tk.Entry(self, width=60)
+        self.entry_term.grid(row=row_i, padx=20, pady=(2, 10), sticky=tk.W)
         row_i += 1
         tk.Label(self, text='Enter study IDs, separated by comma:') \
             .grid(row=row_i, padx=20, pady=2, sticky=tk.W)
         row_i += 1
-        self.entry_ids = tk.Entry(self, width=60) \
-            .grid(row=row_i, padx=20, pady=(2, 10), sticky=tk.W)
+        self.entry_ids = tk.Entry(self, width=60)
+        self.entry_ids.grid(row=row_i, padx=20, pady=(2, 10), sticky=tk.W)
         row_i += 1
         tk.Button(self, text=' Add term ', command=self.add_custom_term) \
             .grid(row=row_i, padx=20, sticky=tk.W)
-        tk.Button(self, text=' Show all custom terms ') \
-            .grid(row=row_i, padx=20, sticky=tk.W, command=self.show_custom_terms)
+        tk.Button(self, text=' Show all custom terms ',
+                  command=self.show_custom_terms) \
+            .grid(row=row_i, padx=(100, 0), sticky=tk.W)
 
     def add_custom_term(self):
         # error checking
         term = self.entry_term.get()
+        term = term.strip()
         if len(re.findall('[^a-zA-Z0-9 ]', term)) > 0:
             Global().show_error('Invalid character in term.')
+            return
         ids = self.entry_ids.get()
         if len(re.findall('[^0-9, ]', ids)) > 0:
             Global().show_error('Invalid character in study IDs.')
+            return
+        if len(term) == 0 or len(ids) == 0:
+            return
         # add to dataset
         try:
             ids = [int(i) for i in ids.split(',')]
@@ -127,20 +133,28 @@ class SettingsPage(tk.Frame, PageBuilder):
         # add to autocomplete lists
         for ac_list in Global().ac_lists:
             ac_list.append(term)
+        Global().update_status('Term "%s" added.' % term, is_ready=True)
+        self.entry_term.delete(0, tk.END)
+        self.entry_ids.delete(0, tk.END)
 
     def show_custom_terms(self):
+        if len(Global().dataset.custom_terms) == 0:
+            Global().update_status(status='Nothing yet!',
+                                   is_ready=True, user_op=True)
+            return
         win = tk.Toplevel(Global().root)
         win.title('Custom Terms')
-        row = 0
+        row = -1
         for term in Global().dataset.custom_terms:
-            tk.Label(win, text=term) \
-                .grid(row, padx=10, pady=(10, 2), sticky=tk.W)
             row += 1
-            entry = tk.Entry(win, width=30) \
-                .grid(row, padx=20)
-            ids = ', '.join(Global().dataset.custom_terms[term])
+            tk.Label(win, text=term) \
+                .grid(row=row, padx=10, pady=(5, 1), sticky=tk.W)
+            row += 1
+            entry = tk.Entry(win, width=30)
+            entry.grid(row=row, padx=20, pady=(1, 10))
+            ids = ','.join([str(i) for i in Global().dataset.custom_terms[term]])
             entry.insert(tk.END, ids)
-            entry.config(state=tk.DISABLED)
+            entry.config(state='readonly')
 
     def get_outdir_from_button(self):
         outdir = askdirectory(initialdir=Global().outpath)
