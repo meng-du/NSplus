@@ -53,8 +53,9 @@ class Global(Singleton):
         self.outpath = os.path.join(os.path.expanduser('~'), 'NeurosynthPlus')
         if not os.path.isdir(self.outpath):
             os.mkdir(self.outpath)
-        # fdr
+        # fdr & uniform prior
         self.fdr = 0.01
+        self.prior = 0.5
         # number of iterations (for comparison)
         self.num_iterations = 500
         # lower and upper thresholds (for comparison)

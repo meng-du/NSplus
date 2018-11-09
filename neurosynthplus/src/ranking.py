@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import rankdata
-from .single_term import analyze_all_terms
-from .metaplus import NsInfo
+from .singleterm import analyze_all_terms
+from .analysisinfo import AnalysisInfo
 
 
 def sort_and_save(metas, means, img_names, rank_by='pFgA_given_pF=0.50', ascending=False,
@@ -59,7 +59,7 @@ def rank_terms(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=No
     :param extra_info: (list of tuples) extra information to put at the top of csv
     :return: an NsInfo object and a pandas data frame of the rank
     """
-    img_info = NsInfo.get_num_from_img_name(rank_by)
+    img_info = AnalysisInfo.get_num_from_img_name(rank_by)
     metas = analyze_all_terms(dataset, extra_expr, **img_info)
     img_names = list(metas[0].images.keys())
     img_means = [np.mean([meta.images[img] for img in img_names], axis=1) for meta in metas]
@@ -79,7 +79,7 @@ def rank_terms(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=No
         info.append(('extra terms', ', '.join(extra_expr)))
     if rank_first:
         info.append(('tie resolution', ties))
-    info = NsInfo(info).as_pandas_df()
+    info = AnalysisInfo(info).as_pandas_df()
     rank = sort_and_save(metas, img_means, img_names, rank_by, ascending, csv_name, info)
 
     return info, rank

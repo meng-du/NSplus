@@ -1,8 +1,8 @@
 from __future__ import absolute_import, print_function
-from .single_term import AnalysisPage
+from .singleterm import AnalysisPage
 from .ranking import RankingPage
-from .pair_comp import PairCompPage
-from .multi_comp import MultiCompPage
+from .paircomp import PairCompPage
+from .multicomp import MultiCompPage
 from .settings import SettingsPage
 from .globals import Global
 from ..version import __version__

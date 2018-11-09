@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
+from ..src.analysisinfo import AnalysisInfo
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
@@ -14,25 +15,18 @@ class PageBuilder(object):
     def __init__(self, *args, **kwargs):
         super(PageBuilder, self).__init__(*args, **kwargs)  # mixin class calls super
 
-    def add_img_selection(self, row):
+    def add_img_selection(self, row, default='pFgA_given_pF=', exclude_imgs=()):
         """
         Add 6 radio buttons that asks user to select one of the images
-        :return: the last row number
         :param row: (integer) the first row number for these widgets
+        :param default: default image selection
+        :param exclude_imgs: image names to be excluded
         :return: (integer) the last row number
         """
-        self.image_labels = {
-            'Forward inference with a uniform prior=0.5': 'pAgF_given_pF=0.50',
-            'Forward inference z score (uniformity test)': 'uniformity-test_z',
-            'Forward inference z score (uniformity test) with multiple comparison correction':
-                'uniformity-test_z_FDR_',
-            'Reverse inference with a uniform prior=0.5': 'pFgA_given_pF=0.50',
-            'Reverse inference z score (association test)': 'association-test_z',
-            'Reverse inference z score (association test) with multiple comparison correction':
-                'association-test_z_FDR_'
-        }
-        self.img_var = tk.StringVar(value='pFgA_given_pF=0.50')
-        for text in self.image_labels.keys():
+        self.image_labels = AnalysisInfo.img_names.reverse(lambda k:
+                                                           k not in exclude_imgs)
+        self.img_var = tk.StringVar(value=default)
+        for text in self.image_labels:
             tk.Radiobutton(self,
                            text=text,
                            variable=self.img_var,

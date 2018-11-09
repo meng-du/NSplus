@@ -9,7 +9,7 @@ class DatasetPlus(ns.Dataset):
     """
     An extension of the NeuroSynth Dataset class.
     """
-    def __init__(self, dataset=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         :param dataset: initialize from a Neurosynth Dataset instance
         """
@@ -40,8 +40,11 @@ class DatasetPlus(ns.Dataset):
         """
         if term in self.get_feature_names():
             raise ValueError('Term "%s" already exists.' % term)
-        # TODO check if study ID is in database
-        self.custom_terms[term] = set(study_ids)
+        # get IDs that are in database
+        valid_ids = set(self.image_table.ids) & set(study_ids)
+        if len(valid_ids) == 0:
+            raise ValueError('Must provide a list of valid study IDs')
+        self.custom_terms[term] = valid_ids
 
     def get_studies(self, features=None, expression=None, *args, **kwargs):
         results = []
@@ -65,8 +68,8 @@ class DatasetPlus(ns.Dataset):
 
     @classmethod
     def load_default_database(cls):
-        data_file = os.path.join(os.path.dirname(__file__), os.pardir, 'data',
-                                 'database_v0.7_with_features.pkl.gz')
+        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_file = os.path.join(parent_dir, 'data', 'database_v0.7.pkl.gz')
         return cls.load(data_file, compressed=True)
 
     @classmethod

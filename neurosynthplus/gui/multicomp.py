@@ -1,8 +1,9 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
-from .page_builder import PageBuilder
-from .autocomplete_page import AutocompletePage
+from .pagebuilder import PageBuilder
+from .autocompletepage import AutocompletePage
 from ..src.comparison import compare_group
+from ..src.analysisinfo import AnalysisInfo
 from threading import Thread
 from sys import version_info
 if version_info.major == 2:
@@ -47,7 +48,7 @@ class MultiCompPage(PageBuilder, AutocompletePage):
         row_i += 1
         tk.Label(self, text='Create images based on:') \
             .grid(row=row_i, padx=10, pady=(10, 2), sticky=tk.W)
-        row_i = self.add_img_selection(row_i + 1)
+        row_i = self.add_img_selection(row_i + 1, exclude_imgs=['pA'])
 
         #  thresholds
         def change_func(which_thr):
@@ -133,7 +134,9 @@ class MultiCompPage(PageBuilder, AutocompletePage):
             Global().show_error('Please specify more than 2 terms')
             return
 
-        image = self.img_var.get()
+        image = AnalysisInfo.add_num_to_img_name(self.img_var.get(),
+                                                 Global().prior, Global().fdr)
+
         lower_thr = Global().lower_thr if self.lower_thr_var.get() == 1 else None
         upper_thr = Global().upper_thr if self.upper_thr_var.get() == 1 else None
         no_overlap = self.overlap_var.get() == 1

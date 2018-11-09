@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
-from ..src.single_term import analyze_expression
-from .autocomplete_page import AutocompletePage
+from ..src.singleterm import analyze_expression
+from .autocompletepage import AutocompletePage
 from .globals import Global
 from threading import Thread
 from sys import version_info

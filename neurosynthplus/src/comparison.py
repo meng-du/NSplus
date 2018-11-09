@@ -1,4 +1,5 @@
-from .metaplus import NsInfo, MetaAnalysisPlus
+from .metaplus import MetaAnalysisPlus
+from .analysisinfo import AnalysisInfo
 import random
 import os
 
@@ -161,13 +162,13 @@ def compare_group(dataset, expr_list, image_name, lower_thr=None, upper_thr=None
     :return: a dictionary {expression: MetaAnalysisPlus conjunction map}
     """
     # result name & path
-    name = '_'.join([NsInfo.shorten_expr(expr) for expr in expr_list])
+    name = '_'.join([AnalysisInfo.shorten_expr(expr) for expr in expr_list])
     outpath = MetaAnalysisPlus.make_result_dir(outpath, name)
     pair_outpath = os.path.join(outpath, 'pairwise_comparisons')
     os.mkdir(pair_outpath)
 
     # pairwise comparisons
-    img_info = NsInfo.get_num_from_img_name(image_name)
+    img_info = AnalysisInfo.get_num_from_img_name(image_name)
     kwargs.update(img_info)
     pair_metas = {}
     for expr in expr_list:

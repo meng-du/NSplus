@@ -1,6 +1,6 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
-from .page_builder import PageBuilder
+from .pagebuilder import PageBuilder
 from sys import version_info
 import re
 if version_info.major == 2:

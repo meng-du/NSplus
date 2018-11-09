@@ -13,9 +13,9 @@ def test_sort_and_save():
     extra_info = pd.DataFrame([('ranked by', 'img2'), ('data type', 'test')])
     result = sort_and_save(metas, means, imgs,
                            rank_by='img2',
-                           # csv_name='test_sort.csv',
+                           csv_name='test_sort.csv',
                            extra_info_df=extra_info)
-    assert result.shape == (10, 6)
+    assert result.shape == (11, 6)
     s = pd.Series(['f1', 'f 2', 'f3', 'f 4', 'f5'] * 2, name='term')
     assert_series_equal(result['term'], s)
     s = pd.Series([i for i in range(1, 11)], name='rank')

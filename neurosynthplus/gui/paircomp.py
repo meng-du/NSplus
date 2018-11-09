@@ -1,7 +1,7 @@
 from __future__ import absolute_import, print_function
 from .globals import Global
-from .page_builder import PageBuilder
-from .autocomplete_page import AutocompletePage
+from .pagebuilder import PageBuilder
+from .autocompletepage import AutocompletePage
 from ..src.comparison import compare_expressions
 from threading import Thread
 

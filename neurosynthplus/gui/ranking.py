@@ -1,6 +1,7 @@
 from __future__ import absolute_import, print_function
 from ..src.ranking import rank_terms
-from .page_builder import PageBuilder
+from ..src.analysisinfo import AnalysisInfo
+from .pagebuilder import PageBuilder
 from .globals import Global
 import os
 from threading import Thread
@@ -25,7 +26,8 @@ class RankingPage(tk.Frame, PageBuilder):
         row_i += 1
         tk.Label(self, text='Sort terms by:') \
             .grid(row=row_i, padx=10, pady=(10, 2), sticky='w')
-        row_i = self.add_img_selection(row_i + 1)
+        row_i = self.add_img_selection(row_i + 1,
+            exclude_imgs=['pA', 'pAgF', 'pFgA', 'pAgF_given_pF='])
 
         #  procedure selection
         #   label
@@ -59,11 +61,9 @@ class RankingPage(tk.Frame, PageBuilder):
         if not Global().validate_settings():
             return
 
-        meta_img = self.img_var.get()
+        meta_img = AnalysisInfo.add_num_to_img_name(self.img_var.get(),
+                                                    Global().prior, Global().fdr)
         procedure = self.proc_var.get()
-
-        if 'FDR' in meta_img:
-            meta_img += str(Global().fdr)
 
         # roi check
         if Global().roi_filename is None:

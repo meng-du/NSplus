@@ -1,47 +1,9 @@
-from collections import OrderedDict
-from string import punctuation
+from .analysisinfo import AnalysisInfo
 import pandas as pd
 import neurosynth as ns
 import numpy as np
 import os
 from datetime import datetime
-
-
-class NsInfo(OrderedDict):
-    """
-    Handle information strings (e.g. NeuroSynth expressions and image names).
-    """
-    img_names = ['pA', 'pAgF', 'pFgA', 'uniformity-test_z', 'association-test_z']
-    prior_img_names = ['pAgF_given_pF=', 'pFgA_given_pF=']
-    fdr_img_names = ['uniformity-test_z_FDR_', 'association-test_z_FDR_']
-
-    def __init__(self, *args, **kwargs):
-        super(NsInfo, self).__init__(*args, **kwargs)
-
-    @staticmethod
-    def shorten_expr(expr):
-        abbr = expr.split(' ', maxsplit=1)[0]
-        return abbr.strip(punctuation)
-
-    @staticmethod
-    def get_num_from_img_name(image_name):
-        if image_name in NsInfo.img_names:
-            return {}
-        for prior_name in NsInfo.prior_img_names:
-            if prior_name in image_name:
-                num = image_name[len(prior_name):]
-                return {'prior': float(num)}
-        for fdr_name in NsInfo.fdr_img_names:
-            if fdr_name in image_name:
-                num = image_name[len(fdr_name):]
-                return {'fdr': float(num)}
-        return {}
-
-    def as_pandas_df(self):
-        """
-        Return the information as a pandas data frame
-        """
-        return pd.DataFrame(list(self.values()), index=list(self.keys()))
 
 
 class MetaAnalysisPlus(ns.meta.MetaAnalysis):
@@ -76,13 +38,13 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
     def __repr__(self):
         return str(self)
 
-    class Info(NsInfo):
+    class Info(AnalysisInfo):
         def __init__(self, *args, **kwargs):
             """
             Initialize with 'expression', and 'contrary expression' if comparing to
             another expression
             """
-            super(NsInfo, self).__init__(*args, **kwargs)
+            super(AnalysisInfo, self).__init__(*args, **kwargs)
             self.name = self.get_shorthand()
 
         def __str__(self):
@@ -100,10 +62,10 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             """
             name = ''
             if 'expression' in self:
-                name = NsInfo.shorten_expr(self['expression'])
+                name = AnalysisInfo.shorten_expr(self['expression'])
                 if 'contrary expression' in self:
                     name += '_vs_' + \
-                            NsInfo.shorten_expr(self['contrary expression'])
+                            AnalysisInfo.shorten_expr(self['contrary expression'])
             return name
 
     # Methods for File Output #
@@ -117,10 +79,13 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         """
         images = self.images.keys()
         if image_names is not None:
-            images = list(set(image_names) & images)  # find intersection
+            images = set(image_names) & images  # find intersection
+        images = AnalysisInfo.order_images(images)
+        descriptions = [AnalysisInfo.img_names[img] for img in images]
         info_df = self.info.as_pandas_df()
-        info_df = info_df.append(pd.DataFrame([images], index=['voxel']))
-        image_df = pd.DataFrame([self.images[img_name].tolist() for img_name in images]).T
+        info_df = info_df.append(pd.DataFrame([descriptions, images],
+                                              index=['image', 'voxel']))
+        image_df = pd.DataFrame([self.images[img].tolist() for img in images]).T
         return pd.concat([info_df, image_df])
 
     @staticmethod
@@ -229,5 +194,5 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         info += extra_info
         if expression:
             info = cls.Info(info)
-            info.set_name(NsInfo.shorten_expr(expression) + '_' + image_name + comp_name)
+            info.set_name(AnalysisInfo.shorten_expr(expression) + '_' + image_name + comp_name)
         return cls(info, meta_list[0].dataset, images={'conjunction': conjunction})
