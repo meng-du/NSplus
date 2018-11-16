@@ -1,2 +1,4 @@
-# NSplus
-A Neurosynth-based tool with additional functions and GUI
+# NS+
+A NeuroSynth-based tool with additional functions and GUI
+
+Beta release coming soon...
