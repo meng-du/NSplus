@@ -19,8 +19,6 @@ class AutocompleteEntry(tk.Entry):
             del kwargs['listboxLength']
         else:
             self.listboxLength = 8
-        # Listbox width
-        self.nothing = 1
 
         # Custom matches function
         if 'matchesFunction' in kwargs:

@@ -66,14 +66,8 @@ class Global(Singleton):
         self.num_iter_list = []
         # autocomplete entry lists (to be updated after loading database)
         self.ac_lists = []
-
-        def _update_ac_lists(event):
-            feature_names = Global().dataset.get_feature_names()
-            for ac_list in self.ac_lists:
-                for entry in ac_list:
-                    entry.autocompleteList = feature_names
-
-        root.bind('<<Database_loaded>>', _update_ac_lists)
+        self.feature_names = []
+        root.bind('<<Database_loaded>>', lambda e: self.update_ac_lists())
 
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
@@ -82,6 +76,19 @@ class Global(Singleton):
                                         bd=1, relief=tk.SUNKEN, anchor='w', padx=3,
                                         font=('Menlo', 12), bg='#6d6d6d', fg='#d6d6d6')
         self.statusbar_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+    def update_ac_lists(self, term=None):
+        if term:
+            self.feature_names.append(term)
+            return
+        # update everything
+        self.feature_names = Global().dataset.get_feature_names()
+        for ac_list in self.ac_lists:
+            for entry in ac_list:
+                if term:
+                    entry.autocompleteList.append(term)
+                else:
+                    entry.autocompleteList = self.feature_names
 
     def _update_status(self, status, is_ready, is_error=False):  # not thread safe
         self.status = status

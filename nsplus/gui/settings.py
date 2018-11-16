@@ -127,13 +127,13 @@ class SettingsPage(tk.Frame, PageBuilder):
         # add to dataset
         try:
             ids = [int(i) for i in ids.split(',')]
-            Global().dataset.add_custom_term(term, ids)
+            valid_ids = Global().dataset.add_custom_term(term, ids)
         except ValueError as e:
             Global().show_error(e)
-        # add to autocomplete lists
-        for ac_list in Global().ac_lists:
-            ac_list.append(term)
-        Global().update_status('Term "%s" added.' % term, is_ready=True)
+            return
+        Global().update_ac_lists(term)  # add to autocomplete lists
+        Global().update_status('Added term "%s" with %d studies.' % (term, len(valid_ids)),
+                               is_ready=True)
         self.entry_term.delete(0, tk.END)
         self.entry_ids.delete(0, tk.END)
 

@@ -28,15 +28,15 @@ class DatasetPlus(ns.Dataset):
         """
         Returns names of features, but excluding those that start with a digit
         """
-        all_features = super(DatasetPlus, self).get_feature_names(features)
-        all_features = [feature for feature in all_features if not feature[0].isdigit()]
-        return all_features + list(self.custom_terms.keys())
+        features = super(DatasetPlus, self).get_feature_names(features)
+        return features + list(self.custom_terms.keys())
 
     def add_custom_term(self, term, study_ids):
         """
         Add a custom term to the dataset
         :param term: (string) name of your term
         :param study_ids: (list of integers) a list of study IDs
+        :return a subset of the given study_ids that are valid
         """
         if term in self.get_feature_names():
             raise ValueError('Term "%s" already exists.' % term)
@@ -45,6 +45,7 @@ class DatasetPlus(ns.Dataset):
         if len(valid_ids) == 0:
             raise ValueError('Must provide a list of valid study IDs')
         self.custom_terms[term] = valid_ids
+        return valid_ids
 
     def get_studies(self, features=None, expression=None, *args, **kwargs):
         results = []
@@ -59,6 +60,7 @@ class DatasetPlus(ns.Dataset):
             return super(DatasetPlus, self).get_studies(features=features,
                                                         expression=expression,
                                                         *args, **kwargs)
+        return results
 
     def get_custom_studies(self, custom_term):
         if custom_term in self.custom_terms:
