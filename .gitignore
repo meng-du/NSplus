@@ -1,7 +1,5 @@
 *.pyc
 .*
-neurosynthplus/data/*.txt
-neurosynthplus/data/*.pkl
-neurosynthplus/data/data*
-*old*
+nsplus/data/*.txt
+nsplus/data/*.pkl
 

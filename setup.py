@@ -2,12 +2,12 @@
 import os
 from setuptools import setup, find_packages
 
-version_file = os.path.join('neurosynthplus', 'version.py')
+version_file = os.path.join('nsplus', 'version.py')
 exec(compile(open(version_file, 'rb').read(), version_file, 'exec'))
 
-APP_NAME = 'NeurosynthPlus'
+APP_NAME = 'NSplus'
 OPTIONS = {
-    'iconfile': 'icon.icns',
+    'iconfile': 'res/icon.icns',
     'plist': {
         'CFBundleName': APP_NAME,
         'CFBundleDisplayName': APP_NAME,
@@ -21,11 +21,11 @@ setup(
     name=APP_NAME,
     version=__version__,
     description='A Neurosynth-based meta-analysis tool',
-    url='https://github.com/MetaD/neurosynthplus',
+    url='https://github.com/MetaD/NSplus',
     author='Meng Du',
     author_email='mengdu@umich.edu',
-    app=['NeurosynthPlus.py'],
-    data_files=[('data', ['neurosynthplus/data/database_v0.7_with_features.pkl.gz'])],
+    app=['nsplus.py'],
+    data_files=[('data', ['nsplus/data/database_v0.7.pkl.gz'])],
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
     packages=find_packages(exclude=('tests', 'docs')),
