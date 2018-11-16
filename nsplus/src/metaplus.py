@@ -81,7 +81,8 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         if image_names is not None:
             images = set(image_names) & images  # find intersection
         images = AnalysisInfo.order_images(images)
-        descriptions = [AnalysisInfo.img_names[img] for img in images]
+        descriptions = [AnalysisInfo.img_names[AnalysisInfo.remove_num_from_name(img)]
+                        for img in images]
         info_df = self.info.as_pandas_df()
         info_df = info_df.append(pd.DataFrame([descriptions, images],
                                               index=['image', 'voxel']))

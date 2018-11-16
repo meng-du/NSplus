@@ -57,7 +57,7 @@ class AnalysisInfo(OrderedDict):
         return abbr.strip(punctuation)
 
     @classmethod
-    def get_num_from_img_name(cls, img_name):
+    def get_num_from_name(cls, img_name):
         if img_name in AnalysisInfo.regular_img_names:
             return {}
         if cls.pre_prior in img_name:
@@ -71,11 +71,19 @@ class AnalysisInfo(OrderedDict):
         return {}
 
     @classmethod
-    def add_num_to_img_name(cls, img_name, prior=None, fdr=None):
+    def add_num_to_name(cls, img_name, prior=None, fdr=None):
         if (cls.pre_prior in img_name) and prior:
             return img_name + '%0.2f' % prior
         if (cls.pre_fdr in img_name) and fdr:
             return img_name + str(fdr)
+        return img_name
+
+    @classmethod
+    def remove_num_from_name(cls, img_name):
+        for substr in (cls.pre_prior, cls.pre_fdr):
+            index = img_name.find(substr)
+            if index != -1:
+                return img_name[:index + len(substr)]
         return img_name
 
     @classmethod
@@ -85,11 +93,18 @@ class AnalysisInfo(OrderedDict):
         :return: a list of given images, ordered
         """
         result = []
-        for img in images:
-            for part in cls.img_names.keys():
-                if part in img:
-                    result.append(img)
-                    continue
+        images = set(images)
+        for name in cls.img_names.keys():
+            if name in images:
+                result.append(name)
+                images.remove(name)
+                continue
+            else:
+                for img in images:
+                    if name in img:
+                        result.append(img)
+                        images.remove(img)
+                        break
         return result
 
     def as_pandas_df(self):

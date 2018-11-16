@@ -168,7 +168,7 @@ def compare_group(dataset, expr_list, image_name, lower_thr=None, upper_thr=None
     os.mkdir(pair_outpath)
 
     # pairwise comparisons
-    img_info = AnalysisInfo.get_num_from_img_name(image_name)
+    img_info = AnalysisInfo.get_num_from_name(image_name)
     kwargs.update(img_info)
     pair_metas = {}
     for expr in expr_list:

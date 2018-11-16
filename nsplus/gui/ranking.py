@@ -61,8 +61,8 @@ class RankingPage(tk.Frame, PageBuilder):
         if not Global().validate_settings():
             return
 
-        meta_img = AnalysisInfo.add_num_to_img_name(self.img_var.get(),
-                                                    Global().prior, Global().fdr)
+        meta_img = AnalysisInfo.add_num_to_name(self.img_var.get(),
+                                                Global().prior, Global().fdr)
         procedure = self.proc_var.get()
 
         # roi check

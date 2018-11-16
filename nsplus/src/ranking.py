@@ -59,7 +59,7 @@ def rank_terms(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=No
     :param extra_info: (list of tuples) extra information to put at the top of csv
     :return: an NsInfo object and a pandas data frame of the rank
     """
-    img_info = AnalysisInfo.get_num_from_img_name(rank_by)
+    img_info = AnalysisInfo.get_num_from_name(rank_by)
     metas = analyze_all_terms(dataset, extra_expr, **img_info)
     img_names = list(metas[0].images.keys())
     img_means = [np.mean([meta.images[img] for img in img_names], axis=1) for meta in metas]

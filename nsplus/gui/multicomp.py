@@ -134,8 +134,8 @@ class MultiCompPage(PageBuilder, AutocompletePage):
             Global().show_error('Please specify more than 2 terms')
             return
 
-        image = AnalysisInfo.add_num_to_img_name(self.img_var.get(),
-                                                 Global().prior, Global().fdr)
+        image = AnalysisInfo.add_num_to_name(self.img_var.get(),
+                                             Global().prior, Global().fdr)
 
         lower_thr = Global().lower_thr if self.lower_thr_var.get() == 1 else None
         upper_thr = Global().upper_thr if self.upper_thr_var.get() == 1 else None

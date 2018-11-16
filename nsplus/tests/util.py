@@ -33,7 +33,7 @@ def get_dummy_meta(how_many=1, dataset=None, num_info=1):
         x = i + 1
         img_names = list(AnalysisInfo.img_names.keys())
         for j in range(len(img_names)):
-            img_names[j] = AnalysisInfo.add_num_to_img_name(img_names[j], prior=0.5, fdr=0.01)
+            img_names[j] = AnalysisInfo.add_num_to_name(img_names[j], prior=0.5, fdr=0.01)
         images = {img_names[i]: np.array([4, 0.3, -2, -0.1, 0]) * ((-1) ** x) * x * i
                   for i in range(5)}
         meta_list.append(MetaAnalysisPlus(info, dataset, images))
