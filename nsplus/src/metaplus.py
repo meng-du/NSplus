@@ -85,7 +85,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                         for img in images]
         info_df = self.info.as_pandas_df()
         info_df = info_df.append(pd.DataFrame([descriptions, images],
-                                              index=['image', 'voxel']))
+                                              index=['image (->)', u'voxel (↓)']))
         image_df = pd.DataFrame([self.images[img].tolist() for img in images]).T
         return pd.concat([info_df, image_df])
 

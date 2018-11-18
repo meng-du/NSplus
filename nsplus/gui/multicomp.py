@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 from .globals import Global
 from .pagebuilder import PageBuilder
 from .autocompletepage import AutocompletePage
-from ..src.comparison import compare_group
+from ..src.comparison import compare_multiple
 from ..src.analysisinfo import AnalysisInfo
 from threading import Thread
 from sys import version_info
@@ -153,10 +153,10 @@ class MultiCompPage(PageBuilder, AutocompletePage):
         def _compare():
             try:
                 # run
-                compare_group(Global().dataset, expressions, image, lower_thr,
-                              upper_thr, extra_info=[mask], outpath=Global().outpath,
-                              exclude_overlap=no_overlap, reduce_larger_set=reduce,
-                              num_iterations=num_iter)
+                compare_multiple(Global().dataset, expressions, image, lower_thr,
+                                 upper_thr, extra_info=[mask], outpath=Global().outpath,
+                                 exclude_overlap=no_overlap, reduce_larger_set=reduce,
+                                 num_iterations=num_iter)
                 Global().root.event_generate('<<Done_group_comp>>')  # trigger event
 
             except Exception as e:

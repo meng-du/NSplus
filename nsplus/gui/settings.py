@@ -171,8 +171,4 @@ class SettingsPage(tk.Frame, PageBuilder):
                                                   ('all files', '*.*')))
         if len(roi_filename) > 0:
             Global().roi_filename = roi_filename
-            self.label_roi_file.config(text=Global().get_roi_name(with_ext=True))
-        else:
-            return
-
-        Global().load_roi(self.label_roi_file)
+            Global().load_roi(self.label_roi_file)

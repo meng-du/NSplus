@@ -149,11 +149,11 @@ def compare_expressions(dataset, expr, contrary_expr, exclude_overlap=True,
     return mean_metas if two_way else mean_metas[0]
 
 
-def compare_group(dataset, expr_list, image_name, lower_thr=None, upper_thr=None,
-                  extra_info=(), save_files=True, outpath='.', **kwargs):
+def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=None,
+                     extra_info=(), save_files=True, outpath='.', **kwargs):
     """
-    Do all possible pairwise comparison within the given term group, and then create a
-    conjunction map.
+    (Battle Royale) Do all possible pairwise comparison within the given term group,
+    and then create a conjunction map.
     See compare_expressions and MetaAnalysisPlus.conjunction for more info.
     If there's any conflict between the prior and fdr in image_name and kwargs, info
     in image_name will be used.

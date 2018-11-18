@@ -246,8 +246,11 @@ class Global(Singleton):
         def after_loading_roi(event):
             self.update_status(status='Done. ROI %s loaded.' % self.get_roi_name(with_ext=True),
                                is_ready=True)
-            if roi_label is not None:
-                roi_label.config(text='(default) ' + self.default_roi)
+            # change label text
+            text = self.get_roi_name(with_ext=True) if self.roi_filename \
+                else '(default) ' + self.default_roi
+            roi_label.config(text=text)
+
             self.root.unbind('<<Done_loading_roi>>')
 
         self.root.bind('<<Done_loading_roi>>', after_loading_roi)
@@ -270,6 +273,4 @@ class Global(Singleton):
     def use_default_roi(self, roi_label=None):
         if self.roi_filename is not None:
             self.roi_filename = None
-            if roi_label is not None:
-                roi_label.config(text='(default) ' + self.default_roi)
             self.load_roi(roi_label)

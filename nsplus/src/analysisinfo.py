@@ -90,8 +90,12 @@ class AnalysisInfo(OrderedDict):
     def order_images(cls, images):
         """
         :param images: (iterable) names of images
-        :return: a list of given images, ordered
+        :return: a list of given images, ordered by img_names;
+                 if none of the given images is in img_names, the given images is
+                 returned as it is
         """
+        if len(images) < 2:
+            return images
         result = []
         images = set(images)
         for name in cls.img_names.keys():
@@ -105,7 +109,7 @@ class AnalysisInfo(OrderedDict):
                         result.append(img)
                         images.remove(img)
                         break
-        return result
+        return result if len(result) > 0 else images
 
     def as_pandas_df(self):
         """
