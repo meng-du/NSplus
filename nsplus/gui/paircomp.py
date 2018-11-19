@@ -30,19 +30,19 @@ class PairCompPage(PageBuilder, AutocompletePage):
         if not Global().validate_settings():
             return
 
-        # discard any changes
-        self.entry_control(self.entry_num_iter, self.btn_num_iter,
-                           discard_change=True)
-
         # get variables
         expr = self.ac_entry1.get()
         Global().validate_expression(expr)
         contrary_expr = self.ac_entry2.get()
         Global().validate_expression(contrary_expr)
         exclude_overlap = self.overlap_var.get() == 1
-        reduce_larger_set = self.equal_size_var.get() == 1
+        reduce = self.equal_size_var.get() == 1
         two_way = self.two_way_var.get() == 1
-        num_iterations = Global().num_iterations if reduce_larger_set else 1
+        num_iterations = Global().num_iterations if reduce else 1
+
+        # discard any unsaved change
+        self.entry_control(entry=self.entry_num_iter, button=self.btn_num_iter,
+                           entry_val=num_iterations, discard_change=True)
 
         if not Global().update_status(
                 status='Comparing "%s" and "%s"...' % (expr, contrary_expr),
@@ -53,7 +53,7 @@ class PairCompPage(PageBuilder, AutocompletePage):
             try:
                 # run
                 compare_expressions(Global().dataset, expr, contrary_expr, exclude_overlap,
-                                    reduce_larger_set, num_iterations, two_way,
+                                    reduce, num_iterations, two_way,
                                     fdr=Global().fdr,
                                     extra_info=[
                                         ('mask', Global().roi_filename or Global().default_roi)],

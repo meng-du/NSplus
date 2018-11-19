@@ -125,13 +125,10 @@ class MultiCompPage(PageBuilder, AutocompletePage):
         if not Global().validate_settings():
             return
 
-        # discard any changes
-        self.entry_control(self.entry_num_iter, self.btn_num_iter,
-                           discard_change=True)
-
+        # get parameters
         expressions = self.listbox.get(0, tk.END)
         if len(expressions) < 3:
-            Global().show_error('Please specify more than 2 terms')
+            Global().show_error('Please specify more than 2 terms in ' + self.nb_label)
             return
 
         image = AnalysisInfo.add_num_to_name(self.img_var.get(),
@@ -144,6 +141,14 @@ class MultiCompPage(PageBuilder, AutocompletePage):
         num_iter = Global().num_iterations if reduce else 1
 
         mask = ('mask', Global().roi_filename or Global().default_roi)
+
+        # discard any unsaved change in 3 entries
+        self.entry_control(self.entry_num_iter, self.btn_num_iter,
+                           entry_val=num_iter, discard_change=True)
+        self.entry_control(self.entry_lower_thr, self.btn_lower_thr,
+                           entry_val=lower_thr, discard_change=True)
+        self.entry_control(self.entry_upper_thr, self.btn_upper_thr,
+                           entry_val=upper_thr, discard_change=True)
 
         if not Global().update_status(
                 status='Comparing term group...',

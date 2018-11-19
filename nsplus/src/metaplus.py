@@ -77,15 +77,25 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                             If None, all images will be returned.
         :return: a pandas data frame of images
         """
-        images = self.images.keys()
+        images = set(self.images.keys())
         if image_names is not None:
             images = set(image_names) & images  # find intersection
-        images = AnalysisInfo.order_images(images)
-        descriptions = [AnalysisInfo.img_names[AnalysisInfo.remove_num_from_name(img)]
-                        for img in images]
-        info_df = self.info.as_pandas_df()
-        info_df = info_df.append(pd.DataFrame([descriptions, images],
-                                              index=['image (->)', u'voxel (↓)']))
+        images = list(AnalysisInfo.order_images(images))
+        descriptions = []
+        has_description = False
+        for img in images:
+            key = AnalysisInfo.remove_num_from_name(img)
+            if key in AnalysisInfo.img_names:
+                descriptions.append(AnalysisInfo.img_names[key])
+                has_description = True
+            else:
+                descriptions.append('')
+        if has_description:
+            img_df = pd.DataFrame([descriptions, images],
+                                  index=[u'image (→)', u'voxel (↓)'])
+        else:
+            img_df = pd.DataFrame([images], index=['voxel'])
+        info_df = self.info.as_pandas_df().append(img_df)
         image_df = pd.DataFrame([self.images[img].tolist() for img in images]).T
         return pd.concat([info_df, image_df])
 
@@ -175,6 +185,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
 
         src_imgs = np.array([meta.images[image_name] for meta in meta_list])
 
+        connector = ''
         if upper_thr is None:
             conjunction = np.sum(src_imgs > lower_thr, axis=0)
             comp_name = '>' + str(lower_thr)
@@ -186,6 +197,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                 conjunction = np.sum((src_imgs > lower_thr) &
                                      (src_imgs < upper_thr), axis=0)
                 comp_name = str(lower_thr) + '-' + str(upper_thr)
+                connector = '_'
             else:
                 conjunction = np.sum((lower_thr < src_imgs) |
                                      (src_imgs < upper_thr), axis=0)
@@ -195,5 +207,6 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         info += extra_info
         if expression:
             info = cls.Info(info)
-            info.set_name(AnalysisInfo.shorten_expr(expression) + '_' + image_name + comp_name)
+            info.set_name(AnalysisInfo.shorten_expr(expression) + '_' +
+                          image_name + connector + comp_name)
         return cls(info, meta_list[0].dataset, images={'conjunction': conjunction})
