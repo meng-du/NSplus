@@ -32,9 +32,7 @@ class PairCompPage(PageBuilder, AutocompletePage):
 
         # get variables
         expr = self.ac_entry1.get()
-        Global().validate_expression(expr)
         contrary_expr = self.ac_entry2.get()
-        Global().validate_expression(contrary_expr)
         exclude_overlap = self.overlap_var.get() == 1
         reduce = self.equal_size_var.get() == 1
         two_way = self.two_way_var.get() == 1
@@ -47,6 +45,10 @@ class PairCompPage(PageBuilder, AutocompletePage):
         if not Global().update_status(
                 status='Comparing "%s" and "%s"...' % (expr, contrary_expr),
                 is_ready=False, user_op=True):
+            return
+
+        if (not Global().validate_expression(expr)) or \
+                (not Global().validate_expression(contrary_expr)):
             return
 
         def _compare():

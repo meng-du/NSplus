@@ -155,6 +155,10 @@ class MultiCompPage(PageBuilder, AutocompletePage):
                 is_ready=False, user_op=True):
             return
 
+        for expr in expressions:
+            if not Global().validate_expression(expr):
+                return
+
         def _compare():
             try:
                 # run

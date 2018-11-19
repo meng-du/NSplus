@@ -50,14 +50,12 @@ class AnalysisPage(AutocompletePage):
             return
 
         expression = self.ac_entry.get()
-        try:
-            Global().validate_expression(expression)
-        except ValueError as e:
-            Global().show_error(e)
-            return
 
         if not Global().update_status(status='Analyzing "%s"...' % expression,
                                       is_ready=False, user_op=True):
+            return
+
+        if not Global().validate_expression(expression):
             return
 
         def _analyze():

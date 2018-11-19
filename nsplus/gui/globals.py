@@ -150,18 +150,18 @@ class Global(Singleton):
         return True
 
     def validate_expression(self, expression):  # some simple validations
-        # FIXME show message instead
         expression = expression.strip()
+        error = False
         if len(expression) == 0:
-            raise ValueError('No expression entered')
+            error = 'No expression entered'
         if re.search('[^a-zA-Z0-9*&~|() ]', expression) is not None:
-            raise ValueError('Illegal characters in expression')
+            error = 'Invalid characters in expression'
         if re.search('[|&] *[|&]', expression) is not None:
-            raise ValueError('Illegal usage of operators in expression')
+            error = 'Invalid usage of operators in expression'
         if re.search('^[|&)]', expression) is not None:  # wrong leading operators
-            raise ValueError('Illegal usage of operators in expression')
+            error = 'Invalid usage of operators in expression'
         if re.search('[|&(~]$', expression) is not None:  # wrong trailing operators
-            raise ValueError('Illegal usage of operators in expression')
+            error = 'Invalid usage of operators in expression'
 
         # make sure any word without * is a neurosynth term
         entered_terms = re.findall('[a-zA-Z0-9 *]+', expression)
@@ -171,11 +171,16 @@ class Global(Singleton):
             if len(entry) == 0:
                 continue
             if len(entry.strip('* ')) == 0:
-                raise ValueError('Illegal usage of operators in expression')
+                error = 'Invalid usage of operators in expression'
             if '*' in entry:
                 continue
             if entry not in ns_terms:
-                raise ValueError('"%s" is not found in Neurosynth' % entry)
+                error = '"%s" is not found in Neurosynth' % entry
+
+        if error:
+            self.show_error(ValueError(error))
+            return False
+        return True
 
     def set_fdr(self, new_fdr):  # validate and set fdr
         try:
@@ -232,8 +237,8 @@ class Global(Singleton):
         try:
             self.update_status(status='Loading database...', is_ready=False)
             self.dataset = DatasetPlus.load_default_database()
-            self.update_status(is_ready=True)
             self.root.event_generate('<<Database_loaded>>')  # trigger event
+            self.update_status(is_ready=True)
         except Exception as e:
             messagebox.showerror('Error: failed to load database', str(e))
             self.update_status(status='Error: failed to load database. ' + str(e),
@@ -241,10 +246,13 @@ class Global(Singleton):
             raise e
 
     def load_roi(self, roi_label):
+        if not self.update_status(status='Loading ROI...', is_ready=False, user_op=True):
+            return
+
         Thread(target=self._load_roi, args=[self.roi_filename]).start()
 
         def after_loading_roi(event):
-            self.update_status(status='Done. ROI %s loaded.' % self.get_roi_name(with_ext=True),
+            self.update_status(status='ROI %s loaded.' % self.get_roi_name(with_ext=True),
                                is_ready=True)
             # change label text
             text = self.get_roi_name(with_ext=True) if self.roi_filename \
@@ -263,10 +271,11 @@ class Global(Singleton):
         return filename if with_ext else filename.rsplit('.nii', 1)[0]
 
     def _load_roi(self, roi_filename):
-        if not self.update_status(status='Loading ROI...', is_ready=False, user_op=True):
-            return
-        self.update_status('Loading ROI...', is_ready=False)
-        self.dataset.mask(roi_filename)
+        try:
+            # TODO put something in the instructions on the dimensions of masks supported
+            self.dataset.mask(roi_filename)
+        except Exception as e:
+            self.show_error(e)
         self.update_status(is_ready=True)
         self.root.event_generate('<<Done_loading_roi>>')  # trigger event
 

@@ -97,4 +97,7 @@ class RankingPage(tk.Frame, PageBuilder):
 
         Thread(target=_rank).start()
         Global().root.bind('<<Done_ranking>>',
-                           lambda e: Global().update_status('Done. A file is saved to ' + outfile))
+                           lambda e: Global().update_status(
+                               'Done. A file is saved to ' + outfile,
+                               is_ready=True
+                           ))
