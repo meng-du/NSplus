@@ -127,8 +127,8 @@ class MultiCompPage(PageBuilder, AutocompletePage):
 
         # get parameters
         expressions = self.listbox.get(0, tk.END)
-        if len(expressions) < 3:
-            Global().show_error('Please specify more than 2 terms in ' + self.nb_label)
+        if len(expressions) < 2:
+            Global().show_error('Please specify at least 2 terms in ' + self.nb_label)
             return
 
         image = AnalysisInfo.add_num_to_name(self.img_var.get(),

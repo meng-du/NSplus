@@ -2,12 +2,14 @@
 import os
 from setuptools import setup, find_packages
 
-version_file = os.path.join('nsplus', 'version.py')
+version_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                            'nsplus', 'version.py')
 exec(compile(open(version_file, 'rb').read(), version_file, 'exec'))
 
 APP_NAME = 'NSplus'
 OPTIONS = {
-    'iconfile': 'nsplus/res/icon.icns',
+    'iconfile': os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                             'nsplus', 'res', 'icon.icns'),
     'plist': {
         'CFBundleName': APP_NAME,
         'CFBundleDisplayName': APP_NAME,
@@ -24,8 +26,10 @@ setup(
     url='https://github.com/MetaD/NSplus',
     author='Meng Du',
     author_email='mengdu@umich.edu',
-    app=['nsplus.py'],
-    data_files=[('data', ['nsplus/data/database_v0.7.pkl.gz'])],
+    app=[os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                      'nsplus.py')],
+    data_files=[('data', [os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                       'nsplus', 'data', 'database_v0.7.pkl.gz')])],
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
     packages=find_packages(exclude=('tests', 'docs')),

@@ -164,7 +164,7 @@ class SettingsPage(tk.Frame, PageBuilder):
 
     def load_roi_from_button(self):
         # get filename
-        roi_filename = askopenfilename(initialdir='./',
+        roi_filename = askopenfilename(initialdir=Global().outpath,
                                        title='Select ROI file',
                                        filetypes=(('NIFTI files', '*.nii'),
                                                   ('NIFTI files', '*.gz'),

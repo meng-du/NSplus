@@ -67,7 +67,6 @@ class Global(Singleton):
         # autocomplete entry lists (to be updated after loading database)
         self.ac_lists = []
         self.feature_names = []
-        root.bind('<<Database_loaded>>', lambda e: self.update_ac_lists())
 
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
@@ -236,9 +235,18 @@ class Global(Singleton):
         """
         try:
             self.update_status(status='Loading database...', is_ready=False)
-            self.dataset = DatasetPlus.load_default_database()
-            self.root.event_generate('<<Database_loaded>>')  # trigger event
-            self.update_status(is_ready=True)
+
+            def load_database():
+                self.dataset = DatasetPlus.load_default_database()
+                self.root.event_generate('<<Database_loaded>>')  # trigger event
+
+            def on_database_load(event):
+                self.update_ac_lists()
+                self.update_status(is_ready=True)
+                self.root.unbind('<<Database_loaded>>')
+
+            self.root.bind('<<Database_loaded>>', on_database_load)
+            Thread(target=load_database).start()
         except Exception as e:
             messagebox.showerror('Error: failed to load database', str(e))
             self.update_status(status='Error: failed to load database. ' + str(e),
