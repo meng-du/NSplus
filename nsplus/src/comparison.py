@@ -153,13 +153,13 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
                      extra_info=(), save_files=True, outpath='.', **kwargs):
     """
     (Battle Royale) Do all possible pairwise comparison within the given term group,
-    and then create a conjunction map.
-    See compare_expressions and MetaAnalysisPlus.conjunction for more info.
+    and then create a winning map.
+    See compare_expressions and MetaAnalysisPlus.winnings for more info.
     If there's any conflict between the prior and fdr in image_name and kwargs, info
     in image_name will be used.
 
     :param kwargs: anything else passed to the pairwise compare_expressions function
-    :return: a dictionary {expression: MetaAnalysisPlus conjunction map}
+    :return: a dictionary {expression: MetaAnalysisPlus winning map}
     """
     # result name & path
     name = '_'.join([AnalysisInfo.shorten_expr(expr) for expr in expr_list])
@@ -181,8 +181,8 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
                                        outpath=pair_outpath, **kwargs)
             pair_metas[expr].append(meta)
 
-    # conjunction
-    conj_metas = {}
+    # winning map
+    win_metas = {}
     for expr in pair_metas:
         # info
         info = [('expression', expr)]
@@ -190,15 +190,15 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
                   pair_metas[expr][i].info['contrary expression'])
                  for i in range(len(expr_list) - 1)]
         info += extra_info
-        # conjunction
-        meta = MetaAnalysisPlus.conjunction(pair_metas[expr], image_name, lower_thr,
-                                            upper_thr, expression=expr, extra_info=info)
-        conj_metas[expr] = meta
+        # winnings
+        meta = MetaAnalysisPlus.winnings(pair_metas[expr], image_name, lower_thr,
+                                         upper_thr, expression=expr, extra_info=info)
+        win_metas[expr] = meta
 
     if save_files:
-        for conj_meta in conj_metas.values():
-            filename = conj_meta.info.name + '.csv'
-            conj_meta.save_csv(os.path.join(outpath, filename))
-            conj_meta.save_images(outpath=outpath)
+        for win_meta in win_metas.values():
+            filename = win_meta.info.name + '.csv'
+            win_meta.save_csv(os.path.join(outpath, filename))
+            win_meta.save_images(outpath=outpath)
 
-    return conj_metas
+    return win_metas

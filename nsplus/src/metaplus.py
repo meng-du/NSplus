@@ -157,8 +157,8 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         return cls(meta_list[0].info, meta_list[0].dataset, images=mean_imgs)
 
     @classmethod
-    def conjunction(cls, meta_list, image_name, lower_thr=None, upper_thr=None,
-                    expression=None, extra_info=()):
+    def winnings(cls, meta_list, image_name, lower_thr=None, upper_thr=None,
+                 expression=None, extra_info=()):
         """
         Given a list of meta-analysis results, compute a new image based on image_name,
         where the value at each voxel is the number of images in meta_list in which this
@@ -176,7 +176,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             if lower_thr > upper_thr, an image is counted when its voxels are EITHER
             greater than lower_thr OR less than upper_thr.
 
-        :return: a MetaAnalysisPlus object that has the conjunction image
+        :return: a MetaAnalysisPlus object that has the winnings image
         """
         if lower_thr is None and upper_thr is None:
             raise ValueError('Must specify at least one threshold')
@@ -187,19 +187,19 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
 
         connector = ''
         if upper_thr is None:
-            conjunction = np.sum(src_imgs > lower_thr, axis=0)
+            winnings = np.sum(src_imgs > lower_thr, axis=0)
             comp_name = '>' + str(lower_thr)
         elif lower_thr is None:
-            conjunction = np.sum(src_imgs < upper_thr, axis=0)
+            winnings = np.sum(src_imgs < upper_thr, axis=0)
             comp_name = '<' + str(upper_thr)
         else:
             if lower_thr < upper_thr:
-                conjunction = np.sum((src_imgs > lower_thr) &
+                winnings = np.sum((src_imgs > lower_thr) &
                                      (src_imgs < upper_thr), axis=0)
                 comp_name = str(lower_thr) + '-' + str(upper_thr)
                 connector = '_'
             else:
-                conjunction = np.sum((lower_thr < src_imgs) |
+                winnings = np.sum((lower_thr < src_imgs) |
                                      (src_imgs < upper_thr), axis=0)
                 comp_name = '>' + str(lower_thr) + 'or' + '<' + str(upper_thr)
 
@@ -209,4 +209,4 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
             info = cls.Info(info)
             info.set_name(AnalysisInfo.shorten_expr(expression) + '_' +
                           image_name + connector + comp_name)
-        return cls(info, meta_list[0].dataset, images={'conjunction': conjunction})
+        return cls(info, meta_list[0].dataset, images={'winnings': winnings})

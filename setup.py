@@ -7,7 +7,7 @@ exec(compile(open(version_file, 'rb').read(), version_file, 'exec'))
 
 APP_NAME = 'NSplus'
 OPTIONS = {
-    'iconfile': 'res/icon.icns',
+    'iconfile': 'nsplus/res/icon.icns',
     'plist': {
         'CFBundleName': APP_NAME,
         'CFBundleDisplayName': APP_NAME,
