@@ -8,8 +8,11 @@ exec(compile(open(version_file, 'rb').read(), version_file, 'exec'))
 
 APP_NAME = 'NSplus'
 OPTIONS = {
+    'argv_emulation': True,
     'iconfile': os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              'nsplus', 'res', 'icon.icns'),
+    'packages': ['pandas', 'numpy', 'scipy', 'neurosynth', 'sklearn',
+                 'matplotlib'],
     'plist': {
         'CFBundleName': APP_NAME,
         'CFBundleDisplayName': APP_NAME,
@@ -26,13 +29,11 @@ setup(
     url='https://github.com/MetaD/NSplus',
     author='Meng Du',
     author_email='mengdu@umich.edu',
-    app=[os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                      'nsplus.py')],
-    data_files=[('data', [os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                       'nsplus', 'data', 'database_v0.7.pkl.gz')])],
+    app=[os.path.join(os.path.dirname(os.path.realpath(__file__)), 'run.py')],
+    package_data={'nsplus': os.path.join('data', 'database_v0.7.pkl.gz')},
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
-    packages=find_packages(exclude=('tests', 'docs')),
+    packages=find_packages(exclude=('data', 'res', 'tests', 'docs')),
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",

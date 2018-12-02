@@ -80,6 +80,7 @@ def rank_terms(dataset, rank_by='pFgA_given_pF=0.50', extra_expr=(), csv_name=No
     if rank_first:
         info.append(('tie resolution', ties))
     info = AnalysisInfo(info).as_pandas_df()
+    # TODO check if csv name exists?
     rank = sort_and_save(metas, img_means, img_names, rank_by, ascending, csv_name, info)
 
     return info, rank

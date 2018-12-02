@@ -40,6 +40,14 @@ class PageBuilder(object):
                                 comp_btn=True, start_func=None):
         """
         Add 3 check box widgets related to term comparison
+        :param overlap: (boolean or 'disable') show the checkbox whether to exclude
+                        studies associate with both terms. If 'disable' is passed,
+                        the checkbox is shown but disabled.
+        :param size: (boolean or 'disable') show the checkbox whether to reduce
+                      the larger study set
+        :param two_ways: (boolean or 'disable') show the checkbox whether to compare
+                         the expressions in both ways
+        :param comp_btn: (boolean) show the 'compare' button
         :param start_func: a function that runs when comp_btn is clicked; must be
                            defined if comp_btn=True
         :return: (integer) the last row number
@@ -51,7 +59,8 @@ class PageBuilder(object):
             self.overlap_var = tk.IntVar(value=1)
             tk.Checkbutton(self,
                            text='Exclude studies associated with both terms',
-                           variable=self.overlap_var) \
+                           variable=self.overlap_var,
+                           state=tk.DISABLED if overlap == 'disable' else tk.NORMAL) \
                 .grid(row=row, padx=15, pady=2, sticky=tk.W)
 
         #  checkbox: equal study set sizes
@@ -61,7 +70,8 @@ class PageBuilder(object):
             tk.Checkbutton(self,
                            text='Randomly sample the larger study set to get '
                                 'two equally sized sets',
-                           variable=self.equal_size_var) \
+                           variable=self.equal_size_var,
+                           state=tk.DISABLED if size == 'disable' else tk.NORMAL) \
                 .grid(row=row, padx=15, pady=(2, 0), sticky=tk.W)
             #  number of iterations text label
             row += 1
@@ -95,7 +105,8 @@ class PageBuilder(object):
             self.two_way_var = tk.IntVar(value=1)
             tk.Checkbutton(self,
                            text='Analyze both terms (term1 vs term2, and term2 vs term1)',
-                           variable=self.two_way_var) \
+                           variable=self.two_way_var,
+                           state=tk.DISABLED if size == 'disable' else tk.NORMAL) \
                 .grid(row=row, padx=15, pady=2, sticky=tk.W)
 
         #  compare button

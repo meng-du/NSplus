@@ -2,6 +2,7 @@ import os
 import pickle
 import gzip
 import shutil
+import pkg_resources as pkgr
 import neurosynth as ns
 
 
@@ -70,8 +71,9 @@ class DatasetPlus(ns.Dataset):
 
     @classmethod
     def load_default_database(cls):
-        parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        data_file = os.path.join(parent_dir, 'data', 'database_v0.7.pkl.gz')
+        data_file = pkgr.resource_stream('nsplus',
+                                         os.path.join('data',
+                                                      'database_v0.7.pkl.gz'))
         return cls.load(data_file, compressed=True)
 
     @classmethod

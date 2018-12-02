@@ -1,0 +1,6 @@
+include README.md LICENSE requirements.txt
+recursive-exclude nsplus *.pyc
+prune tests
+prune docs
+prune data
+prune res

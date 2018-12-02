@@ -92,7 +92,7 @@ class MultiCompPage(PageBuilder, AutocompletePage):
         tk.Label(self, text='When comparing each pair:') \
             .grid(row=row_i, padx=10, pady=(10, 0), sticky=tk.W)
 
-        self.add_comparison_settings(row=row_i + 1, two_ways=False,
+        self.add_comparison_settings(row=row_i + 1, overlap='disable', two_ways=False,
                                      start_func=self.start)
 
     def on_selection_change(self, event):
