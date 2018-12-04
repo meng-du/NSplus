@@ -8,6 +8,7 @@ from .globals import Global
 from ..version import __version__
 from threading import Thread
 import os
+import pkg_resources as pkgr
 from sys import version_info
 if version_info.major == 2:
     import Tkinter as tk
@@ -53,38 +54,47 @@ class AboutPage(tk.Frame):
         parent.title('About NS+')
         bg_color = '#f1f1f1'
         parent.config(bg=bg_color)
+        row_i = -1
         # icon
-        iconpath = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        icon = tk.PhotoImage(file=os.path.join(iconpath, 'res', 'icon.png'))
-        label = tk.Label(parent, image=icon, bg=bg_color)
-        label.image = icon
-        label.grid(row=0, pady=20)
+        # row_i += 1
+        # icon = tk.PhotoImage(
+        #     file=pkgr.resource_filename('nsplus', os.path.join('res', 'icon.png')))
+        # label = tk.Label(parent, image=icon, bg=bg_color)
+        # label.image = icon
+        # label.grid(row=row_i, pady=(20, 5))
         # texts
+        row_i += 1
         tk.Label(parent, text='NS+', bg=bg_color, font='Verdana 18 bold') \
-            .grid(row=1, padx=30, pady=0)
+            .grid(row=row_i, padx=30, pady=(15, 0))
+        row_i += 1
         tk.Label(parent, text='Extends the functionality of Neurosynth.org',
                  bg=bg_color, font='Verdana 12') \
-            .grid(row=2, padx=20, pady=(0, 5))
+            .grid(row=row_i, padx=20, pady=(0, 5))
+        row_i += 1
         tk.Label(parent, text='Version ' + __version__, bg=bg_color, font='Verdana 11') \
-            .grid(row=3, padx=20)
+            .grid(row=row_i, padx=20)
+        row_i += 1
         tk.Label(parent, text=u'© 2018 Created by Meng Du and Matthew Lieberman',
                  bg=bg_color, font='Verdana 11') \
-            .grid(row=4, padx=20, pady=20)
-        tk.Label(parent, text='For citations, please use:',
+            .grid(row=row_i, padx=20, pady=(40, 0))
+        row_i += 1
+        tk.Label(parent, text='For citations, please (temporarily) use:',
                  bg=bg_color, font='Verdana 11') \
-            .grid(row=5, padx=20, pady=(10, 0))
+            .grid(row=row_i, padx=20, pady=(10, 0))
         # citation
+        row_i += 1
         citation = 'Du, M. & Lieberman, M. D. (2018). NS+: A new\n' \
                    'meta-analysis tool to extend the utility of NeuroSynth.\n' \
                    'Unpublished manuscript.'
         tk.Label(parent, text=citation, bg=bg_color, font='TkFixedFont') \
-            .grid(row=6, padx=20, pady=2)
+            .grid(row=row_i, padx=20, pady=2)
 
         def copy_citation():
             root.clipboard_clear()
             root.clipboard_append(citation.replace('\n', ' '))
+        row_i += 1
         tk.Button(parent, text=' Copy ', command=copy_citation, highlightthickness=0) \
-            .grid(row=7, padx=20, pady=(0, 15))
+            .grid(row=row_i, padx=20, pady=(0, 15))
 
 
 def main_gui():

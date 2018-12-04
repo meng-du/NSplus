@@ -8,7 +8,6 @@ exec(compile(open(version_file, 'rb').read(), version_file, 'exec'))
 
 APP_NAME = 'NSplus'
 OPTIONS = {
-    'argv_emulation': True,
     'iconfile': os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              'nsplus', 'res', 'icon.icns'),
     'packages': ['pandas', 'numpy', 'scipy', 'neurosynth', 'sklearn',
@@ -19,7 +18,9 @@ OPTIONS = {
         'CFBundleVersion': __version__,
         'CFBundleShortVersionString': __version__,
         'NSHumanReadableCopyright': u'© 2018 Meng Du. All Rights Reserved.'
-    }
+    },
+    'bdist_base': os.path.join(os.path.dirname(os.getcwd()), 'build'),
+    'dist_dir': os.path.join(os.path.dirname(os.getcwd()), 'dist')
 }
 
 setup(
@@ -30,7 +31,7 @@ setup(
     author='Meng Du',
     author_email='mengdu@umich.edu',
     app=[os.path.join(os.path.dirname(os.path.realpath(__file__)), 'run.py')],
-    package_data={'nsplus': os.path.join('data', 'database_v0.7.pkl.gz')},
+    include_package_data=True,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
     packages=find_packages(exclude=('data', 'res', 'tests', 'docs')),

@@ -1,6 +1,6 @@
 include README.md LICENSE requirements.txt
-recursive-exclude nsplus *.pyc
-prune tests
-prune docs
-prune data
-prune res
+include nsplus/data/database_v0.7.pkl.gz
+prune nsplus/tests
+prune nsplus/docs
+prune nsplus/res
+global-exclude *.pyc .* *.txt
