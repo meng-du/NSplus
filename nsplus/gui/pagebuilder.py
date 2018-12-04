@@ -12,6 +12,9 @@ class PageBuilder(object):
     """
     A factory of page components
     """
+    btn_txt_edit = ' Edit '
+    btn_txt_apply = ' Apply '
+
     def __init__(self, *args, **kwargs):
         super(PageBuilder, self).__init__(*args, **kwargs)  # mixin class calls super
 
@@ -130,7 +133,7 @@ class PageBuilder(object):
         """
         Add an entry controlled by a button next to it. The button toggles the entry
         status between disabled (button showing "Apply") and normal (button showing
-        "Change")
+        "Edit")
 
         :param entry_val: the initial value for the entry (could be None)
         :param btn_func: (function) a function that runs when the button is clicked,
@@ -156,7 +159,7 @@ class PageBuilder(object):
         entry.grid(row=row, padx=entry_padx, pady=pady, sticky=sticky)
         entry.bind('<Return>', lambda e: btn_func())
 
-        button = tk.Button(self, command=btn_func, text=' Change ',
+        button = tk.Button(self, command=btn_func, text=self.btn_txt_edit,
                            highlightthickness=0)
         button.grid(row=row, padx=btn_padx, pady=pady, sticky=sticky)
 
@@ -165,7 +168,7 @@ class PageBuilder(object):
     def entry_control(self, entry, button, entry_val=None, set_func=None,
                       discard_change=False):
         """
-        Toggles the Change/Apply button that controls an entry (see
+        Toggles the Edit/Apply button that controls an entry (see
         add_controlled_entry above), unless discard_change is True.
         Define another callback function with no parameters to pass to
         add_controlled_entry as btn_func, and call this function in it.
@@ -177,30 +180,30 @@ class PageBuilder(object):
                          either True (successful) or False (invalid entry input)
                          Must be specified when discard_change=False
         :param discard_change: if True, just disable the entry, discard changes if
-                               there is any, and make sure the button shows "Change"
+                               there is any, and make sure the button shows "Edit"
         :return: False if entry value is unchanged, or the value otherwise
         """
         # discard change
         if discard_change:
             self.change_entry_value(entry, entry_val)
             if 'Apply' in button['text']:
-                button.config(text=' Change ')
+                button.config(text=self.btn_txt_edit)
             return False
 
         # otherwise, toggle
-        if 'Change' in button['text']:
-            # changing, "Change" -> "Apply"
+        if button['text'] == self.btn_txt_edit:
+            # changing, "Edit" -> "Apply"
             entry.config(state=tk.NORMAL)
-            button.config(text=' Apply ')
+            button.config(text=self.btn_txt_apply)
             return False
         else:
-            # applying change, "Apply" -> "Change"
+            # applying change, "Apply" -> "Edit"
             if set_func is None:
                 raise RuntimeError('No method specified to set the value')
             result = set_func(entry.get())
             if result:  # success
                 entry.config(state=tk.DISABLED)
-                button.config(text=' Change ')
+                button.config(text=self.btn_txt_edit)
                 return result
             else:  # error
                 entry.delete(0, tk.END)

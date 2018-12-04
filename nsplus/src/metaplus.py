@@ -200,7 +200,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                 connector = '_'
             else:
                 winnings = np.sum((lower_thr < src_imgs) |
-                                     (src_imgs < upper_thr), axis=0)
+                                  (src_imgs < upper_thr), axis=0)
                 comp_name = '>' + str(lower_thr) + 'or' + '<' + str(upper_thr)
 
         info = [('based on', image_name), ('criterion', comp_name)]
