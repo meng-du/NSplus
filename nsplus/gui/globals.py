@@ -32,7 +32,7 @@ class Global(Singleton):
     """
     A class that maintains the Neurosynth dataset instance, global settings,
     and the current app status (including UI for the status bar)
-    # TODO refactor everything, use MVC
+    # TODO refactor using MVC
     """
     def __init__(self, root=None, **kwargs):
         if root is None:
@@ -70,7 +70,7 @@ class Global(Singleton):
 
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
-        self.text_width = 80
+        self.text_width = 92
         self.statusbar_label = tk.Label(root, text=self.status.ljust(self.text_width),
                                         bd=1, relief=tk.SUNKEN, anchor='w', padx=3,
                                         font=('Menlo', 12), bg='#6d6d6d', fg='#d6d6d6')
@@ -229,7 +229,7 @@ class Global(Singleton):
         if isinstance(exception, BaseException):
             raise exception
 
-    def load_pkl_database(self):
+    def load_database(self):
         """
         Call this function after a Global instance has been initiated
         """

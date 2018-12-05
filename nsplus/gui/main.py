@@ -23,10 +23,10 @@ elif version_info.major == 3:
 class MainApp(tk.Frame):
     def __init__(self, root, **kwargs):
         super(MainApp, self).__init__(root, **kwargs)
-        self.parent = root
-        root.title('NS+')
+        self.root = root
 
         # menu bar
+        root.title('NS+')
         menubar = tk.Menu(root)
         appmenu = tk.Menu(menubar, name='apple')
         menubar.add_cascade(menu=appmenu)
@@ -56,12 +56,13 @@ class AboutPage(tk.Frame):
         parent.config(bg=bg_color)
         row_i = -1
         # icon
-        # row_i += 1
-        # icon = tk.PhotoImage(
-        #     file=pkgr.resource_filename('nsplus', os.path.join('res', 'icon.png')))
-        # label = tk.Label(parent, image=icon, bg=bg_color)
-        # label.image = icon
-        # label.grid(row=row_i, pady=(20, 5))
+        row_i += 1
+        icon = tk.PhotoImage(
+            data=pkgr.resource_string('nsplus', os.path.join('res', 'icon.png')))
+        icon = icon.subsample(2)
+        label = tk.Label(parent, image=icon, bg=bg_color)
+        label.image = icon
+        label.grid(row=row_i, pady=(20, 5))
         # texts
         row_i += 1
         tk.Label(parent, text='NS+', bg=bg_color, font='Verdana 18 bold') \
@@ -103,9 +104,9 @@ def main_gui():
         root = tk.Tk()
         Global(root=root)
         main_app = MainApp(root)
-        main_app.pack(side='top', fill='both')
-        # load Neurosynth database in another thread
-        Thread(target=Global.load_pkl_database, args=[Global()]).start()
+        main_app.pack(side=tk.TOP, fill=tk.BOTH)
+        # load Neurosynth database
+        Thread(target=Global.load_database, args=[Global()]).start()
         # start GUI
         gui_started = True
         root.mainloop()

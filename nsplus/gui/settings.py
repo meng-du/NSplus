@@ -163,6 +163,8 @@ class SettingsPage(tk.Frame, PageBuilder):
             self.label_outdir.config(text=outdir)
 
     def load_roi_from_button(self):
+        if not Global().update_status(is_ready=True, user_op=True):  # not ready
+            return
         # get filename
         roi_filename = askopenfilename(initialdir=Global().outpath,
                                        title='Select ROI file',
