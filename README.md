@@ -7,8 +7,8 @@ Some of the things you could do with NS+:
 - Analyze, compare or rank **custom terms** in addition to existing terms in Neurosynth
 - ... and more functionalities in development!
 
-#### Read a paper where NS+ helped recognize the functional subdivisions of mPFC:
-[Lieberman, M. D., Straccia, M. A., Meyer, M. L., Du, M., & Tan, K. M. (2019). **Social, Self,(Situational), and Affective Processes in Medial Prefrontal Cortex (MPFC): Causal, Multivariate, and Reverse Inference Evidence.** *Neuroscience & Biobehavioral Reviews.*](http://www.scn.ucla.edu/pdf/Lieberman(2019)NBR.pdf)
+##### Read a paper where NS+ helped recognize the functional subdivisions of mPFC:
+###### [Lieberman, M. D., Straccia, M. A., Meyer, M. L., Du, M., & Tan, K. M. (2019). *Social, Self,(Situational), and Affective Processes in Medial Prefrontal Cortex (MPFC): Causal, Multivariate, and Reverse Inference Evidence.* Neuroscience & Biobehavioral Reviews.](http://www.scn.ucla.edu/pdf/Lieberman(2019)NBR.pdf)
 
 ## Installation
 You can now download a beta version for MacOS [here](https://github.com/MetaD/NSplus/releases). **No need to install anything** -- just unzip it and start to use.
