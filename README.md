@@ -7,10 +7,13 @@ Some of the things you could do with NS+:
 - Analyze, compare or rank custom terms in addition to existing terms in Neurosynth
 - ... and more functionalities in development!
 
-## Installation
-You can now download a beta version for MacOS [here](https://github.com/MetaD/NSplus/releases). No need to install anything -- just unzip it and start to use.
+#### Read a paper where NS+ helped recognize the functional subdivisions of mPFC:
+[Lieberman, M. D., Straccia, M. A., Meyer, M. L., Du, M., & Tan, K. M. (2019). **Social, Self,(Situational), and Affective Processes in Medial Prefrontal Cortex (MPFC): Causal, Multivariate, and Reverse Inference Evidence.** *Neuroscience & Biobehavioral Reviews.*](http://www.scn.ucla.edu/pdf/Lieberman(2019)NBR.pdf)
 
-For advanced users, you could alternatively use NS+ as a Python package, and run analyses in Python instead of using the GUI. To install NS+ (beta) with pip: `pip install git+https://github.com/MetaD/NSplus.git`
+## Installation
+You can now download a beta version for MacOS [here](https://github.com/MetaD/NSplus/releases). **No need to install anything** -- just unzip it and start to use.
+
+For Python coders: you could alternatively use NS+ as a Python package, and run analyses in Python instead of using the GUI. To install NS+ (beta) with pip: `pip install git+https://github.com/MetaD/NSplus.git`
 
 ## Contribution & Getting Help
 To report a bug, request a feature, or ask a question, please [create a new issue](https://github.com/MetaD/NSplus/issues/new) or contact Meng Du <<mengdu@umich.edu>>.
