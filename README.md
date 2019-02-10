@@ -2,9 +2,9 @@
 NS+ is a [Neurosynth](www.neurosynth.org)-based tool (plus a graphical user interface) for fMRI meta-analysis. It provides a flexible interface for Neurosynth's large-scale (14371 studies), automated meta-analysis abilities, and additionally supports highly customizable forward or reverse inference analyses within any given brain region of interest.
 
 Some of the things you could do with NS+:
-- Rank 3000+ terms (e.g. "social", "emotion", "working memory") in any ROI based on reverse inference (posterior probability) to explore what brain functions the ROI is responsible for
-- Compare multiple terms and get a map that shows the territory where each term dominates in an ROI (battle royale!)
-- Analyze, compare or rank custom terms in addition to existing terms in Neurosynth
+- **Rank** 3000+ terms (e.g. "social", "emotion", "working memory") in any ROI based on reverse inference (posterior probability) to explore what brain functions the ROI is responsible for
+- **Compare multiple terms** and get a map showing the territory where each term dominates in an ROI (battle royale!)
+- Analyze, compare or rank **custom terms** in addition to existing terms in Neurosynth
 - ... and more functionalities in development!
 
 #### Read a paper where NS+ helped recognize the functional subdivisions of mPFC:
