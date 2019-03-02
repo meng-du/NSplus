@@ -127,7 +127,7 @@ class SettingsPage(tk.Frame, PageBuilder):
         # add to dataset
         try:
             ids = [int(i) for i in ids.split(',')]
-            valid_ids = Global().dataset.add_custom_term(term, ids)
+            valid_ids = Global().dataset.add_custom_term_by_ids(term, ids)
         except ValueError as e:
             Global().show_error(e)
             return

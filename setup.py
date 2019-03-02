@@ -17,7 +17,7 @@ OPTIONS = {
         'CFBundleDisplayName': APP_NAME,
         'CFBundleVersion': __version__,
         'CFBundleShortVersionString': __version__,
-        'NSHumanReadableCopyright': u'© 2018 Meng Du. All Rights Reserved.'
+        'NSHumanReadableCopyright': u'© 2018-2019 Meng Du & Matthew Lieberman. All Rights Reserved.'
     },
     'bdist_base': os.path.join(os.path.dirname(os.getcwd()), 'build'),
     'dist_dir': os.path.join(os.path.dirname(os.getcwd()), 'dist')

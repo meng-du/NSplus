@@ -32,21 +32,42 @@ class DatasetPlus(ns.Dataset):
         features = super(DatasetPlus, self).get_feature_names(features)
         return features + list(self.custom_terms.keys())
 
-    def add_custom_term(self, term, study_ids):
+    def add_custom_term_by_ids(self, new_term, study_ids):
         """
-        Add a custom term to the dataset
-        :param term: (string) name of your term
-        :param study_ids: (list of integers) a list of study IDs
+        Add a custom term to the dataset by associating a list of study IDs
+        to the new term
+        :param new_term: (string) name of your term
+        :param study_ids: (list of integers) a list of study IDs associated
+                          with the new term
         :return a subset of the given study_ids that are valid
         """
-        if term in self.get_feature_names():
-            raise ValueError('Term "%s" already exists.' % term)
+        # TODO use Dataset.add_features
+        if new_term in self.get_feature_names():
+            raise ValueError('Term "%s" already exists.' % new_term)
         # get IDs that are in database
         valid_ids = set(self.image_table.ids) & set(study_ids)
         if len(valid_ids) == 0:
             raise ValueError('Must provide a list of valid study IDs')
-        self.custom_terms[term] = valid_ids
+        self.custom_terms[new_term] = valid_ids
         return valid_ids
+
+    def add_custom_term_by_expression(self, new_term, expression):
+        """
+        Add a custom term as a short hand of an expression
+        Example:
+            dataset.add_custom_term_by_expression(
+                'emotional experience',
+                'emotion* &~ (emotional faces | emotional stimuli)')
+        :param new_term: (string) name of your term
+        :param expression: (string)
+        :return: a list of study IDs associated with the new term
+        """
+        if new_term in self.get_feature_names():
+            raise ValueError('Term "%s" already exists.' % new_term)
+        study_ids = self.get_studies(expression=expression)
+        # TODO need to fix above function for this to work
+        self.add_custom_term_by_ids(new_term, study_ids)
+        return study_ids
 
     def get_studies(self, features=None, expression=None, *args, **kwargs):
         results = []

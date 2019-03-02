@@ -13,9 +13,9 @@ def test_default_database():
 
 def test_add_custom_term():
     dataset = get_test_dataset()
-    added = dataset.add_custom_term('such awesomeness', [9593960, 11114477, 12077008])
+    added = dataset.add_custom_term_by_ids('such awesomeness', [9593960, 11114477, 12077008])
     assert len(added) == 3
-    added = dataset.add_custom_term('moreawesomeness', ['9593960', '11114477', 12077008])
+    added = dataset.add_custom_term_by_ids('moreawesomeness', ['9593960', '11114477', 12077008])
     assert len(added) == 1
     assert dataset.get_studies(features='moreawesomeness') == [12077008]
     assert len(dataset.get_studies(expression='such awesomeness')) == 3
@@ -23,6 +23,6 @@ def test_add_custom_term():
     assert 'such awesomeness' in features
     assert 'moreawesomeness' in features
     with pytest.raises(ValueError):
-        dataset.add_custom_term('very wrong', [123, 456, 789])
+        dataset.add_custom_term_by_ids('very wrong', [123, 456, 789])
     with pytest.raises(ValueError):
-        dataset.add_custom_term('emotion', [9593960, 11114477, 12077008])
+        dataset.add_custom_term_by_ids('emotion', [9593960, 11114477, 12077008])

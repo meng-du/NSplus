@@ -75,7 +75,7 @@ class AboutPage(tk.Frame):
         tk.Label(parent, text='Version ' + __version__, bg=bg_color, font='Verdana 11') \
             .grid(row=row_i, padx=20)
         row_i += 1
-        tk.Label(parent, text=u'© 2018 Created by Meng Du and Matthew Lieberman',
+        tk.Label(parent, text=u'© 2018-2019 Created by Meng Du and Matthew Lieberman',
                  bg=bg_color, font='Verdana 11') \
             .grid(row=row_i, padx=20, pady=(40, 0))
         row_i += 1
@@ -84,7 +84,7 @@ class AboutPage(tk.Frame):
             .grid(row=row_i, padx=20, pady=(10, 0))
         # citation
         row_i += 1
-        citation = 'Du, M. & Lieberman, M. D. (2018). NS+: A new\n' \
+        citation = 'Du, M. & Lieberman, M. D. (2019). NS+: A new\n' \
                    'meta-analysis tool to extend the utility of NeuroSynth.\n' \
                    'Unpublished manuscript.'
         tk.Label(parent, text=citation, bg=bg_color, font='TkFixedFont') \
