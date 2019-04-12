@@ -195,13 +195,14 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         else:
             if lower_thr < upper_thr:
                 winnings = np.sum((src_imgs > lower_thr) &
-                                     (src_imgs < upper_thr), axis=0)
+                                  (src_imgs < upper_thr), axis=0)
                 comp_name = str(lower_thr) + '-' + str(upper_thr)
                 connector = '_'
             else:
                 winnings = np.sum((lower_thr < src_imgs) |
                                   (src_imgs < upper_thr), axis=0)
                 comp_name = '>' + str(lower_thr) + 'or' + '<' + str(upper_thr)
+        winnings = winnings.astype(np.int32)  # convert to signed int (NIFTI_TYPE_INT32)
 
         info = [('based on', image_name), ('criterion', comp_name)]
         info += extra_info
