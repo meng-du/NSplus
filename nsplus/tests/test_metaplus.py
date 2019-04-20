@@ -30,7 +30,7 @@ def test_winnings():
     meta_list = get_dummy_meta(5)
     result = MetaAnalysisPlus.winnings(
         meta_list, image_name='uniformity-test_z', lower_thr=1)
-    assert result.images['winnings'].dtype == np.int
+    assert result.images['winnings'].dtype == np.int32
     assert_array_almost_equal(result.images['winnings'], [2, 2, 3, 2, 0])
     assert result.info['criterion'] == '>1'
 

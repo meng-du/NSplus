@@ -31,12 +31,14 @@ class PairCompPage(PageBuilder, AutocompletePage):
             return
 
         # get variables
-        expr = self.ac_entry1.get()
-        contrary_expr = self.ac_entry2.get()
+        expr = self.ac_entry1.get().strip()
+        contrary_expr = self.ac_entry2.get().strip()
         exclude_overlap = self.overlap_var.get() == 1
         reduce = self.equal_size_var.get() == 1
         two_way = self.two_way_var.get() == 1
         num_iterations = Global().num_iterations if reduce else 1
+
+        mask = ('mask', Global().roi_filename or Global().default_roi)
 
         # discard any unsaved change
         self.entry_control(entry=self.entry_num_iter, button=self.btn_num_iter,
@@ -57,8 +59,7 @@ class PairCompPage(PageBuilder, AutocompletePage):
                 compare_expressions(Global().dataset, expr, contrary_expr, exclude_overlap,
                                     reduce, num_iterations, two_way,
                                     fdr=Global().fdr,
-                                    extra_info=[
-                                        ('mask', Global().roi_filename or Global().default_roi)],
+                                    extra_info=[mask],
                                     outpath=Global().outpath)
 
                 Global().root.event_generate('<<Done_pair_comp>>')  # trigger event

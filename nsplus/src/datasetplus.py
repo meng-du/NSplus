@@ -34,14 +34,13 @@ class DatasetPlus(ns.Dataset):
 
     def add_custom_term_by_ids(self, new_term, study_ids):
         """
-        Add a custom term to the dataset by associating a list of study IDs
-        to the new term
+        Add a custom term to the dataset by associating it with a list of
+        study IDs
         :param new_term: (string) name of your term
         :param study_ids: (list of integers) a list of study IDs associated
                           with the new term
         :return a subset of the given study_ids that are valid
         """
-        # TODO use Dataset.add_features
         if new_term in self.get_feature_names():
             raise ValueError('Term "%s" already exists.' % new_term)
         # get IDs that are in database
@@ -51,9 +50,10 @@ class DatasetPlus(ns.Dataset):
         self.custom_terms[new_term] = valid_ids
         return valid_ids
 
-    def add_custom_term_by_expression(self, new_term, expression):
+    def add_custom_term_by_expression(self, new_term, expression, **kwargs):
         """
-        Add a custom term as a short hand of an expression
+        Add a custom term by associating it with study IDs found with an
+        existing expression
         Example:
             dataset.add_custom_term_by_expression(
                 'emotional experience',
@@ -64,8 +64,7 @@ class DatasetPlus(ns.Dataset):
         """
         if new_term in self.get_feature_names():
             raise ValueError('Term "%s" already exists.' % new_term)
-        study_ids = self.get_studies(expression=expression)
-        # TODO need to fix above function for this to work
+        study_ids = self.get_studies(expression=expression, **kwargs)
         self.add_custom_term_by_ids(new_term, study_ids)
         return study_ids
 

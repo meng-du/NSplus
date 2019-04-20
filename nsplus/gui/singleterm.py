@@ -49,7 +49,7 @@ class AnalysisPage(AutocompletePage):
         if not Global().validate_settings():
             return
 
-        expression = self.ac_entry.get()
+        expression = self.ac_entry.get().strip()
 
         if not Global().update_status(status='Analyzing "%s"...' % expression,
                                       is_ready=False, user_op=True):

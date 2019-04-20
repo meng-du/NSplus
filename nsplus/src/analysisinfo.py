@@ -30,8 +30,8 @@ class AnalysisInfo(OrderedDict):
     Handle information strings (e.g. Neurosynth expressions and image names).
     """
     img_names = BiOrderedDict(
-        [('association-test_z', 'Association test (reverse inference z score)'),
-         ('pFgA_given_pF=', 'Reverse inference probability based on an uniform prior=0.5'),
+        [('pFgA_given_pF=', 'Reverse inference probability based on an uniform prior=0.5'),
+         ('association-test_z', 'Association test (reverse inference z score)'),
          ('association-test_z_FDR_', 'Association test (reverse inference z score) '
                                      'with multiple comparison correction'),
          ('pFgA', 'Reverse inference probability'),

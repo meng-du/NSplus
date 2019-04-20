@@ -1,6 +1,8 @@
 from .metaplus import MetaAnalysisPlus
 from .analysisinfo import AnalysisInfo
 import random
+import numpy as np
+import pandas as pd
 import os
 
 
@@ -181,7 +183,7 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
                                        outpath=pair_outpath, **kwargs)
             pair_metas[expr].append(meta)
 
-    # winning map
+    # winning maps
     win_metas = {}
     for expr in pair_metas:
         # info
@@ -195,10 +197,34 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
                                          upper_thr, expression=expr, extra_info=info)
         win_metas[expr] = meta
 
+    # counts of winnings TODO too slow
+    win_meta_imgs = np.array([meta.images['winnings'] for meta in win_metas.values()])
+    win_counts = [pd.DataFrame(dict(zip(*np.unique(vox, return_counts=True))), index=[0])
+                  for vox in win_meta_imgs.T]  # for each voxel, count occurrence of each value
+    win_counts_df = pd.concat(win_counts, ignore_index=True).fillna(0).astype(np.int32)
+    win_counts_meta_imgs = {str(col): np.array(win_counts_df[col]) for col in win_counts_df}
+    win_counts_info = [('expressions', ', '.join(expr_list))] + extra_info
+    win_counts_info.append(('description',
+                            'This file and corresponding NIFTI images show how many '
+                            'winning maps have each possible value at each voxel. '
+                            'For example, in column "0" and image "winning_counts_0.nii.gz", '
+                            'the value at each voxel is the number of winning maps '
+                            'that shows a "0" at this voxel. So in this column/image, '
+                            'if a voxel value equals %d, it means all of the winning '
+                            'maps show a "0", i.e., no term wins at this voxel. '
+                            'This column/image can be used to identify non-selective '
+                            'voxels.' % len(expr_list)))
+    win_counts_meta = MetaAnalysisPlus(win_counts_info, dataset, images=win_counts_meta_imgs)
+
+    # save images & csv
     if save_files:
+        # winnings
         for win_meta in win_metas.values():
             filename = win_meta.info.name + '.csv'
             win_meta.save_csv(os.path.join(outpath, filename))
             win_meta.save_images(outpath=outpath)
+        # counts
+        win_counts_meta.save_csv(os.path.join(outpath, name + '_winning_counts.csv'))
+        win_counts_meta.save_images(prefix=name + '_winning_counts', outpath=outpath)
 
     return win_metas

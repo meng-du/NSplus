@@ -92,7 +92,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                 descriptions.append('')
         if has_description:
             img_df = pd.DataFrame([descriptions, images],
-                                  index=[u'image (→)', u'voxel (↓)'])
+                                  index=['image (->)', u'voxel (below ↓)'])
         else:
             img_df = pd.DataFrame([images], index=['voxel'])
         info_df = self.info.as_pandas_df().append(img_df)
@@ -162,7 +162,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
         """
         Given a list of meta-analysis results, compute a new image based on image_name,
         where the value at each voxel is the number of images in meta_list in which this
-        voxel value passes the given threshold criterion.
+        voxel value passes the given threshold criteria.
 
         At least one of lower_thr and upper_thr must be specified.
         When lower threshold is the only threshold specified:
@@ -185,6 +185,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
 
         src_imgs = np.array([meta.images[image_name] for meta in meta_list])
 
+        # calculate winnings
         connector = ''
         if upper_thr is None:
             winnings = np.sum(src_imgs > lower_thr, axis=0)
@@ -204,10 +205,12 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                 comp_name = '>' + str(lower_thr) + 'or' + '<' + str(upper_thr)
         winnings = winnings.astype(np.int32)  # convert to signed int (NIFTI_TYPE_INT32)
 
+        # info & file name
         info = [('based on', image_name), ('criterion', comp_name)]
         info += extra_info
         if expression:
             info = cls.Info(info)
             info.set_name(AnalysisInfo.shorten_expr(expression) + '_' +
                           image_name + connector + comp_name)
+
         return cls(info, meta_list[0].dataset, images={'winnings': winnings})
