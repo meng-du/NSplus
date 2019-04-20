@@ -10,7 +10,9 @@ Some of the things you could do with NS+:
 ## Examples
 [This document](https://github.com/MetaD/NSplus/tree/master/docs/NS+_TPJdemo.pdf) contains a demonstration of NS+ that examines the functional subdivisions of the temporoparietal junction (TPJ).
 
-###### We have also published a paper where NS+ helped recognize the functional subdivisions of mPFC: [Lieberman, M. D., Straccia, M. A., Meyer, M. L., Du, M., & Tan, K. M. (2019). *Social, Self,(Situational), and Affective Processes in Medial Prefrontal Cortex (MPFC): Causal, Multivariate, and Reverse Inference Evidence.* Neuroscience & Biobehavioral Reviews.](http://www.scn.ucla.edu/pdf/Lieberman(2019)NBR.pdf)
+We have also published a paper where NS+ helped recognize the functional subdivisions of mPFC: [Lieberman, M. D., Straccia, M. A., Meyer, M. L., Du, M., & Tan, K. M. (2019). *Social, Self,(Situational), and Affective Processes in Medial Prefrontal Cortex (MPFC): Causal, Multivariate, and Reverse Inference Evidence.* Neuroscience & Biobehavioral Reviews.](http://www.scn.ucla.edu/pdf/Lieberman(2019)NBR.pdf)
+
+More documentation and examples in progress...
 
 ## Installation
 You can now download a beta version for MacOS [here](https://github.com/MetaD/NSplus/releases). **No need to install anything** -- just unzip it and start to use.
