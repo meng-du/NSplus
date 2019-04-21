@@ -81,7 +81,7 @@ class Global(Singleton):
             self.feature_names.append(term)
             return
         # update everything
-        self.feature_names = Global().dataset.get_feature_names()
+        self.feature_names = Global().dataset.feature_names
         for ac_list in self.ac_lists:
             for entry in ac_list:
                 if term:
@@ -164,9 +164,8 @@ class Global(Singleton):
 
         # make sure any word without * is a neurosynth term
         entered_terms = re.findall('[a-zA-Z0-9 *]+', expression)
-        ns_terms = set(self.dataset.get_feature_names())
+        ns_terms = set(self.dataset.feature_names)
         for entry in entered_terms:
-            entry = entry.strip()
             if len(entry) == 0:
                 continue
             if len(entry.strip('* ')) == 0:

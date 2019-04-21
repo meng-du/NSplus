@@ -64,7 +64,7 @@ def analyze_all_terms(dataset, extra_expr=(), prior=0.5, fdr=0.01):
     expression list
     :return: a list of MetaAnalysisPlus objects
     """
-    all_exprs = [term for term in dataset.get_feature_names() if not term[0].isdigit()]
+    all_exprs = [term for term in dataset.feature_names if not term[0].isdigit()]
     if len(extra_expr) > 0:
         all_exprs += extra_expr
     all_exprs = set(all_exprs)

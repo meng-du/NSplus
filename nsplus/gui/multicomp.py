@@ -126,7 +126,7 @@ class MultiCompPage(PageBuilder, AutocompletePage):
             return
 
         # get parameters
-        expressions = self.listbox.get(0, tk.END).strip()
+        expressions = [expr.strip() for expr in self.listbox.get(0, tk.END)]
         if len(expressions) < 2:
             Global().show_error('Please specify at least 2 terms in ' + self.nb_label)
             return

@@ -197,12 +197,15 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
                                          upper_thr, expression=expr, extra_info=info)
         win_metas[expr] = meta
 
-    # counts of winnings TODO too slow
+    # counts of winnings
+    from datetime import datetime
+    print(datetime.now())
     win_meta_imgs = np.array([meta.images['winnings'] for meta in win_metas.values()])
-    win_counts = [pd.DataFrame(dict(zip(*np.unique(vox, return_counts=True))), index=[0])
-                  for vox in win_meta_imgs.T]  # for each voxel, count occurrence of each value
-    win_counts_df = pd.concat(win_counts, ignore_index=True).fillna(0).astype(np.int32)
-    win_counts_meta_imgs = {str(col): np.array(win_counts_df[col]) for col in win_counts_df}
+    print(datetime.now())
+    win_counts = np.apply_along_axis(lambda x: np.bincount(x, minlength=len(expr_list)),
+                                     axis=0, arr=win_meta_imgs).astype(np.int32)
+    win_counts_meta_imgs = {str(col): win_counts[col] for col in range(len(expr_list))}
+    print(datetime.now())
     win_counts_info = [('expressions', ', '.join(expr_list))] + extra_info
     win_counts_info.append(('description',
                             'This file and corresponding NIFTI images show how many '
@@ -215,6 +218,7 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
                             'This column/image can be used to identify non-selective '
                             'voxels.' % len(expr_list)))
     win_counts_meta = MetaAnalysisPlus(win_counts_info, dataset, images=win_counts_meta_imgs)
+    print(datetime.now())
 
     # save images & csv
     if save_files:
@@ -223,8 +227,11 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
             filename = win_meta.info.name + '.csv'
             win_meta.save_csv(os.path.join(outpath, filename))
             win_meta.save_images(outpath=outpath)
+            print('x', datetime.now())
         # counts
         win_counts_meta.save_csv(os.path.join(outpath, name + '_winning_counts.csv'))
+        print(datetime.now())
         win_counts_meta.save_images(prefix=name + '_winning_counts', outpath=outpath)
+        print(datetime.now())
 
     return win_metas

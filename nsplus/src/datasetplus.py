@@ -4,18 +4,23 @@ import gzip
 import shutil
 import pkg_resources as pkgr
 import neurosynth as ns
+import copy
 
 
 class DatasetPlus(ns.Dataset):
     """
     An extension of the Neurosynth Dataset class.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, ns_dataset=None, *args, **kwargs):
         """
         :param dataset: initialize from a Neurosynth Dataset instance
         """
-        super(DatasetPlus, self).__init__(*args, **kwargs)
+        if ns_dataset:
+            self.__dict__ = copy.copy(ns_dataset.__dict__)
+        else:
+            super(DatasetPlus, self).__init__(*args, **kwargs)
         self.custom_terms = {}  # term - study IDs
+        self.feature_names = set(super(DatasetPlus, self).get_feature_names())
 
     def mask(self, mask_file=None):
         if mask_file is None:  # use neurosynth default mask
@@ -24,13 +29,6 @@ class DatasetPlus(ns.Dataset):
                                      'MNI152_T1_2mm_brain.nii.gz')
         self.masker = ns.mask.Masker(mask_file)
         self.create_image_table()
-
-    def get_feature_names(self, features=None):
-        """
-        Returns names of features, but excluding those that start with a digit
-        """
-        features = super(DatasetPlus, self).get_feature_names(features)
-        return features + list(self.custom_terms.keys())
 
     def add_custom_term_by_ids(self, new_term, study_ids):
         """
@@ -41,13 +39,15 @@ class DatasetPlus(ns.Dataset):
                           with the new term
         :return a subset of the given study_ids that are valid
         """
-        if new_term in self.get_feature_names():
+        # TODO need to add feature to feature table for expressions to work
+        if new_term in self.feature_names:
             raise ValueError('Term "%s" already exists.' % new_term)
         # get IDs that are in database
         valid_ids = set(self.image_table.ids) & set(study_ids)
         if len(valid_ids) == 0:
             raise ValueError('Must provide a list of valid study IDs')
         self.custom_terms[new_term] = valid_ids
+        self.feature_names.add(new_term)
         return valid_ids
 
     def add_custom_term_by_expression(self, new_term, expression, **kwargs):
@@ -62,25 +62,32 @@ class DatasetPlus(ns.Dataset):
         :param expression: (string)
         :return: a list of study IDs associated with the new term
         """
-        if new_term in self.get_feature_names():
+        if new_term in self.feature_names:
             raise ValueError('Term "%s" already exists.' % new_term)
         study_ids = self.get_studies(expression=expression, **kwargs)
         self.add_custom_term_by_ids(new_term, study_ids)
         return study_ids
 
     def get_studies(self, features=None, expression=None, *args, **kwargs):
+        """
+        Get studies from both custom features and dataset
+        :param features: (string or list of strings) single feature name(s)
+        :param expression: (string) composite expression of feature name(s)
+        :param args, kwargs: passed to NeuroSynth Dataset.get_studies
+        :return: a list of string study IDs
+        """
         results = []
-        if isinstance(features, str):
-            results += self.get_custom_studies(features)
-        elif isinstance(features, list):
+        if features is not None:
+            if isinstance(features, str):
+                features = [features]
             for feature in features:
                 results += self.get_custom_studies(feature)
-        results += self.get_custom_studies(expression)
-
-        if len(results) == 0:
-            return super(DatasetPlus, self).get_studies(features=features,
-                                                        expression=expression,
-                                                        *args, **kwargs)
+                results += super(DatasetPlus, self).get_studies(features=feature,
+                                                                *args, **kwargs)
+        if expression is not None:
+            results += self.get_custom_studies(expression)
+            results += super(DatasetPlus, self).get_studies(expression=expression,
+                                                            *args, **kwargs)
         return results
 
     def get_custom_studies(self, custom_term):
@@ -114,11 +121,13 @@ class DatasetPlus(ns.Dataset):
         else:
             dataset = super(DatasetPlus, cls).load(filename)
 
-        dataset.__class__ = DatasetPlus  # TODO any better way to downcast class?
-        dataset.custom_terms = {}
-        return dataset
+        return cls(ns_dataset=dataset)
 
     def save(self, filename, compress=False):
+        """
+        Save the current Dataset instance to a pickle file.
+        Note all custom terms will be lost.
+        """
         super(DatasetPlus, self).save(filename)
         if compress:
             temp_filename = filename + '.temporarynspfile'
