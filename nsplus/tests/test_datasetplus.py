@@ -17,12 +17,13 @@ def test_add_custom_term_by_ids():
     dataset = get_test_dataset()
     added = dataset.add_custom_term_by_ids('such awesomeness', [9593960, 11114477, 12077008, 5300321])
     assert len(added) == 3
-    added = dataset.add_custom_term_by_ids('moreawesomeness', ['9593960', '11114477', 12077008])
-    assert len(added) == 1
-    assert dataset.get_studies(features='moreawesomeness') == [12077008]
+    added = dataset.add_custom_term_by_ids('moreawesomeness', ['9593960', '11114477', 12077008, 9620698])
+    assert len(added) == 2
+    assert set(dataset.get_studies(features='moreawesomeness')) == {12077008, 9620698}
     assert len(dataset.get_studies(expression='such awesomeness')) == 3
-    assert len(dataset.get_studies(expression='such awesomeness & moreawesomeness')) == 3
+    assert dataset.get_studies(expression='such awesomeness & moreawesomeness') == [12077008]
     assert len(dataset.get_studies(expression='such awesomeness | moreawesomeness')) == 4
+    assert set(dataset.get_studies(expression='*esomeness')) == {9593960, 9620698, 11114477, 12077008}
     features = dataset.feature_names
     assert 'such awesomeness' in features
     assert 'moreawesomeness' in features
@@ -35,8 +36,7 @@ def test_add_custom_term_by_ids():
 def test_add_custom_term_by_expression():
     dataset = get_test_dataset()
     dataset.add_custom_term_by_ids('such awesomeness', [9593960, 11114477, 12077008, 5300321])
-    dataset.add_custom_term_by_ids('moreawesomeness', ['9593960', '11114477', 12077008])
-    added = dataset.add_custom_term_by_expression('aw', 'such awesomeness & moreawesomeness')
-    assert len(added) == 3
-    added = dataset.add_custom_term_by_expression('aww', 'such awesomeness | moreawesomeness')
-    assert len(added) == 4
+    dataset.add_custom_term_by_ids('moreawesomeness', ['9593960', '11114477', 12077008, 9620698])
+    assert dataset.add_custom_term_by_expression('aw', 'such awesomeness & moreawesomeness') == [12077008]
+    assert len(dataset.add_custom_term_by_expression('aww', 'such awesomeness | moreawesomeness')) == 4
+    assert set(dataset.get_studies(features='aww')) == {9593960, 9620698, 11114477, 12077008}

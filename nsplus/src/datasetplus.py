@@ -4,6 +4,8 @@ import gzip
 import shutil
 import pkg_resources as pkgr
 import neurosynth as ns
+import pandas as pd
+import numpy as np
 import copy
 
 
@@ -30,36 +32,53 @@ class DatasetPlus(ns.Dataset):
         self.masker = ns.mask.Masker(mask_file)
         self.create_image_table()
 
-    def add_custom_term_by_ids(self, new_term, study_ids):
+    def add_custom_term_by_ids(self, new_term, study_ids, frequency=0.1):
         """
         Add a custom term to the dataset by associating it with a list of
-        study IDs
+        study IDs.
+        This will add the new term as a feature to the feature table of the
+        database, where the associated study IDs has an arbitrary fixed
+        term frequency. The purpose of this arbitrary frequency
+        is just for the get_studies function to return the associated
+        study IDs.
+
         :param new_term: (string) name of your term
         :param study_ids: (list of integers) a list of study IDs associated
                           with the new term
+        :param frequency: (float) an arbitrary term frequency level to be
+                          associated with the study IDs in the database.
+                          Should be sufficiently greater than the default
+                          frequency threshold (0.001).
         :return a subset of the given study_ids that are valid
         """
-        # TODO need to add feature to feature table for expressions to work
         if new_term in self.feature_names:
             raise ValueError('Term "%s" already exists.' % new_term)
         # get IDs that are in database
-        valid_ids = set(self.image_table.ids) & set(study_ids)
+        all_study_ids = self.feature_table.data.index.values
+        valid_ids = set(all_study_ids) & set(study_ids)
+        print(valid_ids)
         if len(valid_ids) == 0:
             raise ValueError('Must provide a list of valid study IDs')
+        # add to custom term list
         self.custom_terms[new_term] = valid_ids
         self.feature_names.add(new_term)
+        # add to database
+        feature_df = pd.DataFrame(np.zeros((len(all_study_ids), 1)),
+                                  index=all_study_ids, columns=[new_term])
+        feature_df[new_term][valid_ids] = frequency
+        self.add_features(feature_df)
         return valid_ids
 
-    def add_custom_term_by_expression(self, new_term, expression, **kwargs):
+    def add_custom_term_by_expression(self, new_term, expression,
+                                      frequency=0.1, **kwargs):
         """
         Add a custom term by associating it with study IDs found with an
-        existing expression
+        existing expression. See more information in add_custom_term_by_ids
         Example:
             dataset.add_custom_term_by_expression(
                 'emotional experience',
                 'emotion* &~ (emotional faces | emotional stimuli)')
-        :param new_term: (string) name of your term
-        :param expression: (string)
+
         :return: a list of study IDs associated with the new term
         """
         if new_term in self.feature_names:
@@ -67,34 +86,6 @@ class DatasetPlus(ns.Dataset):
         study_ids = self.get_studies(expression=expression, **kwargs)
         self.add_custom_term_by_ids(new_term, study_ids)
         return study_ids
-
-    def get_studies(self, features=None, expression=None, *args, **kwargs):
-        """
-        Get studies from both custom features and dataset
-        :param features: (string or list of strings) single feature name(s)
-        :param expression: (string) composite expression of feature name(s)
-        :param args, kwargs: passed to NeuroSynth Dataset.get_studies
-        :return: a list of string study IDs
-        """
-        results = []
-        if features is not None:
-            if isinstance(features, str):
-                features = [features]
-            for feature in features:
-                results += self.get_custom_studies(feature)
-                results += super(DatasetPlus, self).get_studies(features=feature,
-                                                                *args, **kwargs)
-        if expression is not None:
-            results += self.get_custom_studies(expression)
-            results += super(DatasetPlus, self).get_studies(expression=expression,
-                                                            *args, **kwargs)
-        return results
-
-    def get_custom_studies(self, custom_term):
-        if custom_term in self.custom_terms:
-            return self.custom_terms[custom_term]
-        else:
-            return []
 
     @classmethod
     def load_default_database(cls):

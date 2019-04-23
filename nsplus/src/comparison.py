@@ -198,14 +198,10 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
         win_metas[expr] = meta
 
     # counts of winnings
-    from datetime import datetime
-    print(datetime.now())
     win_meta_imgs = np.array([meta.images['winnings'] for meta in win_metas.values()])
-    print(datetime.now())
     win_counts = np.apply_along_axis(lambda x: np.bincount(x, minlength=len(expr_list)),
                                      axis=0, arr=win_meta_imgs).astype(np.int32)
     win_counts_meta_imgs = {str(col): win_counts[col] for col in range(len(expr_list))}
-    print(datetime.now())
     win_counts_info = [('expressions', ', '.join(expr_list))] + extra_info
     win_counts_info.append(('description',
                             'This file and corresponding NIFTI images show how many '
@@ -218,7 +214,6 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
                             'This column/image can be used to identify non-selective '
                             'voxels.' % len(expr_list)))
     win_counts_meta = MetaAnalysisPlus(win_counts_info, dataset, images=win_counts_meta_imgs)
-    print(datetime.now())
 
     # save images & csv
     if save_files:
