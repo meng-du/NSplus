@@ -18,19 +18,22 @@ class AutocompletePage(tk.Frame):
         self.ac_entry_list = []
         Global().ac_lists.append(self.ac_entry_list)
 
-    def create_labeled_ac_entry(self, row=0, width=60,
+    def create_labeled_ac_entry(self, width=60, row=0, padx=10, pady=(10, 2),
                                 label_text='Enter term or expression:'):
-        ac_label = tk.Label(self, text=label_text) \
-            .grid(row=row, padx=10, pady=(10, 2), sticky=tk.W)
+        if label_text and len(label_text) > 0:
+            ac_label = tk.Label(self, text=label_text) \
+                .grid(row=row, padx=10, pady=(10, 2), sticky=tk.W)
+            row += 1
+        else:
+            ac_label = None
 
         # term/expression entry
-        row += 1
         ac_entry = AutocompleteEntry([], self, listboxLength=8, width=width,
                                      matchesFunction=self.matches_term,
                                      setFunction=self.set_selection)
-        ac_entry.grid(row=row, padx=15, pady=(2, 30), sticky=tk.W)
+        ac_entry.grid(row=row, padx=padx, pady=pady, sticky=tk.W)
         self.ac_entry_list.append(ac_entry)
-        return ac_label, ac_entry
+        return ac_entry, ac_label
 
     @staticmethod
     def matches_term(field_value, ac_list_entry):

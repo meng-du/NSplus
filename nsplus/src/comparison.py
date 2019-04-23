@@ -222,11 +222,8 @@ def compare_multiple(dataset, expr_list, image_name, lower_thr=None, upper_thr=N
             filename = win_meta.info.name + '.csv'
             win_meta.save_csv(os.path.join(outpath, filename))
             win_meta.save_images(outpath=outpath)
-            print('x', datetime.now())
         # counts
         win_counts_meta.save_csv(os.path.join(outpath, name + '_winning_counts.csv'))
-        print(datetime.now())
         win_counts_meta.save_images(prefix=name + '_winning_counts', outpath=outpath)
-        print(datetime.now())
 
     return win_metas

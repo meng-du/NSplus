@@ -25,7 +25,7 @@ class RankingPage(tk.Frame, PageBuilder):
         #  image selection
         row_i += 1
         tk.Label(self, text='Sort terms by:') \
-            .grid(row=row_i, padx=10, pady=(10, 2), sticky='w')
+            .grid(row=row_i, padx=10, pady=(10, 2), sticky=tk.W)
         row_i = self.add_img_selection(row_i + 1,
             exclude_imgs=['pA', 'pAgF', 'pFgA', 'pA_given_pF='])
 
@@ -44,7 +44,7 @@ class RankingPage(tk.Frame, PageBuilder):
                            text=text,
                            variable=self.proc_var,
                            value=bool(i)) \
-                .grid(row=row_i, padx=30, sticky='w')
+                .grid(row=row_i, padx=30, sticky=tk.W)
 
         #  run button
         row_i += 1

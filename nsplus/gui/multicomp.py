@@ -22,7 +22,7 @@ class MultiCompPage(PageBuilder, AutocompletePage):
         # page contents
         #  entry
         row_i += 1
-        self.ac_entry = self.create_labeled_ac_entry(row=row_i, width=54)[1]
+        self.ac_entry = self.create_labeled_ac_entry(row=row_i, width=54)[0]
         #  add button
         row_i += 1
         self.btn_add = tk.Button(self, command=self.add_expression, text=' Add ',

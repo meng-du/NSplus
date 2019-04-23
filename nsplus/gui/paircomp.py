@@ -16,13 +16,13 @@ class PairCompPage(PageBuilder, AutocompletePage):
         # page contents
         #  first expression
         row_i += 1
-        self.ac_entry1 = self.create_labeled_ac_entry(row=row_i)[1]
+        self.ac_entry1 = self.create_labeled_ac_entry(row=row_i)[0]
 
         #  second expression
         row_i += 2
         self.ac_entry2 = self.create_labeled_ac_entry(
             row=row_i,
-            label_text='Enter term or expression in contrast:')[1]
+            label_text='Enter term or expression in contrast:')[0]
 
         self.add_comparison_settings(row=row_i + 2, start_func=self.start)
 

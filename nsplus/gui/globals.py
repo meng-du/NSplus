@@ -66,7 +66,6 @@ class Global(Singleton):
         self.num_iter_list = []
         # autocomplete entry lists (to be updated after loading database)
         self.ac_lists = []
-        self.feature_names = []
 
         # status bar
         self.statusbar = tk.Frame(root, **kwargs)
@@ -76,18 +75,12 @@ class Global(Singleton):
                                         font=('Menlo', 12), bg='#6d6d6d', fg='#d6d6d6')
         self.statusbar_label.pack(side=tk.BOTTOM, fill=tk.X)
 
-    def update_ac_lists(self, term=None):
-        if term:
-            self.feature_names.append(term)
-            return
+    def update_ac_lists(self):
         # update everything
-        self.feature_names = Global().dataset.feature_names
+        features = Global().dataset.feature_names
         for ac_list in self.ac_lists:
             for entry in ac_list:
-                if term:
-                    entry.autocompleteList.append(term)
-                else:
-                    entry.autocompleteList = self.feature_names
+                entry.autocompleteList = features
 
     def _update_status(self, status, is_ready, is_error=False):  # not thread safe
         self.status = status
@@ -164,15 +157,15 @@ class Global(Singleton):
 
         # make sure any word without * is a neurosynth term
         entered_terms = re.findall('[a-zA-Z0-9 *]+', expression)
-        ns_terms = set(self.dataset.feature_names)
         for entry in entered_terms:
+            entry = entry.strip()
             if len(entry) == 0:
                 continue
             if len(entry.strip('* ')) == 0:
                 error = 'Invalid usage of operators in expression'
             if '*' in entry:
                 continue
-            if entry not in ns_terms:
+            if entry not in self.dataset.feature_names:
                 error = '"%s" is not found in Neurosynth' % entry
 
         if error:

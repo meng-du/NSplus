@@ -56,7 +56,6 @@ class DatasetPlus(ns.Dataset):
         # get IDs that are in database
         all_study_ids = self.feature_table.data.index.values
         valid_ids = set(all_study_ids) & set(study_ids)
-        print(valid_ids)
         if len(valid_ids) == 0:
             raise ValueError('Must provide a list of valid study IDs')
         # add to custom term list
@@ -84,7 +83,7 @@ class DatasetPlus(ns.Dataset):
         if new_term in self.feature_names:
             raise ValueError('Term "%s" already exists.' % new_term)
         study_ids = self.get_studies(expression=expression, **kwargs)
-        self.add_custom_term_by_ids(new_term, study_ids)
+        study_ids = self.add_custom_term_by_ids(new_term, study_ids, frequency)
         return study_ids
 
     @classmethod
