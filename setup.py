@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 from setuptools import setup, find_packages
+import codecs
+try:
+    codecs.lookup('mbcs')
+except LookupError:
+    codecs.register(lambda name, enc=codecs.lookup('ascii'):
+                    {True: enc}.get(name == 'mbcs'))
 
 version_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             'nsplus', 'version.py')

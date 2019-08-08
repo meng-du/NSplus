@@ -104,6 +104,7 @@ class SettingsPage(PageBuilder, AutocompletePage):
             .grid(row=row_i, padx=20, sticky=tk.W)
         # term association radio button
         self.new_term_var = tk.BooleanVar(value=False)  # whether to do alias
+
         def term_association_onchange():
             is_alias = self.new_term_var.get()
             self.label_term_entry['text'] = self.term_entry_instr[int(is_alias)]
@@ -112,6 +113,7 @@ class SettingsPage(PageBuilder, AutocompletePage):
             else:
                 self.ac_entry_custom.turn_off()
             self.ac_entry_custom.delete(0, tk.END)
+
         tk.Radiobutton(self, text='A list of study IDs', variable=self.new_term_var,
                        value=False, command=term_association_onchange) \
             .grid(row=row_i, padx=(195, 0), sticky=tk.W)
