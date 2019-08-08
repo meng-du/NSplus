@@ -92,7 +92,7 @@ class MetaAnalysisPlus(ns.meta.MetaAnalysis):
                 descriptions.append('')
         if has_description:
             img_df = pd.DataFrame([descriptions, images],
-                                  index=['image (->)', u'voxel (below ↓)'])
+                                  index=['image (->)', u'voxel (below)'])
         else:
             img_df = pd.DataFrame([images], index=['voxel'])
         info_df = self.info.as_pandas_df().append(img_df)

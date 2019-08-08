@@ -1,6 +1,1 @@
--e git+https://github.com/neurosynth/neurosynth.git@948ce7edce15d7df693446e76834e0c23bfe8f11#egg=neurosynth
-pandas>=0.23.0
-scipy>=1.1.0
-numpy>=1.14.0
-matplotlib
-scikit-learn
+-e .

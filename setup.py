@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 from setuptools import setup, find_packages
-import codecs
-try:
-    codecs.lookup('mbcs')
-except LookupError:
-    codecs.register(lambda name, enc=codecs.lookup('ascii'):
-                    {True: enc}.get(name == 'mbcs'))
 
 version_file = os.path.join(os.path.dirname(os.path.realpath(__file__)),
                             'nsplus', 'version.py')
@@ -35,10 +29,23 @@ setup(
     url='https://github.com/MetaD/NSplus',
     author='Meng Du',
     author_email='mengdu@umich.edu',
-    app=[os.path.join(os.path.dirname(os.path.realpath(__file__)), 'run.py')],
+    # app=[os.path.join(os.path.dirname(os.path.realpath(__file__)), 'run.py')],
     include_package_data=True,
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
+    install_requires=[
+        'neurosynth@git+https://github.com/neurosynth/neurosynth.git@948ce7edce15d7df693446e76834e0c23bfe8f11#egg=neurosynth',
+        'pandas>=0.23.0',
+        'scipy>=1.1.0',
+        'numpy>=1.14.0',
+        'matplotlib',
+        'scikit-learn'
+    ],
+    entry_points={
+        'console_scripts': [
+             'nsplus=nsplus.gui:main_gui',
+        ],
+    },
     packages=find_packages(exclude=('data', 'res', 'tests', 'docs')),
     classifiers=[
         "Programming Language :: Python :: 3",
