@@ -13,7 +13,7 @@ You can now download a beta version for MacOS [here](https://github.com/MetaD/NS
 For Python coders: you could alternatively use NS+ as a Python package, and run analyses in Python instead of using the GUI. To install NS+ (beta) with pip: `pip install git+https://github.com/MetaD/NSplus.git`
 
 ## Examples
-To get started with the NS+ GUI, first load your ROI mask to NS+ in \<Settings>. [This document](https://github.com/MetaD/NSplus/tree/master/docs/NS+_TPJdemo.pdf) contains a demonstration of NS+ that examines the functional subdivisions of the temporoparietal junction (TPJ).
+To get started with the NS+ GUI, first load your ROI mask to NS+ in \<Settings>. [This document](https://github.com/MetaD/NSplus/tree/master/docs/NSplus_TPJ_demo.pdf) contains a demonstration of NS+ that examines the functional subdivisions of the temporoparietal junction (TPJ).
 
 We have also published a paper where NS+ helped recognize the functional subdivisions of mPFC: [Social, Self, (Situational), and Affective Processes in Medial Prefrontal Cortex (MPFC): Causal, Multivariate, and Reverse Inference Evidence](http://www.scn.ucla.edu/pdf/Lieberman(2019)NBR.pdf)
 
